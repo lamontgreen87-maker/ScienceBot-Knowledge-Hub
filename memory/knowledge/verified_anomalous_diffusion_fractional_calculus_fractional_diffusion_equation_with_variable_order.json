@@ -1,0 +1,88 @@
+{
+    "hypothesis": {
+        "topic": "Anomalous Diffusion & Fractional Calculus: Fractional Diffusion Equation with Variable Order",
+        "hypothesis": "The dynamic scaling exponent z equals 1.5 in the non-equilibrium limit of a fractional diffusion process, indicating anomalous diffusion behavior.",
+        "simulation_context": "Liquid Neon at 25K, 1atm pressure.",
+        "literature_grounding": "This phenomenon is grounded in the generalized Central Limit Theorem and the Hurst exponent scaling law.",
+        "physics_primer": "This uses Fractional Calculus because the system exhibits memory-dependent anomalous diffusion. The governing equation involves a fractional derivative of order \u03b1, which captures the non-local behavior of the system. Specifically, we predict that the mean square displacement will scale as t^z, where z = 1.5. This is implemented using the grunwald_letnikov_diff primitive.",
+        "atomic_specification": {
+            "independent_variable": {
+                "name": "t",
+                "unit": "seconds",
+                "symbol": "t"
+            },
+            "dependent_variable": {
+                "name": "y",
+                "symbol": "y"
+            },
+            "symbolic_parameters": [
+                "t",
+                "y",
+                "ALPHA",
+                "ETA"
+            ]
+        },
+        "mathematical_blueprint": "ALPHA * sp.diff(y, t) + ETA * y**2",
+        "mathematical_implementation_guide": "Implement a sliding Memory Window of 50 history steps. Integrate a dynamic Resource Pool that decays with step-size. Use grunwald_letnikov_diff() in a manual loop. No solve_ivp.",
+        "structural_definition": {
+            "type": "Recursive",
+            "phase_space": "1D",
+            "mapping": "y = f(y, t)"
+        },
+        "boundary_limit_behavior": {
+            "approach_zero": "The system approaches equilibrium as t \u2192 0.",
+            "approach_infinity": "The system exhibits anomalous diffusion behavior as t \u2192 \u221e."
+        },
+        "field": "physics",
+        "target_complexity_score": "60",
+        "required_constants": {
+            "ALPHA": "0.729",
+            "ETA": "2.54"
+        },
+        "test_params": {
+            "complexity_level": "10"
+        }
+    },
+    "raw_output": "",
+    "status": "Failed",
+    "code": "\nimport numpy as np\nimport sympy as sp\nfrom sci_utils import verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff\n\n# 1. SYMBOLIC SETUP\nt, y = sp.symbols('t y')\nALPHA, ETA = sp.symbols('ALPHA ETA')\n\n# 2. CONSTANT INJECTION (REQUIRED CONSTANTS FROM ENVIRONMENT)\nALPHA_val = 0.729\nETA_val = 2.54\n\n# 3. THE IMMUTABLE LAW (Explicit RHS) - Using algebraic multipliers for constants\nexpr = ALPHA * sp.diff(y, t) + ETA * y**2\n\n# Convert symbolic expression to a lambda function for numerical evaluation\nf_rhs = sp.lambdify((t, y), expr, 'numpy')\n\n# 4. HIGH-FIDELITY EXECUTION LOOP - Implementing Memory Window and dynamic Resource Pool\ninitial_capacity = 1000.0\ndecay_rate = 0.01\nthreshold = 10.0\n\nresources = initial_capacity\nstates = []\nhistory_window_size = 50\nmemory_window = [1.0]  # Initial condition for y\n\nt_vals = np.linspace(0, 50, 500); h = t_vals[1] - t_vals[0]\ny_vals = [1.0]  # initial condition\n\n# Define failure chance and saturation limit\nfailure_chance = 0.05\nsaturation_limit = 100.0\n\nfor i in range(1, len(t_vals)):\n    resources -= decay_rate * y_vals[-1]\n    \n    # Check for state change based on resource pool and failure chance\n    if resources < threshold or np.random.rand() < failure_chance:\n        current_state = \"Dormant\"\n        resources = initial_capacity  # Reset resource pool\n    \n    # Implement saturation limit\n    if y_vals[-1] > saturation_limit:\n        y_vals[-1] = saturation_limit\n    \n    dy = grunwald_letnikov_diff(lambda ti, yi: f_rhs(ti, yi), t_vals[i], y_vals[-1], h)\n    y_vals.append(y_vals[-1] + dy * h)\n    \n    # Update memory window\n    if len(memory_window) < history_window_size:\n        memory_window.append(y_vals[-1])\n    else:\n        memory_window = memory_window[1:] + [y_vals[-1]]\n\n# Verify the dynamic scaling exponent z=1.5\nz = 1.5\ndiffusion_exponent = verify_power_law(sol_y=y_vals, sol_t=t_vals)\nif np.isclose(diffusion_exponent, z):\n    print(\"Scaling exponent verified: z =\", diffusion_exponent)\n\n# Anomalous diffusion modeling with fractional dynamics\nsol_y = np.array(y_vals); sol_t = t_vals\n\n# 5. DATA LOGGING (EXECUTE THESE EXACTLY)\nnoisy = add_noise(sol_y)\npasses, h, p_val = verify_confidence_level(noisy, sol_y)\n\nprint(f\"Stochastic P-Value: {p_val}\")\nprint(f\"Audit Result: {verify_structural_consistency(['t', 'y', 'ALPHA', 'ETA'], [list_of_actual_symbols])[0]}\")\n\n# mathematical_implementation_guide\n\"\"\"\nTo implement this simulation:\n\n1. Define the symbolic expression using algebraic multipliers for constants.\n2. Convert the symbolic expression to a lambda function for numerical evaluation.\n3. Implement a manual time-stepping loop using `grunwald_letnikov_diff`.\n4. Use a Memory Window of 50 history steps and update it at each time step.\n5. Integrate a dynamic Resource Pool that decays with step-size.\n\nExample usage:\n    import numpy as np\n    from sci_utils import grunwald_letnikov_diff\n\n    # Define symbolic expression\n    t, y = sp.symbols('t y')\n    ALPHA, ETA = sp.symbols('ALPHA ETA')\n    expr = ALPHA * sp.diff(y, t) + ETA * y**2\n\n    # Convert to lambda function\n    f_rhs = sp.lambdify((t, y), expr, 'numpy')\n\n    # Implement manual time-stepping loop\n    t_vals = np.linspace(0, 50, 500); h = t_vals[1] - t_vals[0]\n    y_vals = [1.0]  # initial condition\n\n    for i in range(1, len(t_vals)):\n        dy = grunwald_letnikov_diff(lambda ti, yi: f_rhs(ti, yi), t_vals[i], y_vals[-1], h)\n        y_vals.append(y_vals[-1] + dy * h)\n\n# Metric Matrix:\nG = np.array([[ALPHA**2, ETA],[ETA, ALPHA]])  # symbolic or numeric\n\n# Fractal Map:\nnodes = np.array([ALPHA**n for n in range(10)])\n\"\"\"\n",
+    "invention": {
+        "name": "FractionalFlow",
+        "concept": "Integrating Anomalous Diffusion & Fractional Calculus with AI-Driven Geospatial Analysis for Enhanced Contaminant Transport Modeling",
+        "specs": {
+            "Core Components": [
+                "Fractional diffusion equation solver with variable order",
+                "Advanced geospatial analysis and machine learning algorithms for data integration and model calibration",
+                "High-performance computing framework for large-scale simulations",
+                "Uncertainty quantification and sensitivity analysis tools"
+            ],
+            "Technical Features": [
+                "Support for heterogeneous porous media with varying properties",
+                "Incorporation of non-Fickian diffusion processes using fractional calculus",
+                "Automated model calibration using machine learning techniques",
+                "Real-time data assimilation and model updating",
+                "Scalable and parallelizable architecture for large-scale simulations"
+            ],
+            "Software Requirements": [
+                "Python-based framework with NumPy, SciPy, and Pandas libraries",
+                "Integration with popular geospatial analysis tools (e.g., GDAL, Geopandas)",
+                "Support for various machine learning frameworks (e.g., TensorFlow, PyTorch)",
+                "High-performance computing capabilities using GPUs or distributed computing"
+            ],
+            "Data Requirements": [
+                "High-resolution geological and hydrological data",
+                "Contaminant concentration data from monitoring networks",
+                "Porous media properties (e.g., permeability, porosity) data"
+            ]
+        },
+        "impact": "High"
+    },
+    "evaluation": {
+        "significance_score": 30,
+        "novelty": "The integration of fractional calculus with AI-driven geospatial analysis is somewhat novel but not groundbreaking.",
+        "rigor_analysis": "The hypothesis is specific (z=1.5), but the simulation setup and verification process lack transparency and thorough testing, especially regarding boundary conditions and edge cases.",
+        "realism_score": 7,
+        "verdict": "While the work touches on interesting concepts, it falls short due to insufficient validation of its core hypothesis and unclear methodological choices.",
+        "community_alert": false
+    }
+}

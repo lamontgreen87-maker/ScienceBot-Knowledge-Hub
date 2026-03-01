@@ -7,8 +7,8 @@
         "math_model": "mightykatun/qwen2.5-math:72b",
         "sleeper_mode": false,
         "fallback_model": "llama3.1:8b",
-        "api_url": "http://198.13.252.40:22874/api/generate",
-        "secondary_gpu": "http://198.13.252.40:22874/api/generate",
+        "api_url": "http://198.13.252.111:52176/api/generate",
+        "secondary_gpu": "http://198.13.252.111:52176/api/generate",
         "gpu_mapping": {
             "explorer": "secondary_gpu",
             "lab": "api_url",
@@ -22,7 +22,7 @@
         "cpu_threads": 24,
         "max_swarm_workers": 8,
         "turbo_workers": 12,
-        "heavy_concurrency_limit": 1,
+        "heavy_concurrency_limit": 8,
         "num_ctx": 32768,
         "theorist_model": "deepseek-r1:70b",
         "constructor_model": "llama3.3"
@@ -35,10 +35,19 @@
         "max_complexity": 40,
         "max_retries": 30,
         "focus_areas": [
-            "Anomalous Diffusion & Fractional Calculus",
             "Nonlinear Dynamics & Chaos Theory",
-            "Ricci Flow & Geometric Curvature",
+            "Nonlinear Dynamics & Chaos Theory",
+            "Nonlinear Dynamics & Chaos Theory",
             "Stochastic Systems & Noise-Driven Dynamics",
+            "Stochastic Systems & Noise-Driven Dynamics",
+            "Stochastic Systems & Noise-Driven Dynamics",
+            "Ricci Flow & Geometric Curvature",
+            "Ricci Flow & Geometric Curvature",
+            "Ricci Flow & Geometric Curvature",
+            "Quantum Field Theory in Curved Spacetime",
+            "Quantum Field Theory in Curved Spacetime",
+            "Quantum Field Theory in Curved Spacetime",
+            "Anomalous Diffusion & Fractional Calculus",
             "Phase Transitions & Critical Phenomena",
             "Quantum Information & Decoherence",
             "Topological Defects in Network Dynamics",
@@ -58,14 +67,14 @@
         ],
         "research_depth": 5,
         "study_loop_count": 1,
-        "turbo_mode": true,
+        "turbo_mode": false,
         "use_large_theorist": true
     },
     "social": {
         "moltbook_api_key": "moltbook_sk_4JKDjbJR2gpK67tWfJmLR5HQ7qndYolh",
         "enabled": true,
         "default_submolt": "science",
-        "pulse_frequency": 10
+        "pulse_frequency": 2000
     },
     "paths": {
         "discoveries": "discoveries/",

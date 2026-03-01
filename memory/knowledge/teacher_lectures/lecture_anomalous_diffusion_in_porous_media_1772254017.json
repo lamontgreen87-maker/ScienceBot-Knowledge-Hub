@@ -1,0 +1,12 @@
+{
+    "topic": "Anomalous Diffusion in Porous Media",
+    "lecture": "This is a mock lecture about fractional flow in heterogenous media...",
+    "foundational_pillars": [
+        {
+            "pillar": "Memory Window",
+            "description": "Long-range dependencies..."
+        }
+    ],
+    "symbolic_rhs_suggestion": "ALPHA * Diff(y, t, order=0.7)",
+    "physicist_advice": "Focus on the kernel decay rate."
+}

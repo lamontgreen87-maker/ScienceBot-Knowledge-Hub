@@ -1,0 +1,82 @@
+{
+    "hypothesis": {
+        "topic": "Anomalous Diffusion & Fractional Calculus: Investigating the Effects of Fractional Order on Mean Squared Displacement in Anomalous Diffusion",
+        "hypothesis": "The anomalous diffusion exponent \u03b1 changes when introducing a spatially varying Hurst exponent H(x) in the fractional diffusion equation, resulting in a dynamic scaling exponent z equals 1.5 in the non-equilibrium limit.",
+        "simulation_context": "Liquid Neon at 25K, 1atm pressure.",
+        "literature_grounding": "This study is grounded in the theory of anomalous diffusion and fractional calculus, as described by Metzler and Klafter (2000) and Sokolov et al. (2002).",
+        "physics_primer": "This uses Fractional Calculus because the system exhibits memory-dependent anomalous diffusion. The governing equation is a fractional diffusion equation with a spatially varying Hurst exponent H(x). The specific numerical values predicted are \u03b1 = 1.5 and H(x) = 0.75. This will be implemented using grunwald_letnikov_diff().",
+        "atomic_specification": {
+            "independent_variable": {
+                "name": "t",
+                "unit": "seconds",
+                "symbol": "t"
+            },
+            "dependent_variable": {
+                "name": "y",
+                "symbol": "y"
+            },
+            "symbolic_parameters": [
+                "t",
+                "y",
+                "ALPHA",
+                "H"
+            ]
+        },
+        "mathematical_blueprint": "ALPHA * sp.diff(y, t) + H(x) * y**2",
+        "mathematical_implementation_guide": "Implement a sliding Memory Window of 50 history steps. Integrate a dynamic Resource Pool that decays with step-size. Use grunwald_letnikov_diff() in a manual loop. No solve_ivp.",
+        "structural_definition": {
+            "type": "Recursive",
+            "phase_space": "1D",
+            "mapping": "dy/dt = f(y, t)"
+        },
+        "boundary_limit_behavior": {
+            "approach_zero": "y approaches 0 as t approaches infinity",
+            "approach_infinity": "y grows without bound as t approaches infinity"
+        },
+        "field": "physics",
+        "target_complexity_score": "60",
+        "required_constants": {
+            "ALPHA": "1.5",
+            "H": "0.75"
+        },
+        "test_params": {
+            "complexity_level": "10"
+        }
+    },
+    "raw_output": "",
+    "status": "Failed",
+    "code": "\nimport numpy as np\nimport sympy as sp\nfrom sci_utils import verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff\n\n# 1. SYMBOLIC SETUP\nt, x, y = sp.symbols('t x y')\nALPHA, H = sp.symbols('ALPHA H')\n\n# 2. CONSTANT INJECTION (REQUIRED CONSTANTS FROM ENVIRONMENT)\nALPHA_VAL = 1.5  # anomalous diffusion exponent\nH_VAL = 0.75  # Hurst exponent\n\n# 3. THE IMMUTABLE LAW (Explicit RHS)\nexpr = ALPHA * sp.diff(y, t, 'frac') + H * y**2\n\n# Make H(x) spatially varying by multiplying with a lambda function\nf_rhs = sp.lambdify((t, x, y), ALPHA_VAL * grunwald_letnikov_diff(lambda ti, yi, xi: yi, t, x, y, ALPHA_VAL, 0.01) + (lambda x: H_VAL * np.sin(x))(x) * y**2, 'numpy')\n\n# 4. HIGH-FIDELITY EXECUTION LOOP\nt_vals = np.linspace(0, 10, 1000); h = t_vals[1] - t_vals[0]\nx_vals = np.linspace(-5, 5, len(t_vals))\ny_vals = [1.0]  # initial condition\nresource_pool = 100; states = []\nhistory_window_size = 50\n\n# Implement a sliding Memory Window of 50 history steps\nfor i in range(1, len(t_vals)):\n    # Update Resource Pool\n    resource_pool -= 0.01 * y_vals[-1]\n    \n    if np.random.rand() < 0.05 or resource_pool < 10: \n        states.append(\"Dormant\")\n    else: \n        states.append(\"Active\")\n\n    # Implement a sliding Memory Window of 50 history steps\n    if i >= history_window_size:\n        y_vals.pop(0)\n    dy = grunwald_letnikov_diff(lambda ti, yi, xi: f_rhs(ti, xi, yi), t_vals[i], x_vals[-1], y_vals[-1], ALPHA_VAL, h)\n    y_vals.append(y_vals[-1] + dy * h)\n\n# 5. DATA LOGGING (EXECUTE THESE EXACTLY)\nnoisy = add_noise(np.array(y_vals))\npasses, h, p_val = verify_confidence_level(noisy, np.array(y_vals))\nprint(f\"Stochastic P-Value: {p_val}\")\nlist_of_actual_symbols = [t, x, y, ALPHA, H]\nprint(f\"Audit Result: {verify_structural_consistency(['t', 'x', 'y', 'ALPHA', 'H'], list_of_actual_symbols)[0]}\")\n\n# Mathematical Implementation Guide\n\"\"\"\nTo implement the Memory Window, Metric Matrix, and Fractal Map for this simulation:\n\n1. **Memory Window**: Implement a sliding window of size `history_window_size` to store past values of y.\n   - Initialize an empty list `y_vals` to store the history of y values.\n   - After each time step, append the new value of y to the end of the list and remove the oldest value if the list exceeds the desired size.\n\n2. **Metric Matrix**: Define a NumPy array representing the Metric Matrix G for this simulation.\n   - For example: `G = np.array([[g00, g01],[g10, g11]])`\n\n3. **Fractal Map**: Define an array of nodes representing the Fractal Map for this simulation.\n   - For example: `nodes = np.array([ALPHA**n for n in range(N)])`\n\"\"\"\n\n# Example Metric Matrix\nG = np.array([[1.0, 0.5],[0.5, 1.0]])\n\n# Example Fractal Map with spatially varying Hurst exponent\nN = int(len(t_vals) / history_window_size)\nnodes = np.array([ALPHA_VAL**n * (lambda x: H_VAL * np.sin(x))(x_vals[n]) for n in range(N)])\n",
+    "invention": {
+        "name": "NanoDiffuse",
+        "concept": "Fractional Calculus-Informed Nanoparticle Diffusion Simulator (FCNDS)",
+        "specs": {
+            "Key Components": [
+                "Advanced Computational Fluid Dynamics (CFD) engine incorporating fractional calculus models",
+                "Machine learning algorithms for simulating and predicting anomalous diffusion of nanoparticles in complex biological systems",
+                "Integration with experimental imaging techniques (e.g. fluorescence microscopy, MRI) for validation and training data",
+                "User-friendly interface for inputting system parameters and visualizing simulation results"
+            ],
+            "Technical Details": [
+                "Utilizes fractional calculus to model non-Fickian diffusion of nanoparticles in biological systems",
+                "Employs machine learning algorithms (e.g. neural networks, Gaussian processes) to simulate and predict nanoparticle diffusion",
+                "Incorporates experimental imaging data for validation and training of simulation models",
+                "Enables users to input system parameters (e.g. particle size, shape, surface chemistry; biological system properties)",
+                "Provides visualization tools for simulating and predicting nanoparticle diffusion in 2D and 3D"
+            ],
+            "System Requirements": [
+                "High-performance computing infrastructure (e.g. GPU clusters, cloud computing)",
+                "Advanced software frameworks for CFD and machine learning (e.g. OpenFOAM, TensorFlow)",
+                "Experimental imaging equipment (e.g. fluorescence microscopes, MRI machines)"
+            ]
+        },
+        "impact": "High"
+    },
+    "evaluation": {
+        "significance_score": 30,
+        "novelty": "The concept introduces a spatially varying Hurst exponent in fractional diffusion equations, offering a novel perspective on anomalous diffusion. However, the execution falls short due to inconsistencies in testing the hypothesis.",
+        "rigor_analysis": "The hypothesis suggests \u03b1 varies with H(x), but the simulation keeps \u03b1 fixed at 1.5, leading to a critical flaw in testing the proposed relationship. This inconsistency undermines the mathematical rigor of the approach.",
+        "realism_score": 7,
+        "verdict": "While the work explores an intriguing idea using established methods from fractional calculus, the failure to vary \u03b1 as hypothesized and potential numerical issues detract from its validity. The simulation's setup does not adequately test the hypothesis, leading to a failed verification of the proposed scaling exponent z=1.5.",
+        "community_alert": false
+    }
+}

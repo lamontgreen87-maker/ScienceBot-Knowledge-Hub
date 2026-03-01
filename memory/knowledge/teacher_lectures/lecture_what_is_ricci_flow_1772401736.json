@@ -1,0 +1,21 @@
+{
+    "topic": "What is Ricci Flow?",
+    "lecture": "Ricci Flow is a mathematical concept that helps us understand and simplify the shape of complex spaces called manifolds. Imagine you have a wrinkled shirt; Ricci Flow is like ironing it over time to make it smoother. Developed by Richard Hamilton in the 1980s, this idea has become crucial in both mathematics and physics.\n\nRicci Flow involves changing the 'metric' of a manifold, which is how we measure distances on its surface. The Ricci tensor tells us about the curvature, or how bent the space is. Positive curvature might look like a dome, while negative curvature could resemble a saddle. Over time, Ricci Flow adjusts this curvature to make the shape simpler.\n\nIn physics, Ricci Flow helps study black holes and the universe's expansion. It also played a key role in solving the Poincar\u00e9 conjecture, a major math problem. However, challenges remain, like handling infinite surfaces and understanding all possible singularities.",
+    "foundational_pillars": [
+        {
+            "pillar": "Ricci Flow",
+            "description": "A process that smooths manifolds over time."
+        },
+        {
+            "pillar": "Ricci Tensor",
+            "description": "Measures curvature or bending of space."
+        },
+        {
+            "pillar": "Singularity Formation",
+            "description": "Points where curvature becomes infinite."
+        }
+    ],
+    "symbolic_rhs_suggestion": "ALPHA * y + BETA * dL/dx",
+    "physicist_advice": "Start with simple models and gradually add complexity.",
+    "visuals": null
+}

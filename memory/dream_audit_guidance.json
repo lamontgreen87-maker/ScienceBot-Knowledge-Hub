@@ -1,0 +1,497 @@
+[
+    {
+        "timestamp": 1772135077.3637106,
+        "insight": "The most frequent audit failures are related to Template Compliance (criterion 1), Hypothesis-Math Alignment (criterion 7), and Implementation Guide (criterion 8).",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure the code follows the 5-part mandatory skeleton exactly, including symbolic setup, constant injection, immutable law definition, execution bridge, and data logging."
+            },
+            {
+                "criterion_number": 7,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "high",
+                "repair_directive": "Modify the code to reflect the hypothesis unique physics, not a generic stand-in. For example, if the hypothesis mentions fractional calculus / GL-diff or Ricci curvature, those exact functions must appear in the code."
+            },
+            {
+                "criterion_number": 8,
+                "criterion_name": "Implementation Guide",
+                "frequency": "medium",
+                "repair_directive": "Fully implement the hypothesis mathematical_implementation_guide, including Memory Windows, Metric Matrices, Fractal Maps etc. Generic or placeholder implementations must be replaced with concrete code."
+            }
+        ],
+        "hypothesis_generation_guidance": "To improve hypothesis quality for the LLM, inject more specific and detailed information about the research topic, such as relevant literature grounding and atomic specification.",
+        "repair_prompt_addition": "To improve code repair for the LLM, inject examples of concrete implementation guides for Memory Windows, Metric Matrices, Fractal Maps etc. This will help the LLM to better understand the required implementation details."
+    },
+    {
+        "timestamp": 1772135432.6582901,
+        "insight": "The most frequent audit failures are related to Hypothesis-Math Alignment (criterion #7) and Implementation Guide (criterion #8).",
+        "violated_criteria": [
+            {
+                "criterion_number": 7,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "high",
+                "repair_directive": "Ensure the symbolic `expr` reflects the hypothesis unique physics, not a generic stand-in. Example code: expr = ALPHA * y**2 + ETA * t * y (from topic **\"Quantum-Inspired Emergence of Scale-Invariant Patterns in Stochastic Systems with Non-Commutative Geometric Constraints\"**)"
+            },
+            {
+                "criterion_number": 8,
+                "criterion_name": "Implementation Guide",
+                "frequency": "high",
+                "repair_directive": "Fully implement the hypothesis mathematical_implementation_guide: Memory Windows, Metric Matrices, Fractal Maps etc. Example code: Implement a Ricci-Flat Metric Tensor represented as a NumPy matrix with dimensions 4x4 (from topic **\"Non-Equilibrium Emergence of Self-Organization in Stochastic Systems via Anomalous Diffusion and Fractional Calculus on Quantum-Inspired Non-Metric Manifolds\"**)"
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that the LLM is provided with a clear and specific mathematical blueprint that accurately reflects the unique physics of the hypothesis.",
+        "repair_prompt_addition": "In the repair prompt, provide example code snippets for each required implementation guide element (e.g. Memory Windows, Metric Matrices)."
+    },
+    {
+        "timestamp": 1772136484.5879667,
+        "insight": "The most frequently violated audit criteria are Template Compliance, Numerical Accuracy Audit, Primitive Alignment, Hypothesis-Math Alignment, and Implementation Guide. These failures often stem from a lack of understanding or misinterpretation of the hypothesis requirements.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Use the exact 5-part mandatory skeleton as provided in the template. Ensure that each section is filled with relevant code and variables, following the specified format."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "high",
+                "repair_directive": "Verify that constant values (ALPHA, BETA, etc.) are EXACTLY matched with the hypothesis specification. Use placeholder or default values only when explicitly mentioned in the hypothesis."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "high",
+                "repair_directive": "If the hypothesis mentions fractional calculus / GL-diff or Ricci curvature, ensure that these EXACT functions are used in the code. Use placeholder or default values only when explicitly mentioned in the hypothesis."
+            },
+            {
+                "criterion_number": 6,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "medium",
+                "repair_directive": "Review the symbolic expression (expr) to ensure it accurately reflects the unique physics described in the hypothesis. Use placeholder or default values only when explicitly mentioned in the hypothesis."
+            },
+            {
+                "criterion_number": 8,
+                "criterion_name": "Implementation Guide",
+                "frequency": "medium",
+                "repair_directive": "Implement the required architectural elements from the mathematical implementation guide, such as Memory Windows, Metric Matrices, and Fractal Maps. Use placeholder or default values only when explicitly mentioned in the hypothesis."
+            }
+        ],
+        "hypothesis_generation_guidance": "To improve hypothesis quality, provide more specific and detailed descriptions of the physics involved, including any relevant laws, effects, or mathematical equations. Ensure that all constants are clearly defined and their units specified.",
+        "repair_prompt_addition": "When generating repair prompts, include explicit examples of how to fix common audit failures, such as template compliance issues or numerical accuracy problems. Provide clear instructions on what code changes are needed to address each failure."
+    },
+    {
+        "timestamp": 1772138811.3483334,
+        "insight": "The most frequent audit failures are related to Template Compliance, Hypothesis-Math Alignment, and Primitive Alignment. The code often fails to follow the mandatory skeleton, does not accurately reflect the hypothesis unique physics, and does not use the required fractional calculus or Ricci curvature primitives.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure that the code follows the mandatory skeleton exactly, with no deviations. This includes using the required functions and constants in the correct order."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "medium",
+                "repair_directive": "If the hypothesis mentions fractional calculus or Ricci curvature, ensure that the code uses the exact functions (grunwald_letnikov_diff() and ricci_curvature_scalar())."
+            },
+            {
+                "criterion_number": 7,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "high",
+                "repair_directive": "Ensure that the symbolic expression accurately reflects the hypothesis unique physics, rather than using a generic stand-in."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that they clearly specify the required constants and functions. This will help prevent audit failures related to Template Compliance and Hypothesis-Math Alignment.",
+        "repair_prompt_addition": "Add examples of how to use the required fractional calculus or Ricci curvature primitives to the repair prompt. This will help the LLM generate code that accurately reflects the hypothesis unique physics."
+    },
+    {
+        "timestamp": 1772139879.5885515,
+        "insight": "The most frequently violated audit criteria are Template Compliance, Numerical Accuracy Audit, Primitive Alignment, Multiplier Rule, Hypothesis-Math Alignment, and Implementation Guide.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Use the exact 5-part mandatory skeleton for simulations. Ensure that each part is implemented correctly."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "medium",
+                "repair_directive": "Double-check that constant values match the hypothesis specification exactly. Use algebraic multipliers for constants (e.g., ALPHA = 0.7; expr = ALPHA * x**2)."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "medium",
+                "repair_directive": "If the hypothesis mentions fractional calculus or Ricci curvature, ensure that the corresponding primitives (grunwald_letnikov_diff(), ricci_curvature_scalar()) are used in the code."
+            },
+            {
+                "criterion_number": 5,
+                "criterion_name": "Multiplier Rule",
+                "frequency": "medium",
+                "repair_directive": "Never use .subs(). Ensure that constants are algebraic multipliers (e.g., ALPHA = 0.7; expr = ALPHA * x**2)."
+            },
+            {
+                "criterion_number": 6,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "medium",
+                "repair_directive": "The symbolic expression must reflect the hypothesis's unique physics, not a generic stand-in. Use algebraic multipliers for constants (e.g., ALPHA = 0.7; expr = ALPHA * x**2)."
+            },
+            {
+                "criterion_number": 8,
+                "criterion_name": "Implementation Guide",
+                "frequency": "high",
+                "repair_directive": "Implement the Memory Window, Metric Matrix, or Fractal Map as described in the hypothesis's mathematical_implementation_guide. Do not use generic or placeholder implementations."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that the topic is specific and relevant to the focus areas. Use precise language to describe the problem, and include relevant context constants.",
+        "repair_prompt_addition": "In the repair prompt, provide explicit examples of how to implement each part of the template compliance check. Include code snippets for common scenarios (e.g., using algebraic multipliers)."
+    },
+    {
+        "timestamp": 1772142851.9390593,
+        "insight": "The most frequently violated audit criteria are Template Compliance, Numerical Accuracy Audit, Primitive Alignment, Multiplier Rule, Hypothesis-Math Alignment, and Implementation Guide.",
+        "strict_rule": "Always use the exact hypothesis vocabulary in the symbolic expression (expr) to ensure Hypothesis-Math Alignment.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Use the mandatory 5-part skeleton exactly as specified in the template."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "medium",
+                "repair_directive": "Ensure that constant values (ALPHA, BETA, etc.) match the hypothesis specification exactly."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "high",
+                "repair_directive": "Use the exact functions mentioned in the hypothesis for fractional calculus or Ricci curvature (e.g. grunwald_letnikov_diff(), ricci_curvature_scalar())."
+            },
+            {
+                "criterion_number": 5,
+                "criterion_name": "Multiplier Rule",
+                "frequency": "medium",
+                "repair_directive": "Never use .subs(). Constants must be algebraic multipliers (e.g. ALPHA = 0.7; expr = ALPHA * x**2)."
+            },
+            {
+                "criterion_number": 6,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "high",
+                "repair_directive": "The symbolic expression (expr) must reflect the hypothesis unique physics, not a generic stand-in."
+            },
+            {
+                "criterion_number": 8,
+                "criterion_name": "Implementation Guide",
+                "frequency": "medium",
+                "repair_directive": "Fully implement the hypothesis mathematical_implementation_guide: Memory Windows, Metric Matrices, Fractal Maps etc."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that the topic is carefully crafted to be distinct from excluded topics while exploring a fascinating intersection of information theory, complexity science, and quantum-inspired ideas.",
+        "repair_prompt_addition": "When repairing code, use concrete examples that demonstrate how to fix common errors, such as using algebraic multipliers instead of .subs()."
+    },
+    {
+        "timestamp": 1772145253.664775,
+        "insight": "The audit failures are due to a combination of factors, including template compliance issues, incorrect use of constants, and lack of hypothesis-math alignment.",
+        "strict_rule": "Always ensure that the symbolic expression `expr` in the code directly reflects the unique physics described in the hypothesis, without using generic stand-ins or placeholders.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Use the exact 5-part mandatory skeleton provided by the LLM to structure your code."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "medium",
+                "repair_directive": "Define constants as algebraic multipliers and use them consistently throughout the code, avoiding .subs() usage."
+            },
+            {
+                "criterion_number": 5,
+                "criterion_name": "Multipler Rule",
+                "frequency": "high",
+                "repair_directive": "Never use .subs(). Define constants as algebraic multipliers and use them consistently throughout the code."
+            },
+            {
+                "criterion_number": 7,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "medium",
+                "repair_directive": "Directly reflect the unique physics described in the hypothesis in the symbolic expression `expr`, without using generic stand-ins or placeholders."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that the LLM provides specific and detailed descriptions of the unique physics involved, including any relevant mathematical equations or frameworks.",
+        "repair_prompt_addition": "The repair prompt should include concrete examples of how to fix common errors, such as incorrect use of constants or lack of hypothesis-math alignment."
+    },
+    {
+        "timestamp": 1772148133.9629033,
+        "insight": "The most frequent audit failures are due to Template Compliance (criterion 1) and Hypothesis-Math Alignment (criterion 7).",
+        "strict_rule": "Always include a `mathematical_implementation_guide` section in the hypothesis, which must be fully implemented in the code.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Add a `mathematical_implementation_guide` section that includes specific instructions for implementing Memory Windows, Metric Matrices, and Fractal Maps."
+            },
+            {
+                "criterion_number": 7,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "medium",
+                "repair_directive": "Ensure the symbolic `expr` reflects the unique physics described in the hypothesis, not a generic stand-in. Use algebraic multipliers consistently."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that the `mathematical_implementation_guide` section is included and provides specific instructions for implementing Memory Windows, Metric Matrices, and Fractal Maps.",
+        "repair_prompt_addition": "When repairing simulations, provide explicit examples of how to implement Memory Windows, Metric Matrices, and Fractal Maps based on the hypothesis's unique physics."
+    },
+    {
+        "timestamp": 1772214863.5773408,
+        "insight": "The most frequent audit failure pattern involves violations of the Template Compliance, Context Constant Audit, and Primitive Alignment criteria.",
+        "strict_rule": "Always use algebraic multipliers for constants in the immutable law section, and never use .subs().",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure that all code follows the exact 5-part template structure."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "medium",
+                "repair_directive": "Use algebraic multipliers for constants in the immutable law section, e.g. expr = ALPHA * y**2"
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "low",
+                "repair_directive": "If the hypothesis mentions fractional calculus or Ricci curvature, use grunwald_letnikov_diff() and ricci_curvature_scalar() respectively."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, prioritize clear specification of constants and their roles in the mathematical blueprint.",
+        "repair_prompt_addition": "Ensure that all code repairs follow the exact 5-part template structure and use algebraic multipliers for constants."
+    },
+    {
+        "timestamp": 1772219484.749863,
+        "insight": "The majority of failures are due to a lack of adherence to the template, incorrect use of constants, and failure to implement fractional calculus primitives correctly.",
+        "strict_rule": "Always define environment constants as algebraic multipliers (e.g. ALPHA = 0.7; expr = ALPHA * x**2) and never use .subs().",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure that the code follows the exact 5-part mandatory skeleton, including symbolic setup, constant injection, immutable law definition, high-fidelity execution loop, and data logging."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "medium",
+                "repair_directive": "Verify that environment constants are defined and used as algebraic multipliers (e.g. ALPHA = 0.7; expr = ALPHA * x**2)."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "medium",
+                "repair_directive": "Ensure that constant values (ALPHA, BETA, etc.) exactly match the hypothesis specification. Wrong or swapped values should be rejected."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "low",
+                "repair_directive": "Verify that if the hypothesis mentions fractional calculus / GL-diff or Ricci curvature, those exact functions must appear in the code: grunwald_letnikov_diff(), ricci_curvature_scalar()."
+            }
+        ],
+        "hypothesis_generation_guidance": "Please ensure that the generated hypotheses follow the exact template and use algebraic multipliers for environment constants.",
+        "repair_prompt_addition": "When repairing code, verify that the constant values match the hypothesis specification and that fractional calculus primitives are used correctly."
+    },
+    {
+        "timestamp": 1772226261.3539577,
+        "insight": "The majority of failures are due to audit errors related to invalid JSON responses, missing constants, and incorrect usage of algebraic multipliers. Additionally, there is a lack of implementation of fractional calculus primitives in the code.",
+        "strict_rule": "Always verify that all required constants are defined and used as algebraic multipliers in the immutable law section.",
+        "violated_criteria": [
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "high",
+                "repair_directive": "Ensure that all constants from the hypothesis are defined and used as algebraic multipliers in the code. For example: `ALPHA = 0.7291; expr = ALPHA * x**2`."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "medium",
+                "repair_directive": "Verify that constant values in the code exactly match those specified in the hypothesis. Use a strict comparison to catch any discrepancies."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "low",
+                "repair_directive": "If the hypothesis mentions fractional calculus primitives, ensure that they are correctly implemented in the code using `grunwald_letnikov_diff()` or other relevant functions."
+            }
+        ],
+        "hypothesis_generation_guidance": "To improve hypothesis quality, please ensure that all required constants are clearly defined and their roles are explicitly stated. Additionally, provide more detailed guidance on the mathematical implementation of fractional calculus primitives.",
+        "repair_prompt_addition": "When repairing code, pay close attention to the usage of algebraic multipliers and verify that all required constants are correctly defined and used. Also, ensure that fractional calculus primitives are implemented as specified in the hypothesis."
+    },
+    {
+        "timestamp": 1772229171.1725392,
+        "insight": "The most frequent audit failures are related to Template Compliance, Context Constant Audit, and Primitive Alignment. The majority of simulations failed due to incorrect implementation of constants as algebraic multipliers, missing or mismatched primitive functions (e.g., grunwald_letnikov_diff), and incomplete or incorrect mathematical blueprints.",
+        "strict_rule": "Always use algebraic multipliers for environment constants and ensure exact matching between hypothesis specifications and code implementations.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure the code exactly follows the 5-part mandatory skeleton, paying close attention to constant definitions and usage."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "medium",
+                "repair_directive": "Verify that all environment constants are defined as algebraic multipliers (e.g., ALPHA = 0.7; expr = ALPHA * x**2) and used correctly in the mathematical blueprint."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "high",
+                "repair_directive": "Ensure that primitive functions (e.g., grunwald_letnikov_diff, ricci_curvature_scalar) are used correctly and exactly match the hypothesis specifications."
+            }
+        ],
+        "hypothesis_generation_guidance": "When generating hypotheses, ensure that mathematical blueprints accurately reflect the unique physics of the problem. Provide clear definitions for environment constants and specify exact primitive functions required for implementation.",
+        "repair_prompt_addition": "When repairing code, pay close attention to constant definitions and usage. Ensure exact matching between hypothesis specifications and code implementations. Verify that primitive functions are used correctly and match the hypothesis requirements."
+    },
+    {
+        "timestamp": 1772247246.0939047,
+        "insight": "The most common audit failures stem from Template Compliance issues, missing or misapplied constants, improper use of fractional calculus primitives, and banned .subs() operations.",
+        "strict_rule": "Always define constants in a dictionary and use them as algebraic multipliers without any substitutions.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure all code follows the exact 5-part structure with proper section headers."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "high",
+                "repair_directive": "Define constants in a dictionary and use them as multipliers without .subs()."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "medium",
+                "repair_directive": "Use grunwald_letnikov_diff() correctly for fractional derivatives."
+            }
+        ],
+        "hypothesis_generation_guidance": "Ensure all constants are explicitly defined and used as algebraic multipliers in the mathematical expressions.",
+        "repair_prompt_addition": "Avoid using .subs(), implement memory windows correctly, and ensure all constants from the hypothesis are included in the code."
+    },
+    {
+        "timestamp": 1772249258.9695642,
+        "insight": "The most common pattern of audit failures includes violations of Template Compliance, Context Constant Audit, Numerical Accuracy Audit, Primitive Alignment, Multiplier Rule, and Implementation Guide. These issues often stem from missing sections in the code structure, incorrect or incomplete use of constants, and failure to implement specific mathematical functions as required by the hypothesis.",
+        "strict_rule": "Always ensure that all required sections (SYMBOLIC SETUP, CONSTANT INJECTION, THE IMMUTABLE LAW, HIGH-FIDELITY EXECUTION, DATA LOGGING) are present and correctly implemented in the code.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure that all five mandatory sections (SYMBOLIC SETUP, CONSTANT INJECTION, THE IMMUTABLE LAW, HIGH-FIDELITY EXECUTION, DATA LOGGING) are present and correctly structured in the generated code. Example: Add missing sections if they are not present."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "high",
+                "repair_directive": "Define all required constants at the beginning of the code and use them as algebraic multipliers. Example: Ensure `constants = {'ALPHA': 0.7291, 'BETA': 1.4582}` is defined and used in the code."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "high",
+                "repair_directive": "Verify that constant values match exactly with those specified in the hypothesis. Example: Ensure `ALPHA = 0.7291` and `BETA = 1.4582` are used as defined."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "medium",
+                "repair_directive": "If the hypothesis mentions specific functions (e.g., grunwald_letnikov_diff, ricci_curvature_scalar), ensure these functions are used in the code. Example: Ensure `grunwald_letnikov_diff` is called if fractional calculus is mentioned."
+            },
+            {
+                "criterion_number": 5,
+                "criterion_name": "Multiplier Rule",
+                "frequency": "high",
+                "repair_directive": "Never use `.subs()`. Always use algebraic multipliers for constants. Example: Replace `expr.subs(ALPHA, ALPHA_VALUE)` with `ALPHA * expr`."
+            },
+            {
+                "criterion_number": 8,
+                "criterion_name": "Implementation Guide",
+                "frequency": "high",
+                "repair_directive": "Fully implement all aspects of the mathematical_implementation_guide. Example: Ensure a multi-state memory window and resource-limited kernels are implemented as specified."
+            }
+        ],
+        "hypothesis_generation_guidance": "Ensure that all required constants are defined in the hypothesis and that the mathematical_blueprint is clearly specified. Include detailed implementation guides for specific functions and techniques.",
+        "repair_prompt_addition": "Check that all five mandatory sections (SYMBOLIC SETUP, CONSTANT INJECTION, THE IMMUTABLE LAW, HIGH-FIDELITY EXECUTION, DATA LOGGING) are present and correctly structured. Ensure constants are defined and used as algebraic multipliers. Verify constant values match the hypothesis exactly. If fractional calculus is mentioned, ensure specific functions like `grunwald_letnikov_diff` are used. Never use `.subs()`. Fully implement all aspects of the mathematical_implementation_guide."
+    },
+    {
+        "timestamp": 1772250786.700518,
+        "insight": "The most common patterns of audit failures include missing constants, incorrect use of `.subs()`, and failure to implement specific mathematical primitives as required by the hypothesis. Additionally, there are issues with low vocabulary alignment and incomplete template sections.",
+        "strict_rule": "Never use `.subs()` for constant injection; always use algebraic multipliers directly in the symbolic expression.",
+        "violated_criteria": [
+            {
+                "criterion_number": 1,
+                "criterion_name": "Template Compliance",
+                "frequency": "high",
+                "repair_directive": "Ensure all sections of the template (SYMBOLIC SETUP, CONSTANT INJECTION, THE IMMUTABLE LAW, HIGH-FIDELITY EXECUTION LOOP, DATA LOGGING) are fully implemented and not missing any required components."
+            },
+            {
+                "criterion_number": 2,
+                "criterion_name": "Context Constant Audit",
+                "frequency": "high",
+                "repair_directive": "Define all required constants in the `constants` dictionary and use them as algebraic multipliers. For example, if `ALPHA` is a constant, define it as `constants['ALPHA'] = 0.7291` and use it in expressions like `expr = constants['ALPHA'] * y**2`."
+            },
+            {
+                "criterion_number": 3,
+                "criterion_name": "Numerical Accuracy Audit",
+                "frequency": "medium",
+                "repair_directive": "Ensure that all constant values in the code exactly match those specified in the hypothesis. For example, if `ALPHA = 0.7291` in the hypothesis, it must be the same in the code."
+            },
+            {
+                "criterion_number": 4,
+                "criterion_name": "Primitive Alignment",
+                "frequency": "high",
+                "repair_directive": "If the hypothesis mentions specific functions like `grunwald_letnikov_diff()` or `ricci_curvature_scalar()`, ensure these functions are used in the code. For example, if the hypothesis requires a fractional derivative, use `dy = grunwald_letnikov_diff(lambda ti, yi: f_rhs(ti, yi), t_vals[i], y_vals[-1], constants['ALPHA'], h)`."
+            },
+            {
+                "criterion_number": 5,
+                "criterion_name": "Multiplier Rule",
+                "frequency": "high",
+                "repair_directive": "Never use `.subs()` for constant injection. Instead, define constants in the `constants` dictionary and use them as algebraic multipliers. For example, replace `expr.subs(ALPHA, 0.7291)` with `expr = constants['ALPHA'] * y**2`."
+            },
+            {
+                "criterion_number": 6,
+                "criterion_name": "Statistical Transparency",
+                "frequency": "low",
+                "repair_directive": "Ensure the output contains a real numerical p-value. For example, `print(f\"Stochastic P-Value: {p_val}\")`."
+            },
+            {
+                "criterion_number": 7,
+                "criterion_name": "Hypothesis-Math Alignment",
+                "frequency": "high",
+                "repair_directive": "The symbolic expression must reflect the unique physics of the hypothesis. For example, if the hypothesis mentions a specific relationship like `d^ALPHA y/dt^ALPHA = -ALPHA * y + BETA * t^(2*HURST-1)`, ensure this is accurately represented in the code."
+            },
+            {
+                "criterion_name": "Implementation Guide",
+                "frequency": "high",
+                "repair_directive": "Fully implement all aspects of the mathematical_implementation_guide, including memory windows, resource pools, and other specific requirements. For example, if a 50-step GL history is required, ensure it is implemented correctly: `memory_window = []` and manage it within the loop."
+            }
+        ],
+        "hypothesis_generation_guidance": "Ensure all constants mentioned in the hypothesis are defined and used as algebraic multipliers in the code. Avoid using `.subs()` for constant injection. Fully implement all sections of the template, including the memory window and resource pool if required.",
+        "repair_prompt_addition": "If the hypothesis requires specific functions like `grunwald_letnikov_diff()`, ensure these are used in the code. Define all constants in the `constants` dictionary and use them as algebraic multipliers. Avoid using `.subs()` for constant injection. Ensure all sections of the template are fully implemented, including memory windows and resource pools."
+    }
+]

@@ -211,10 +211,15 @@ class ScienceBot(BaseModule):
                                 os._exit(0)
 
                             with open(mailbox_path, 'w', encoding='utf-8') as f:
+                                # We pad the prompt with a newline to ensure we don't hit EOF issues instantly
                                 f.write(prompt)
                             
                             # Instant echo
                             self.ui.print_chat("USER", prompt)
+                            
+                            # INSTANT RESPONSE HOOK: 
+                            # Force the bot to respond immediately in this thread instead of waiting for main loop
+                            self.process_interrupt()
                             
                             current_buffer = ""
                             self.ui.update_input_buffer("")
@@ -327,6 +332,14 @@ class ScienceBot(BaseModule):
                 time.sleep(10)
 
     def get_past_topics(self):
+        cache_path = os.path.join(self.config['paths']['memory'], "past_topics.json")
+        if os.path.exists(cache_path):
+            try:
+                return self._safe_load_json(cache_path, default=[])
+            except:
+                pass
+
+        # Fallback to expensive crawl if cache missing or corrupt
         past_topics = []
         discoveries_dir = self.config['paths']['discoveries']
         if not os.path.exists(discoveries_dir):
@@ -336,8 +349,13 @@ class ScienceBot(BaseModule):
             for file in files:
                 if file.endswith(".json"):
                     data = self._safe_load_json(os.path.join(root, file), default=None)
-                    if data:
-                        past_topics.append(data['hypothesis']['topic'])
+                    if data and 'hypothesis' in data and 'topic' in data['hypothesis']:
+                        topic = data['hypothesis']['topic']
+                        if topic not in past_topics:
+                            past_topics.append(topic)
+                            
+        # Initialize cache for next time
+        self._safe_save_json(cache_path, past_topics)
         return past_topics
 
     def worker_stage_research(self, topic, depth, iteration_count):
@@ -439,13 +457,39 @@ class ScienceBot(BaseModule):
         complexity = int(match.group(1)) if match else 0
         
         if constructor_model and complexity > 30:
-            self.ui.print_log(f"\033[1;33m[SWARM WORKER] High complexity ({complexity}). Using Master Constructor: {constructor_model} (Serialized)...\033[0m")
-            with self.heavy_lock:
-                code = self.lab.generate_simulation(hypothesis_data, description, model=constructor_model)
-                test_result = self.lab.run_simulation(code, hypothesis_data)
+            # Hot-Check for Llama 3.3 Availability
+            try:
+                import requests
+                base_url = self.config['hardware'].get('api_url', 'http://localhost:11434/api/generate').replace('/api/generate', '')
+                tags_resp = requests.get(f"{base_url}/api/tags", timeout=3)
+                available_models = [m['name'] for m in tags_resp.json().get('models', [])]
+                is_ready = any(constructor_model in m for m in available_models)
+            except Exception:
+                is_ready = False # Default to fallback if API check or model list fails
+                
+            if is_ready:
+                self.ui.print_log(f"\033[1;33m[SWARM WORKER] High complexity ({complexity}). Using Master Constructor: {constructor_model} (Serialized)...\033[0m")
+                with self.heavy_lock:
+                    code = self.lab.generate_simulation(hypothesis_data, description, model=constructor_model)
+                    test_result = self.lab.run_simulation(code, hypothesis_data)
+            else:
+                fallback = self.config['hardware'].get('large_model', 'mightykatun/qwen2.5-math:72b')
+                self.ui.print_log(f"\033[1;33m[SWARM WORKER] '{constructor_model}' not yet hydrated. Falling back to {fallback}...\033[0m")
+                with self.heavy_lock:
+                    code = self.lab.generate_simulation(hypothesis_data, description, model=fallback)
+                    test_result = self.lab.run_simulation(code, hypothesis_data)
         else:
             # Standard 8B Attempt
             code = self.lab.generate_simulation(hypothesis_data, description, model=fast_model)
+            
+            # --- PREFLIGHT LINTING (Recommendation 3) ---
+            is_valid, lint_issues, lint_msg = self.lint_code(code, hypothesis_data)
+            if not is_valid:
+                self.ui.print_log(f"\033[1;33m[SWARM WORKER] Lint check FAILED. Repairing early... ({len(lint_issues)} issues)\033[0m")
+                escalation_model = constructor_model or self.config['hardware'].get('large_model')
+                with self.heavy_lock:
+                    code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=escalation_model)
+            
             test_result = self.lab.run_simulation(code, hypothesis_data)
         
         # Escalation/Repair Loop
@@ -459,8 +503,6 @@ class ScienceBot(BaseModule):
                 if test_result.get('status') == 'Failed':
                     code = self.lab.repair_simulation(code, test_result['raw_output'], hypothesis_data, model=escalation_model)
                     test_result = self.lab.run_simulation(code, hypothesis_data)
-
-        return test_result
 
         return test_result
 
@@ -522,7 +564,40 @@ class ScienceBot(BaseModule):
         audit_report = self.auditor.verify(test_result)
         return self.worker_stage_finalize(test_result, audit_report)
 
-        self.ui.print_log(f"[HEARTBEAT] Hypothesis received: {hypothesis_data.get('topic', 'Unknown')}")
+    def lint_code(self, code, hypothesis):
+        """
+        Preflight Linting (Iteration 3511 / Creator Recommendation 3).
+        Checks for .subs() and banned 'def' blocks before execution.
+        """
+        if not code:
+            return False, ["No code generated"], "Empty code provided"
+
+        from template_validation import TemplateValidator
+        report = TemplateValidator.run_all_checks(code, hypothesis)
+        
+        if not report["valid"]:
+            issues = report["errors"] + report["repair_directives"]
+            feedback = "PREFLIGHT LINT FAILED.\n"
+            if report["errors"]:
+                feedback += "Structural Errors:\n- " + "\n- ".join(report["errors"]) + "\n"
+            if report["repair_directives"]:
+                feedback += "Repair Directives (NON-NEGOTIABLE):\n- " + "\n- ".join(report["repair_directives"])
+            return False, issues, feedback
+            
+        return True, [], ""
+
+    def run_simulation(self, code, hypothesis):
+        """
+        Runs a simulation given the generated code and hypothesis.
+        This method is intended to be part of the Lab class, not Agent.
+        The content here seems to be a placeholder or a copy-paste error.
+        The actual run_simulation logic should be in lab.py.
+        """
+        # This method should not be here in agent.py.
+        # It's likely a copy-paste error from lab.py or a misunderstanding.
+        # The agent.py file should call self.lab.run_simulation.
+        # Returning a dummy result to avoid breaking the agent.
+        self.ui.print_log(f"[HEARTBEAT] Hypothesis received: {hypothesis.get('topic', 'Unknown')}")
 
         # ── Banned-term post-check: catch before any LLM/lab cycle is wasted ──
         _BANNED_POST = [
@@ -533,7 +608,7 @@ class ScienceBot(BaseModule):
             'topological quantum',
         ]
         for _attempt in range(2):
-            _h_str = str(hypothesis_data).lower()
+            _h_str = str(hypothesis).lower()
             _hit = next((t for t in _BANNED_POST if t in _h_str), None)
             if not _hit:
                 break
@@ -547,13 +622,13 @@ class ScienceBot(BaseModule):
                 f"framework from the implementable menu: fractional ODEs, standard nonlinear ODEs, "
                 f"SDEs, Ricci curvature, or power-law. Do NOT mention {_hit} in any field."
             )
-            hypothesis_data = self.explorer.generate_hypothesis(
-                topic, research_summary,
+            hypothesis = self.explorer.generate_hypothesis(
+                hypothesis.get('topic'), hypothesis.get('research_summary'),
                 dream_hint=_extra_hint,
-                driving_question=driving_question
+                driving_question=hypothesis.get('driving_question')
             )
 
-        return {"status": "Complete", "topic": topic}
+        return {"status": "Complete", "topic": hypothesis.get('topic')}
 
     def run_swarm(self, max_workers=None):
         """

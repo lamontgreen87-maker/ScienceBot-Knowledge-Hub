@@ -1,0 +1,7 @@
+[
+    "Never use `.subs()` for constant injection; always use algebraic multipliers directly in the symbolic expression (e.g. ALPHA * y).",
+    "Ensure all 5 mandatory sections (SYMBOLIC SETUP, CONSTANT INJECTION, THE IMMUTABLE LAW, HIGH-FIDELITY EXECUTION, DATA LOGGING) are present and correctly formatted.",
+    "Verify that all required constants from the hypothesis are defined in the 'constants' dictionary and match the specified values exactly.",
+    "Promised architectural patterns (Memory Windows, Metric Matrices, Fractal Maps) must have concrete implementations, not just placeholders.",
+    "Numerical simulations must stay within the algebraic limits pre-calculated by the SymPy static analyzer."
+]

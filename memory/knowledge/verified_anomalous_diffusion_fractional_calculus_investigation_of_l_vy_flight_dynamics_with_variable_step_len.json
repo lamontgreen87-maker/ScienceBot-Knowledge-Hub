@@ -1,0 +1,79 @@
+{
+    "hypothesis": {
+        "topic": "Anomalous Diffusion & Fractional Calculus: Investigation of L\u00e9vy Flight Dynamics with Variable Step Lengths",
+        "hypothesis": "The anomalous diffusion exponent (\u03b1) and stability index (\u03b2) in L\u00e9vy flights with variable step lengths are related by a power-law function, \u03b1 \u221d \u03b2^(-1/\u03bc), where \u03bc is the L\u00e9vy index.",
+        "simulation_context": "L\u00e9vy flight dynamics with variable step lengths in a non-Gaussian process",
+        "literature_grounding": [
+            "Hurst exponent (H) and L\u00e9vy index (\u03bc) are related to anomalous diffusion",
+            "Mittag-Leffler function captures memory effects and non-locality in non-Gaussian processes"
+        ],
+        "physics_primer": "Generalized Langevin Equation (GLE) framework for modeling anomalous diffusion processes",
+        "atomic_specification": {
+            "independent_variable": {
+                "name": "t",
+                "symbol": "t"
+            },
+            "dependent_variable": {
+                "name": "y",
+                "symbol": "y"
+            },
+            "symbolic_parameters": [
+                "t",
+                "y",
+                "ALPHA",
+                "BETA",
+                "MU"
+            ]
+        },
+        "mathematical_blueprint": "Riesz fractional derivative with Mittag-Leffler function: d^\u03b1y/dt^\u03b1 = -\u03b2*y + \u03c3*\u03be(t), where \u03be(t) is a L\u00e9vy noise process",
+        "mathematical_implementation_guide": "Multi-state Memory Window with resource-limited kernels, using grunwald_letnikov_diff and verify_power_law functions",
+        "required_constants": {
+            "ALPHA": "0.7291",
+            "BETA": "1.4582",
+            "MU": "1.2345"
+        },
+        "target_complexity_score": "60"
+    },
+    "raw_output": "Preflight Rejection: Code Review FAILED:\n  [1] Constant 'ALPHA' defined in hypothesis but missing from code's 'constants' dictionary.",
+    "status": "Failed",
+    "code": "\nimport numpy as np\nfrom sci_utils import verify_power_law, grunwald_letnikov_diff\nimport sympy as sp\n\n# 1. SYMBOLIC SETUP\nt = sp.symbols('independent_variable')\ny = sp.Function('dependent_variable')(t)\nALPHA, BETA, MU = sp.symbols('ALPHA BETA MU')\n\n# 2. CONSTANT INJECTION (REQUIRED CONSTANTS FROM ENVIRONMENT)\nconstants = {\n    'BETA': 1.4582,\n    'MU': 1.2345,\n    'ALPHA': verify_power_law(BETA, MU)  # Calculate ALPHA using algebraic multiplier with power-law relation\n}\n\n# 3. THE IMMUTABLE LAW (Explicit RHS with resource decay and nonlinearity)\nexpr = -sp.Abs(y)**(1/constants['MU']) * y + sp.Abs(y) * (1 - constants['BETA'] * y**2) + constants['ALPHA'] * y**2\n\n# 4. HIGH-FIDELITY EXECUTION LOOP\nt_vals = np.linspace(0, 5, 200); h = t_vals[1] - t_vals[0]\ny_vals = [1.0]  # initial condition\n\nf_rhs = sp.lambdify((t, y), expr, 'numpy')\nfor i in range(1, len(t_vals)):\n    dy = grunwald_letnikov_diff(lambda ti, yi: f_rhs(ti, yi), t_vals[i], y_vals[-1], h)\n    y_vals.append(y_vals[-1] + dy * h)\n\n# 5. DATA LOGGING\nsol_y = np.array(y_vals); sol_t = t_vals\n\nprint(f\"Solution shape: {sol_y.shape}\")\n",
+    "invention": {
+        "name": "AeroLynx",
+        "concept": "Autonomous Aerial Search and Rescue System utilizing L\u00e9vy Flight-inspired Algorithms and Fractional Calculus",
+        "specs": {
+            "Hardware Components": [
+                "Swarm of drones equipped with high-resolution cameras and sensors for aerial imaging and data collection",
+                "Advanced computer vision system leveraging AI-powered object detection and tracking",
+                "GIS integration for real-time mapping and analysis of complex environments"
+            ],
+            "Software Components": [
+                "L\u00e9vy Flight-inspired algorithm for optimizing search patterns and adapting to dynamic environments",
+                "Fractional calculus-based modeling for predicting anomalous diffusion and improving search efficiency",
+                "Machine learning framework for integrating data from various sources and refining search strategies",
+                "Real-time data analytics and visualization platform for situational awareness and decision support"
+            ],
+            "Key Features": [
+                "Autonomous search and rescue operations in complex environments",
+                "Adaptive search patterns leveraging L\u00e9vy Flight dynamics and fractional calculus",
+                "Real-time mapping and analysis of environment using drone-based aerial imaging and GIS",
+                "AI-powered object detection and tracking for identifying areas of interest",
+                "Data-driven decision support for optimizing search and rescue efforts"
+            ],
+            "Technical Requirements": [
+                "Drone swarm management system with real-time communication and coordination",
+                "Advanced computer vision capabilities for object detection and tracking in complex environments",
+                "High-performance computing infrastructure for processing large datasets and running machine learning models",
+                "Secure data storage and transmission protocols for protecting sensitive information"
+            ]
+        },
+        "impact": "High"
+    },
+    "evaluation": {
+        "significance_score": 30,
+        "novelty": "The work does not present a novel concept but applies existing principles.",
+        "rigor_analysis": "The hypothesis is specific but lacks proper validation and testing.",
+        "realism_score": 6,
+        "verdict": "The study has relevant ideas but falls short in execution and verification, affecting its credibility and practical application potential.",
+        "community_alert": false
+    }
+}

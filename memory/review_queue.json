@@ -1,0 +1,362 @@
+[
+    {
+        "file_path": "discoveries/01_breakthroughs/discovery_prime_number_distribution.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7803812
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_causal_dynamical_triangulations_of_fractal_spacetimes_and_their_implications_for_quantum_gravity.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7806034
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_fibonacci_spiral_efficiency.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.780631
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_fluid_vortex_mathematical_models.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7806456
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_geometrization_of_non-locality_in_higher-dimensional_hilbert_spaces.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7807271
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_non-commutative_geometric_foundations_for_causal_dynamical_triangulation_theories..json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.780748
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_quantum_fluctuation-driven_emergence_of_topological_structures_in_complex_systems.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.780761
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_quantum_information-theoretic_interpretations_of_black_hole_entropy.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7807786
+    },
+    {
+        "file_path": "discoveries/02_confirmed_theory/discovery_quantum_mechanics_theoretical_research.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7807908
+    },
+    {
+        "file_path": "discoveries/03_technical_notes/discovery_anomalous_diffusion_fractional_calculus_fractional_order_of_l_vy_flights.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7810295
+    },
+    {
+        "file_path": "discoveries/03_technical_notes/discovery_chaotic_pendulum_math.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.781043
+    },
+    {
+        "file_path": "discoveries/03_technical_notes/discovery_interpreting_quantum_mechanical_predictions_as_a_guide_for_reconciling_discrepancies_between_quantum_and_relativistic_descriptions_of_time.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7810605
+    },
+    {
+        "file_path": "discoveries/03_technical_notes/discovery_thermodynamics_of_computation.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.781075
+    },
+    {
+        "file_path": "discoveries/04_failed_or_trivial/discovery_fractalization_of_temporal_causality_through_quantum-inspired_non-metric_manifolds_in_multimodal_cog.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.781238
+    },
+    {
+        "file_path": "discoveries/04_failed_or_trivial/discovery_geometric_convergence_of_non-commutative_algebraic_structures_in_quantum_hall_phases.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7812598
+    },
+    {
+        "file_path": "discoveries/04_failed_or_trivial/discovery_geometrization_of_temporal_echoes_in_multiscale_complex_systems_through_information-theoretic_resonance_and_anomalous_entropy_dynamics.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7812738
+    },
+    {
+        "file_path": "discoveries/04_failed_or_trivial/discovery_symmetries_and_anomalies_in_higher-dimensional_topological_phases.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.781286
+    },
+    {
+        "file_path": "discoveries/04_failed_or_trivial/discovery_unified_geometric_framework_for_non-commutative_algebraic_structures_across_causal_dynamical_triangulation_theories.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7812998
+    },
+    {
+        "file_path": "discoveries/04_failed_or_trivial/discovery_unifying_non-commutative_algebraic_structures_across_higher-dimensional_topological_phases_through_a_geometrically-inspired_framework.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7813122
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7824168
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_anomalous_diffusion_fractional_calculus.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7824829
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_anomalous_diffusion_fractional_calculus_aspect_8.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7824993
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_anomalous_diffusion_in_porous_media.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825124
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_anomalous_diffusion_in_porous_media_with_variable_fractal_di.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825296
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_fractional_calculus_for_non-gaussian_processes.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825453
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_fractional_diffusion_equation_with_variable_memory_kernel.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825594
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_fractional_diffusion_equation_with_variable_order.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825747
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_impact_of_spatial_heterogeneity_on_fractional_diffusion_coef.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825868
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_investigating_the_effects_of_fractional_order_on_mean_square.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7825997
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_investigation_of_l_vy_flight_dynamics_with_variable_step_len.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7826123
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_l_vy_flight_simulations_with_tunable_step-length_distributio.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.782625
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_optimal_time-dependent_forcing_for_enhanced_anomalous_transp.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7826374
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_optimization_of_fractional_order_controllers_for_anomalous_d.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7826495
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_optimization_of_fractional_order_via_gradient_descent_for_en.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7826622
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_optimizing_the_hurst_exponent_for_enhanced_predictive_modeli.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7826753
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_role_of_memory_effects_in_anomalous_diffusion.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.782689
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_scaling_properties_of_fractional_brownian_motion_in_confined.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.782711
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_simulation_of_anomalous_diffusion_in_a_confined_space_with_v.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7827246
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_simulation_of_l_vy_flight_dynamics_using_fractional_calculus.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7827377
+    },
+    {
+        "file_path": "memory/knowledge/verified_anomalous_diffusion_fractional_calculus_vector_3_fractional_derivative_operators_for_non-integer_dim.json",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.78275
+    },
+    {
+        "file_path": "memory/press_releases/BREAKTHROUGH_ANOMALOUS_DIFFUSION_FRACTIONAL_CALCULUS_FRACTIONAL.md",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.783058
+    },
+    {
+        "file_path": "memory/press_releases/BREAKTHROUGH_FRACTALIZATION_OF_TEMPORAL_CAUSALITY_THROUGH_QUANT.md",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.783072
+    },
+    {
+        "file_path": "memory/press_releases/BREAKTHROUGH_GEOMETRIZATION_OF_TEMPORAL_ECHOES_IN_MULTISCALE_CO.md",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7830827
+    },
+    {
+        "file_path": "memory/press_releases/BREAKTHROUGH_PRIME_NUMBER_DISTRIBUTION.md",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7830987
+    },
+    {
+        "file_path": "memory/press_releases/BREAKTHROUGH_QUANTUM_INFORMATION-THEORETIC_INTERPRETATIONS_OF_B.md",
+        "review_count": 0,
+        "cumulative_score": 0,
+        "status": "pending_review",
+        "submission_ready": false,
+        "added_timestamp": 1772253296.7831094
+    }
+]

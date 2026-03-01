@@ -1,0 +1,413 @@
+[
+    {
+        "timestamp": 1771824308.718698,
+        "suggestion": "Consider adding more robust error handling and debugging mechanisms in the code to identify and address potential issues. Additionally, implementing a feature to dynamically adjust the complexity level or iteration delay based on the bot's performance may help improve success rates.",
+        "applied_insight": "The Science Bot has experienced a series of failures in testing hypotheses related to Quantum Mechanics Theoretical Research and Non-Commutative Geometric Foundations for Causal Dynamical Triangulation Theories. These failures may be due to code errors, timeout, or complexity issues."
+    },
+    {
+        "timestamp": 1771830179.4090984,
+        "suggestion": "Review and debug the code for the entanglement swapping experiment, specifically the `entanglement_swapping` function. Consider adding more robust error handling and testing.",
+        "applied_insight": "The recursive complexity of Quantum Mechanics Theoretical Research may be too high, causing repeated failures. Additionally, the entanglement swapping experiment failed due to a coding error."
+    },
+    {
+        "timestamp": 1771830601.6178658,
+        "suggestion": "Consider implementing a more robust error handling mechanism in the code to catch and address specific errors, such as timeouts or invalid inputs. Additionally, provide more detailed feedback on failed experiments to help refine the research configuration.",
+        "applied_insight": "The current research configuration is too broad and lacks focus, leading to a high failure rate. The topics explored are diverse, ranging from quantum mechanics to pure math, but the complexity levels are not adequately managed."
+    },
+    {
+        "timestamp": 1771884605.5483584,
+        "suggestion": "Consider implementing code review checks and/or adding more robust error handling before attempting to test complex theories. Additionally, re-evaluate the focus areas and research depth to ensure they are aligned with the project goals.",
+        "applied_insight": "Analysis of recent failures reveals a high number of code errors and failed attempts to validate hypotheses. The majority of these errors stem from attempting to test complex, physics-related theories with low complexity levels (1). Additionally, there is a noticeable pattern in the provided data where identical sub-systems are being used for testing, which may be contributing to the failures."
+    },
+    {
+        "timestamp": 1771885738.2879837,
+        "suggestion": "Consider implementing a hypothesis validation step before proceeding with complex calculations or simulations. This can help identify vague or overly broad hypotheses early on, saving time and resources.",
+        "applied_insight": "The success rate of research tasks is low, likely due to high complexity or unclear hypotheses. Adjusting the 'min_complexity' and 'research_depth' settings may improve outcomes."
+    },
+    {
+        "timestamp": 1771886448.5529592,
+        "suggestion": "Consider implementing a more robust method for calculating fractal dimensions, such as using the box-counting algorithm or the Richardson plot. This may involve modifying the code in the 'Quantum Fractal Holography and the Emergence of Hierarchical Spacetime Structures' hypothesis.",
+        "applied_insight": "Most hypotheses in this dataset have a complexity level of 5, which may be too high for success. Additionally, many code errors occur when calculating fractal dimensions."
+    },
+    {
+        "timestamp": 1771887065.5759816,
+        "suggestion": "Consider adding more specific topics to the focus areas, such as 'Quantum Field Theory' or 'Condensed Matter Physics', to help guide the research towards more concrete and testable hypotheses.",
+        "applied_insight": "The current configuration seems to be set up for research in Quantum Mechanics, but the provided examples of failed experiments suggest that the focus areas should be expanded."
+    },
+    {
+        "timestamp": 1771887824.637495,
+        "suggestion": "Consider implementing a more robust auto-tweak algorithm that adjusts parameters based on the number of failed attempts and complexity levels.",
+        "applied_insight": "The current configuration has a high minimum complexity of 5, which may be causing some hypotheses to fail due to excessive computation. Additionally, the auto-tweak feature is enabled, but it doesn't seem to be making any adjustments."
+    },
+    {
+        "timestamp": 1771888622.0292687,
+        "suggestion": "Consider implementing a more sophisticated filtering mechanism for incoming hypotheses. This could involve using natural language processing techniques to assess the specificity and clarity of each hypothesis, allowing for more targeted research efforts.",
+        "applied_insight": "The provided dataset suggests that most hypotheses are too complex, and the research process is failing to converge due to code errors or hypotheses being too vague."
+    },
+    {
+        "timestamp": 1771889257.1009507,
+        "suggestion": "Consider implementing more lenient complexity thresholds for certain topics or adjusting the algorithm to focus on key concepts rather than strict complexity measures.",
+        "applied_insight": "The current research configuration may be too restrictive, potentially limiting the success of hypothesis testing. The 'min_complexity' threshold seems to be a potential bottleneck."
+    },
+    {
+        "timestamp": 1771889995.3927765,
+        "suggestion": "Consider adding more specific focus areas or adjusting the min_complexity threshold to better match the complexity of the topics being explored.",
+        "applied_insight": "The current configuration has a high research depth of 3, which might be too deep for some topics. Additionally, the auto-tweak feature is disabled."
+    },
+    {
+        "timestamp": 1771892666.2724428,
+        "suggestion": "Consider adding more specific focus areas or domains to narrow down the search space, as it seems that the current topics are too broad and may lead to vague hypotheses.",
+        "applied_insight": "The tasks are related to improving the research process, and there is a need to adjust the configuration settings to achieve better success rates."
+    },
+    {
+        "timestamp": 1771893094.1803765,
+        "suggestion": "Consider adding more specific hypotheses with clear falsification conditions, and refactor the code to handle complexity using techniques like modularization or recursion.",
+        "applied_insight": "The failures are mostly due to code errors, hypothesis vagueness, and high complexity."
+    },
+    {
+        "timestamp": 1771893236.7637522,
+        "suggestion": "Consider adding more specific and focused research questions to avoid vague hypotheses. Additionally, consider implementing a 'fail-safe' mechanism that allows the system to adapt to complex topics by adjusting parameters such as iteration delay or research depth.",
+        "applied_insight": "I analyzed recent failures and identified common causes, including code errors, timeout, hypothesis too vague, and complexity too high. The current config has a minimum complexity of 6, which may be contributing to the failure of complex topics."
+    },
+    {
+        "timestamp": 1771893375.407164,
+        "suggestion": "Consider using more specific and testable hypotheses to avoid vagueness.",
+        "applied_insight": "All experiments failed due to various reasons such as code errors, timeout, hypothesis too vague, and complexity too high. The most common causes were code errors and hypothesis too vague."
+    },
+    {
+        "timestamp": 1771893514.823552,
+        "suggestion": "Consider adding more specific and detailed test cases to the code, especially when dealing with complex mathematical models. This will help catch errors earlier in the development process.",
+        "applied_insight": "The common causes of failure are code errors, timeouts, too vague hypotheses, and excessive complexity. The current configuration has a low auto-tweak setting (false) which may not be optimal for complex research topics."
+    },
+    {
+        "timestamp": 1771893651.1845152,
+        "suggestion": "Consider adding more specific test cases and edge cases to the code to prevent unexpected failures. Additionally, consider providing more detailed feedback on hypothesis formulation to avoid vague or unrealistic hypotheses.",
+        "applied_insight": "The Science Bot's subconscious has analyzed recent failures and identified common causes of code errors, timeout, vague hypotheses, and high complexity."
+    },
+    {
+        "timestamp": 1771893842.422342,
+        "suggestion": "Consider implementing a 'complexity adaptive' feature that adjusts the experiment's parameters based on the subject matter and available computational resources. This would allow researchers to tackle more complex hypotheses without risking failures due to overly high complexity levels.",
+        "applied_insight": "The current research configurations and experiments are not well-suited to tackle complex scientific hypotheses. The complexity level is often set too high, leading to failures in most experiments."
+    },
+    {
+        "timestamp": 1771894050.7331886,
+        "suggestion": "Implement a more systematic approach to testing, including boundary value analysis and error handling. Consider using established libraries and frameworks for computational complexity theory and information-theoretic geometry to streamline implementations and reduce errors.",
+        "applied_insight": "The provided research attempts show a high degree of complexity and mathematical rigor, but lack concrete implementations and robust testing. The failures are often due to oversimplified assumptions or inadequate consideration of edge cases."
+    },
+    {
+        "timestamp": 1771894221.686684,
+        "suggestion": "Consider adding more specific and well-defined hypotheses to the 'data' section of each task. This will help prevent code errors and provide a clearer direction for testing.",
+        "applied_insight": "The analysis revealed that all hypotheses failed due to various reasons, including code errors, timeout, and vagueness of hypotheses. The research configuration has a high minimum complexity level (5) and focuses on diverse areas like Quantum Mechanics, Non-Euclidean Geometry, and Astro-Physics."
+    },
+    {
+        "timestamp": 1771894393.7432566,
+        "suggestion": "Consider adding more specific and well-defined hypotheses to avoid vagueness. Additionally, consider breaking down complex topics into smaller, more manageable subtopics.",
+        "applied_insight": "The recent failures in the Science Bot's experiments can be attributed to a combination of factors including code errors, hypothesis too vague, and complexity too high. The data suggests that the bot is struggling with complex topics such as quantum mechanics, non-euclidean geometry, and theoretical biology."
+    },
+    {
+        "timestamp": 1771894719.9150324,
+        "suggestion": "Consider revising the code to align more closely with the topic and hypothesis, rather than using simple mathematical models or trivial examples. For instance, the 'Resonance-Driven Self-Organization of Hierarchical Networks through Anomalous Information Flow and Non-Equilibrium Thermodynamics in Fractal Spacetimes' could be implemented with a more complex model that incorporates fractal spacetimes and non-equilibrium thermodynamics.",
+        "applied_insight": "All hypotheses failed due to various reasons such as trivial mathematical models, incorrect usage of libraries, and lack of alignment with the hypothesis."
+    },
+    {
+        "timestamp": 1771894897.8808372,
+        "suggestion": "Consider revising the research framework to include more thorough validation and verification checks, ensuring that the implemented code accurately represents the theoretical models and mathematical claims. This may involve implementing additional tests for boundary conditions, physical plausibility, and self-similarity as claimed in the hypotheses.",
+        "applied_insight": "The provided failures suggest a common pattern of misalignment between the research hypothesis and the implemented code. The codes often use simple mathematical models or simulations that do not adequately represent the complex concepts claimed in the hypotheses."
+    },
+    {
+        "timestamp": 1771895090.6027417,
+        "suggestion": "Consider implementing a more robust validation framework that can detect when the code is trivializing the hypothesis or not adequately representing the complex physics. This could involve adding more checks for physical plausibility, self-similarity, and boundary analysis.",
+        "applied_insight": "The failures are due to a combination of factors, including code errors, communication issues with the Auditor engine, and an inability to properly model complex hypotheses. The topics often involve advanced concepts in physics and mathematics, which are difficult to simulate accurately."
+    },
+    {
+        "timestamp": 1771895276.4255154,
+        "suggestion": "Consider implementing a more robust validation framework that can detect and address code errors, timeouts, and vague hypotheses. This could involve adding additional checks for mathematical consistency, physical boundary analysis, self-similarity, and plausibility.",
+        "applied_insight": "The Science Bot's subconscious analysis reveals common causes of failure in recent experiments, including code errors, timeout, vague hypotheses, and excessively high complexity. To improve success, it is recommended to tweak the 'research' config to increase the focus on specific areas, such as Quantum Mechanics or Non-Euclidean Geometry."
+    },
+    {
+        "timestamp": 1771895499.612485,
+        "suggestion": "Consider rephrasing the hypothesis to make it more specific and testable, and include more realistic constraints and boundary audits.",
+        "applied_insight": "Common causes of failure include code errors, timeout, vague hypotheses, and high complexity. The most frequent error is lack of physical plausibility in simulations."
+    },
+    {
+        "timestamp": 1771895689.4938688,
+        "suggestion": "Consider implementing a more robust symbolic consistency check using SymPy's built-in functions to verify the mathematical equations. Additionally, you may want to explore more advanced numerical simulations, such as recursive generators or power-law distributed random variables, to better test the hypotheses.",
+        "applied_insight": "The provided code attempts to validate complex hypotheses, but it often fails due to various issues such as physical plausibility problems, self-similarity verification errors, and poor topic-code alignment."
+    },
+    {
+        "timestamp": 1771895872.2520893,
+        "suggestion": "Consider implementing more rigorous testing for physical plausibility and self-similarity verification in the code, and provide clearer guidelines on topic-code alignment to avoid trivialization of complex concepts.",
+        "applied_insight": "Analysis of recent failures reveals common causes such as code errors, timeout, hypothesis too vague, and complexity too high."
+    },
+    {
+        "timestamp": 1771896205.5535328,
+        "suggestion": "Implement a more robust symbolic check using `sympy.checksol` for all equations, and ensure that physical plausibility checks are more comprehensive. Additionally, consider adding more stringent self-similarity verification methods, such as testing across multiple scales and verifying power-law consistency.",
+        "applied_insight": "The code submissions have several common issues, including incomplete symbolic checks, lack of physical plausibility, and insufficient self-similarity verification. The complexity level is often too high or vague, leading to difficulties in validating the hypotheses."
+    },
+    {
+        "timestamp": 1771896371.523499,
+        "suggestion": "Consider revising the CREATOR's approach to hypothesis formulation and validation. This might involve more detailed mathematical modeling, incorporating real-world data or experiments, and a more rigorous framework for testing self-similarity and power-law consistency.",
+        "applied_insight": "All attempts at validating the provided hypothesis through code failed, indicating that the current implementation or approach may not be suitable for verifying the complex hypotheses."
+    },
+    {
+        "timestamp": 1771896593.076961,
+        "suggestion": "Consider implementing a more robust self-similarity verification process that checks for power-law consistency across multiple scales. Additionally, ensure that physical plausibility is adequately addressed by enforcing real-world conservation laws and using context-specific constants.",
+        "applied_insight": "The current research configurations and code implementations have several areas for improvement. The most common causes of failure include code errors, timeouts, vague hypotheses, and overly complex models."
+    },
+    {
+        "timestamp": 1771896810.334117,
+        "suggestion": "Consider adding more specific focus areas related to quantum mechanics and non-Euclidean geometry, as these topics are being explored in the recent attempts. Additionally, consider increasing the iteration delay to account for potential computational complexities.",
+        "applied_insight": "The common causes of failure among recent attempts include code errors, timeout, hypothesis too vague, and complexity too high. The current research configuration is set to focus on general scientific exploration with a minimum complexity level of 3."
+    },
+    {
+        "timestamp": 1771897154.417126,
+        "suggestion": "Implement a more rigorous symbolic-numeric bridging process, ensuring that the numerical implementation accurately reflects the mathematical blueprint. This can be achieved by using libraries like Sympy for symbolic manipulation and then converting the equations to numerical form.",
+        "applied_insight": "The recent failures in scientific exploration can be attributed to code errors, lack of contextual realism, and incomplete validation processes. The projects often attempt complex tasks without sufficient grounding in physical constants or empirical data."
+    },
+    {
+        "timestamp": 1771898351.18708,
+        "suggestion": "Implement a more robust template for symbolic expression handling to catch potential errors early on. Consider adding additional checks for ghost parameters, unused constants, and structural consistency before proceeding with simulations.",
+        "applied_insight": "Common causes of failures include code errors, timeouts, too vague hypotheses, and excessive complexity."
+    },
+    {
+        "timestamp": 1771898853.128146,
+        "suggestion": "Implement a code review feature that checks for compliance with the template, context constants, and accurate representation of hypotheses. Additionally, consider adding a complexity checker to ensure that the model's complexity aligns with the hypothesis.",
+        "applied_insight": "The recent failures indicate that the code is often non-compliant with the template, lacks context constants, or fails to accurately represent the hypothesis. The most common causes of failure are code errors and the complexity being too high."
+    },
+    {
+        "timestamp": 1771899249.1095655,
+        "suggestion": "Consider implementing a more sophisticated method to handle fractional derivatives and Ricci flow in the simulation. This could involve using libraries like `scipy.special` or `sympy` to implement Grunwald-Letnikov differentiation and ricci curvature scalar.",
+        "applied_insight": "The provided code attempts to simulate complex biological systems, but it fails to align with the hypothesis due to oversimplification and lack of specialized primitives. The most common causes of failure are code errors, timeout, or hypotheses that are too vague."
+    },
+    {
+        "timestamp": 1771899676.5123975,
+        "suggestion": "Consider implementing an early warning system for potential errors in the code, such as checking for undefined variables or incorrect mathematical operations. This can help prevent common causes of failure like code errors and timeout.",
+        "applied_insight": "Common causes of failure include code errors, timeout, hypothesis too vague, and complexity too high. The current research topic is General Scientific Exploration, with a focus on Quantum Field Theory, General Relativity & Non-Euclidean Manifolds, Topological Quantum Computing, and Differential Geometry."
+    },
+    {
+        "timestamp": 1771899997.9609108,
+        "suggestion": "Consider implementing custom functions or integrating specialized libraries for fractional derivative calculations (e.g., grunwald_letnikov_diff) and Ricci curvature scalars to improve accuracy and efficiency.",
+        "applied_insight": "Common issues include incorrect implementation of fractional derivatives, misaligned constants, and failure to incorporate unique elements from the hypothesis."
+    },
+    {
+        "timestamp": 1771901241.5565104,
+        "suggestion": "Consider incorporating more specific and unique physics in the mathematical models, such as using Grunwald-Letnikov fractional derivatives or Ricci curvature calculations. Ensure that the implementation aligns with the hypothesis' architectural requirements.",
+        "applied_insight": "The Science Bot's subconscious analyzed recent failures and identified common causes, including code errors, timeout, hypothesis too vague, and complexity too high. The research topics are from a general scientific exploration area with various focus areas."
+    },
+    {
+        "timestamp": 1771901671.3260098,
+        "suggestion": "Consider implementing a more robust hypothesis validation process to catch vague or overly complex topics early on, potentially using natural language processing techniques. This could involve evaluating the topic's clarity, relevance, and specificity before proceeding with research.",
+        "applied_insight": "The Science Bot's subconscious has analyzed recent failures and identified common causes such as code errors, timeouts, vague hypotheses, and high complexity. The current configuration is also provided."
+    },
+    {
+        "timestamp": 1771902128.7509947,
+        "suggestion": "Consider revising the code to use algebraic multipliers for constants instead of .subs(), as this is explicitly banned by the template. Additionally, ensure that all required architectural components (Metric Matrices, Memory Windows, Fractal Maps) are properly implemented according to the guide.",
+        "applied_insight": "Common causes of failure include code errors, timeout, hypothesis too vague, and complexity too high. The current configuration includes a focus on quantum field theory, general relativity, topological quantum computing, and differential geometry."
+    },
+    {
+        "timestamp": 1771902566.0394156,
+        "suggestion": "Review the mathematical alignment between the hypothesis and the code's implementation. Ensure that all unique physics specified in the hypothesis are implemented correctly.",
+        "applied_insight": "The current implementation of the code is not aligned with the hypothesis, and there are several common causes such as code errors, timeout, hypothesis too vague, complexity too high."
+    },
+    {
+        "timestamp": 1771902972.7982123,
+        "suggestion": "Consider adding more specific checks for hypothesis-math alignment in the code review process to prevent such failures. This could involve verifying that required primitives (e.g., Grunwald-Letnikov) are used and that the mathematical model aligns with the hypothesis.",
+        "applied_insight": "Analyzing recent failures, I noticed that most codes failed to implement the hypothesis' unique physics correctly. The main issues are code errors, undefined functions, and a lack of alignment with the hypothesis."
+    },
+    {
+        "timestamp": 1771903434.8069072,
+        "suggestion": "Consider implementing a more robust constant injection mechanism that automatically defines required constants from environment variables, rather than relying on manual definition or external input. This would help avoid the Preflight Rejection errors and improve code reliability.",
+        "applied_insight": "The current failures are largely due to code errors, missing context constants, and a mismatch between the hypothesis and implementation. The research configuration can be updated to improve success."
+    },
+    {
+        "timestamp": 1771903976.4359145,
+        "suggestion": "Consider implementing a more robust error handling mechanism to catch potential coding issues before they lead to timeouts or failures.",
+        "applied_insight": "The Science Bot's subconscious analyzed recent failures, identifying common causes as code errors, timeout, hypothesis too vague, and complexity too high."
+    },
+    {
+        "timestamp": 1771904426.280601,
+        "suggestion": "Consider implementing a more robust hypothesis-math alignment mechanism that checks for consistency between the research topic, mathematical blueprint, and implementation guide. This could involve automatically generating code snippets based on the hypothesis or using machine learning to identify potential errors in the code.",
+        "applied_insight": "The current research configuration and code implementations are not aligned with the hypotheses, leading to frequent failures. The code often uses incorrect or incomplete mathematical expressions, fails to implement required physics, and incorrectly defines variables."
+    },
+    {
+        "timestamp": 1771904912.5880938,
+        "suggestion": "Consider adding more explicit checks for correct implementation of mathematical concepts, such as verifying the fractional derivative calculations or ensuring that the Ricci flow is correctly integrated into the simulation. Additionally, provide clear guidelines on how to implement non-Euclidean manifolds and their associated mathematical primitives.",
+        "applied_insight": "The submitted code attempts to implement complex mathematical concepts, but frequently fails due to incorrect implementation or mismatch with the hypothesis topic. The most common issues are related to fractional derivatives, Ricci flow, and non-Euclidean manifolds."
+    },
+    {
+        "timestamp": 1771905287.1395323,
+        "suggestion": "Implement a code review framework that checks for hypothesis-math alignment, primitive usage, and complexity adherence before allowing the simulation to run.",
+        "applied_insight": "The code fails to align with the hypothesis in multiple critical areas, including missing core physics elements, misapplication of mathematical primitives, and failure to integrate dynamic scaling exponents. The research configuration may need adjustments to improve success."
+    },
+    {
+        "timestamp": 1772135077.367171,
+        "suggestion": "Consider adding more detailed documentation and explanations for each criterion in the audit report, including examples of correct and incorrect implementations.",
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a new check to ensure that all constants are defined as algebraic multipliers in the code. This will prevent template compliance failures due to missing or incorrect constant definitions.",
+            "instruction": "Insert the following code snippet at line 123 of sci_utils.py: `if 'expr' not in locals() and expr.subs is None: raise ValueError('Constant must be an algebraic multiplier')`"
+        },
+        "applied_insight": "The most frequent audit failures are related to Template Compliance (criterion 1), Hypothesis-Math Alignment (criterion 7), and Implementation Guide (criterion 8)."
+    },
+    {
+        "timestamp": 1772135432.6735947,
+        "suggestion": "Consider using a more robust preflight check in `sci_utils.py` to catch common errors and reduce audit failures.",
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a new check for correct implementation of Memory Windows, Metric Matrices, and Fractal Maps in the hypothesis mathematical_implementation_guide.",
+            "instruction": "Add a new if-else block to `preflight_check` that checks for the presence of these elements in the code. If missing, return an error message indicating which element is not implemented."
+        },
+        "applied_insight": "The most frequent audit failures are related to Hypothesis-Math Alignment (criterion #7) and Implementation Guide (criterion #8)."
+    },
+    {
+        "timestamp": 1772136484.5956612,
+        "suggestion": "Consider adding a 'physics primer' section to the hypothesis template, which provides a brief overview of the underlying physics and relevant mathematical concepts. This can help ensure that researchers understand the context and requirements for their simulation.",
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Modify the preflight check to include a more comprehensive review of template compliance, including checks for correct section formatting and variable usage.",
+            "instruction": "In sci_utils.py, edit the preflight_check function by adding a new section that verifies template compliance. Use regular expressions or string matching to ensure that each section is filled with relevant code and variables, following the specified format."
+        },
+        "applied_insight": "The most frequently violated audit criteria are Template Compliance, Numerical Accuracy Audit, Primitive Alignment, Hypothesis-Math Alignment, and Implementation Guide. These failures often stem from a lack of understanding or misinterpretation of the hypothesis requirements."
+    },
+    {
+        "timestamp": 1772138811.351986,
+        "suggestion": "Consider adding a check for Template Compliance in the preflight review to catch deviations from the mandatory skeleton earlier.",
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check for Template Compliance in the preflight review to catch deviations from the mandatory skeleton earlier.",
+            "instruction": "In sci_utils.py, add the following code to the preflight_check function: `if not template_compliance_code(): return False`"
+        },
+        "applied_insight": "The most frequent audit failures are related to Template Compliance, Hypothesis-Math Alignment, and Primitive Alignment. The code often fails to follow the mandatory skeleton, does not accurately reflect the hypothesis unique physics, and does not use the required fractional calculus or Ricci curvature primitives."
+    },
+    {
+        "timestamp": 1772139879.5938134,
+        "suggestion": "Consider adding a 'topic validation' step to ensure that the generated topic is relevant and specific. This can be achieved by checking if the topic matches one of the focus areas.",
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check for template compliance in the preflight check. Ensure that each part of the mandatory skeleton is implemented correctly and provides explicit examples.",
+            "instruction": "In sci_utils.py, modify the preflight_check function to include the following code snippet:\n\nif not template_compliance_check(code):\n    raise ValueError('Template Compliance Check Failed')\n\nwhere template_compliance_check is a new function that checks for template compliance."
+        },
+        "applied_insight": "The most frequently violated audit criteria are Template Compliance, Numerical Accuracy Audit, Primitive Alignment, Multiplier Rule, Hypothesis-Math Alignment, and Implementation Guide."
+    },
+    {
+        "timestamp": 1772142851.9453266,
+        "suggestion": "Consider adding more operations, loops, or primitives to increase the complexity score and improve code quality.",
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check for Hypothesis-Math Alignment: ensure that the symbolic expression (expr) reflects the hypothesis unique physics, not a generic stand-in.",
+            "instruction": "In the preflight_check function, add a condition to reject simulations where the symbolic expression (expr) does not match the hypothesis vocabulary."
+        },
+        "applied_insight": "The most frequently violated audit criteria are Template Compliance, Numerical Accuracy Audit, Primitive Alignment, Multiplier Rule, Hypothesis-Math Alignment, and Implementation Guide."
+    },
+    {
+        "timestamp": 1772145253.6689854,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check to ensure that the symbolic expression `expr` directly reflects the unique physics described in the hypothesis.",
+            "instruction": "In the preflight_check function, add an if-else statement to verify that the symbolic expression `expr` is correctly aligned with the hypothesis. If not, raise an error."
+        },
+        "applied_insight": "The audit failures are due to a combination of factors, including template compliance issues, incorrect use of constants, and lack of hypothesis-math alignment."
+    },
+    {
+        "timestamp": 1772148133.9685514,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check to ensure that the `mathematical_implementation_guide` section is included and provides specific instructions for implementing Memory Windows, Metric Matrices, and Fractal Maps.",
+            "instruction": "If the hypothesis includes a `mathematical_implementation_guide` section, add a check to verify that it contains specific instructions for implementing Memory Windows, Metric Matrices, and Fractal Maps."
+        },
+        "applied_insight": "The most frequent audit failures are due to Template Compliance (criterion 1) and Hypothesis-Math Alignment (criterion 7)."
+    },
+    {
+        "timestamp": 1772214863.5844376,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check for .subs() usage and provide an informative error message.",
+            "instruction": "In the preflight_check function, add a new condition to raise an error if .subs() is detected in the code. The error message should instruct users to use algebraic multipliers instead."
+        },
+        "applied_insight": "The most frequent audit failure pattern involves violations of the Template Compliance, Context Constant Audit, and Primitive Alignment criteria."
+    },
+    {
+        "timestamp": 1772219484.7557707,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check for banned .subs() operations and verify that constants are used as algebraic multipliers.",
+            "instruction": "Insert the following code after line 123: `if '.subs()' in code: raise ValueError('Banned .subs() operation detected.')` and modify the constant checking logic to ensure that constants are defined and used as algebraic multipliers."
+        },
+        "applied_insight": "The majority of failures are due to a lack of adherence to the template, incorrect use of constants, and failure to implement fractional calculus primitives correctly."
+    },
+    {
+        "timestamp": 1772226261.359305,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Improve the preflight check to catch missing constants and incorrect usage of algebraic multipliers.",
+            "instruction": "Add a new check to verify that all required constants are defined and used as algebraic multipliers in the immutable law section. Raise an error if any discrepancies are found."
+        },
+        "applied_insight": "The majority of failures are due to audit errors related to invalid JSON responses, missing constants, and incorrect usage of algebraic multipliers. Additionally, there is a lack of implementation of fractional calculus primitives in the code."
+    },
+    {
+        "timestamp": 1772229171.1792097,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Improve constant definition and usage checks to prevent common errors.",
+            "instruction": "Add a check to verify that environment constants are defined as algebraic multipliers (e.g., ALPHA = 0.7; expr = ALPHA * x**2) and used correctly in the mathematical blueprint."
+        },
+        "applied_insight": "The most frequent audit failures are related to Template Compliance, Context Constant Audit, and Primitive Alignment. The majority of simulations failed due to incorrect implementation of constants as algebraic multipliers, missing or mismatched primitive functions (e.g., grunwald_letnikov_diff), and incomplete or incorrect mathematical blueprints."
+    },
+    {
+        "timestamp": 1772247246.1043031,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add checks for missing constants and correct use of algebraic multipliers.",
+            "instruction": "Modify the preflight_check function to verify that all required constants are present and correctly used without .subs()."
+        },
+        "applied_insight": "The most common audit failures stem from Template Compliance issues, missing or misapplied constants, improper use of fractional calculus primitives, and banned .subs() operations."
+    },
+    {
+        "timestamp": 1772249258.975164,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Enhance the preflight check to ensure all required sections are present and correctly structured, constants are defined and used as algebraic multipliers, and specific functions are used if mentioned in the hypothesis.",
+            "instruction": "Add a function `check_template_compliance` that verifies the presence and structure of all five mandatory sections. Add a function `check_constants_usage` that ensures constants are defined and used correctly. Add a function `check_primitive_alignment` that checks for the use of specific functions if mentioned in the hypothesis."
+        },
+        "applied_insight": "The most common pattern of audit failures includes violations of Template Compliance, Context Constant Audit, Numerical Accuracy Audit, Primitive Alignment, Multiplier Rule, and Implementation Guide. These issues often stem from missing sections in the code structure, incorrect or incomplete use of constants, and failure to implement specific mathematical functions as required by the hypothesis."
+    },
+    {
+        "timestamp": 1772250786.708288,
+        "code_patch": {
+            "enabled": true,
+            "target_file": "sci_utils.py",
+            "target_function": "preflight_check",
+            "change_description": "Add a check to ensure all required constants are defined and used as algebraic multipliers, and that specific functions like `grunwald_letnikov_diff()` are used if mentioned in the hypothesis.",
+            "instruction": "In the `preflight_check` function, add the following checks:\n1. Ensure all required constants are defined in the `constants` dictionary.\n2. Check for the use of `.subs()` and reject if found.\n3. Verify that specific functions like `grunwald_letnikov_diff()` are used if mentioned in the hypothesis."
+        },
+        "applied_insight": "The most common patterns of audit failures include missing constants, incorrect use of `.subs()`, and failure to implement specific mathematical primitives as required by the hypothesis. Additionally, there are issues with low vocabulary alignment and incomplete template sections."
+    }
+]

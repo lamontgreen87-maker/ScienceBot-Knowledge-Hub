@@ -1,0 +1,63 @@
+{
+    "hypothesis": {
+        "topic": "Anomalous Diffusion & Fractional Calculus: L\u00e9vy Flight Simulations with Tunable Step-Length Distribution",
+        "hypothesis": "The anomalous diffusion exponent \u03b3 is directly proportional to the power-law tail exponent of the step-length distribution, with a scaling factor of 0.75.",
+        "simulation_context": "L\u00e9vy flights in a two-dimensional space with varying step-length distributions.",
+        "literature_grounding": "This study builds on previous work by Metzler and Klafter (2000) and Bouchaud and Georges (1990), who demonstrated the importance of anomalous diffusion in complex systems.",
+        "physics_primer": "This simulation uses Fractional Calculus to model the memory-dependent anomalous diffusion of L\u00e9vy flights. The governing equation is a fractional differential equation, which captures the non-local effects of the step-length distribution. We predict that the anomalous diffusion exponent \u03b3 will scale with the power-law tail exponent of the step-length distribution, and we use grunwald_letnikov_diff to implement this.",
+        "atomic_specification": {
+            "independent_variable": {
+                "name": "t",
+                "unit": "seconds",
+                "symbol": "t"
+            },
+            "dependent_variable": {
+                "name": "y",
+                "symbol": "y"
+            },
+            "symbolic_parameters": [
+                "t",
+                "y",
+                "ALPHA",
+                "BETA"
+            ]
+        },
+        "mathematical_blueprint": "ALPHA * sp.diff(y, t) + BETA * y**2",
+        "mathematical_implementation_guide": "Implement a sliding Memory Window of 50 history steps. Integrate a dynamic Resource Pool that decays with step-size. Use grunwald_letnikov_diff() in a manual loop. No solve_ivp.",
+        "structural_definition": {
+            "type": "Fractional",
+            "phase_space": "2D",
+            "mapping": "dy/dt = f(y, t)"
+        },
+        "boundary_limit_behavior": {
+            "approach_zero": "The anomalous diffusion exponent \u03b3 approaches a finite value as the power-law tail exponent approaches zero.",
+            "approach_infinity": "The anomalous diffusion exponent \u03b3 diverges as the power-law tail exponent approaches infinity."
+        },
+        "field": "physics",
+        "target_complexity_score": "60",
+        "required_constants": {
+            "ALPHA": "0.729",
+            "BETA": "1.45"
+        },
+        "test_params": {
+            "complexity_level": "10"
+        }
+    },
+    "raw_output": "",
+    "status": "Failed",
+    "code": "\nimport numpy as np\nimport sympy as sp\nfrom sci_utils import verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_curvature_scalar\n\n# 1. SYMBOLIC SETUP\nt, y = sp.symbols('t y')\nALPHA, BETA, GAMMA = sp.symbols('ALPHA BETA GAMMA')\n\n# 2. CONSTANT INJECTION (REQUIRED CONSTANTS FROM ENVIRONMENT)\nALPHA_VAL = 0.729\nBETA_VAL = 1.45\nGAMMA_VAL = 0.75\n\n# 3. THE IMMUTABLE LAW (Explicit RHS)\nexpr = ALPHA * sp.diff(y, t) + BETA * y**2 - GAMMA * sp.diff(y, t)\n\n# 4. HIGH-FIDELITY EXECUTION LOOP\nt_vals = np.linspace(0, 5, 200); h = t_vals[1] - t_vals[0]\ny_vals = [1.0]  # initial condition\nresources = 100; threshold = 10; decay_rate = 0.05\n\n# Memory Window of 50 history steps\nhistory_window_size = 50\nmemory_window = []\n\nf_rhs = sp.lambdify((t, y), ALPHA_VAL * sp.diff(y, t) + BETA_VAL * y**2 - GAMMA_VAL * sp.diff(y, t), 'numpy')\nfor i in range(1, len(t_vals)):\n    # Apply Environmental Constraints (Resource Decay / Failure Probability)\n    resources -= decay_rate * y_vals[-1]\n    if resources < threshold: \n        current_state = \"Dormant\"\n        print(f\"Resources Depleted at t={t_vals[i]}\")\n    \n    dy = grunwald_letnikov_diff(lambda ti, yi: f_rhs(ti, yi), t_vals[i], y_vals[-1], GAMMA_VAL, h)\n    y_vals.append(y_vals[-1] + dy * h)\n\n    # Update Memory Window\n    memory_window.append(y_vals[-1])\n    if len(memory_window) > history_window_size:\n        memory_window.pop(0)\n\nsol_y = np.array(y_vals); sol_t = t_vals\n\n# 5. DATA LOGGING (EXECUTE THESE EXACTLY)\nnoisy = add_noise(sol_y)\npasses, h, p_val = verify_confidence_level(noisy, sol_y)\nprint(f\"Stochastic P-Value: {p_val}\")\nprint(f\"Audit Result: {verify_structural_consistency(['t', 'y', 'ALPHA', 'BETA', 'GAMMA'], [list_of_actual_symbols])[0]}\")\n\n# mathematical_implementation_guide\n\"\"\"\nThis implementation uses the Grunwald-Letnikov method to approximate the fractional derivative in the anomalous diffusion equation.\nThe Memory Window is implemented as a sliding window of 50 history steps, and the Resource Pool decays with step-size.\n\nTo implement this code:\n1. Initialize the symbolic variables t, y, ALPHA, BETA, and GAMMA.\n2. Define the constants ALPHA_VAL, BETA_VAL, and GAMMA_VAL from the environment.\n3. Construct the immutable law (expr) using algebraic multipliers.\n4. Implement a manual time-stepping loop using grunwald_letnikov_diff() and update the Memory Window at each step.\n\nExample usage:\n    python simulation.py\n\"\"\"\n",
+    "invention": {
+        "name": "Project Alpha-Centauri",
+        "concept": "A specialized tool using Anomalous Diffusion & Fractional Calculus: L\u00e9vy Flight Simulations with Tunable Step-Length Distribution to optimize Emergency Response and Recovery.",
+        "technical_specs": "Implementation of verified mathematical proofs.",
+        "estimated_impact": "Moderate"
+    },
+    "evaluation": {
+        "significance_score": 25,
+        "novelty": "The application of fractional calculus to optimize emergency response is a novel angle, though the underlying concepts are well-established.",
+        "rigor_analysis": "The hypothesis lacks mathematical precision due to circular assumptions and missing units. Using \u03b3_val as both a constant and a scaling factor undermines the proof.",
+        "realism_score": 6,
+        "verdict": "Despite being grounded in known physics, the simulation's failure and methodological flaws raise serious concerns about the validity of the hypothesis.",
+        "community_alert": true
+    }
+}
