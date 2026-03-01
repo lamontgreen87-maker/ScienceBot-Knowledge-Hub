@@ -1,0 +1,76 @@
+{
+    "hardware": {
+        "local_model": "llama3.1:8b",
+        "reasoning_model": "deepseek-r1:70b",
+        "large_model": "mightykatun/qwen2.5-math:72b",
+        "fast_model": "llama3.1:8b",
+        "math_model": "mightykatun/qwen2.5-math:72b",
+        "sleeper_mode": false,
+        "fallback_model": "llama3.1:8b",
+        "api_url": "http://198.13.252.40:22874/api/generate",
+        "secondary_gpu": "http://198.13.252.40:22874/api/generate",
+        "gpu_mapping": {
+            "explorer": "secondary_gpu",
+            "lab": "api_url",
+            "critic": "secondary_gpu",
+            "reflector": "secondary_gpu",
+            "math_engine": "api_url"
+        },
+        "api_key": null,
+        "teacher_model": "gemini-pro-latest",
+        "teacher_api_key": "AIzaSyAcZYVWYDpOpBYowU9h2JpxvYg-ifyK5ys",
+        "cpu_threads": 24,
+        "max_swarm_workers": 8,
+        "turbo_workers": 12,
+        "heavy_concurrency_limit": 1,
+        "num_ctx": 32768,
+        "theorist_model": "deepseek-r1:70b",
+        "constructor_model": "llama3.3"
+    },
+    "research": {
+        "current_topic": "General Scientific Exploration",
+        "iteration_delay": 12,
+        "auto_tweak": true,
+        "min_complexity": 40,
+        "max_complexity": 40,
+        "max_retries": 30,
+        "focus_areas": [
+            "Anomalous Diffusion & Fractional Calculus",
+            "Nonlinear Dynamics & Chaos Theory",
+            "Ricci Flow & Geometric Curvature",
+            "Stochastic Systems & Noise-Driven Dynamics",
+            "Phase Transitions & Critical Phenomena",
+            "Quantum Information & Decoherence",
+            "Topological Defects in Network Dynamics",
+            "Non-equilibrium Thermodynamics & Entropy Production",
+            "Fractal Geometry in Porous Media",
+            "Self-Organized Criticality & Avalanches",
+            "Active Matter & Collective Motion",
+            "Econophysics & Financial Market Dynamics",
+            "Granular Flow & Jamming Transitions",
+            "Synchronized Oscillators & Kuramoto Models",
+            "Quantum Chaos & Energy Level Statistics",
+            "Fluid Turbulence & Navier-Stokes Instabilities",
+            "Quantum Field Theory in Curved Spacetime",
+            "Metamaterials & Acoustic Cloaking",
+            "Plasma Confinement & Magnetohydrodynamics",
+            "Relativistic Hydrodynamics"
+        ],
+        "research_depth": 5,
+        "study_loop_count": 1,
+        "turbo_mode": true,
+        "use_large_theorist": true
+    },
+    "social": {
+        "moltbook_api_key": "moltbook_sk_4JKDjbJR2gpK67tWfJmLR5HQ7qndYolh",
+        "enabled": true,
+        "default_submolt": "science",
+        "pulse_frequency": 10
+    },
+    "paths": {
+        "discoveries": "discoveries/",
+        "logs": "research_logs/",
+        "memory": "memory/",
+        "tests": "tests/"
+    }
+}
