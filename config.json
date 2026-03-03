@@ -7,9 +7,9 @@
         "math_model": "qwq:32b",
         "sleeper_mode": false,
         "fallback_model": "qwen3.5:27b",
-        "api_url": "http://82.221.170.234:27194/api/generate",
+        "api_url": "http://213.173.102.103:41932/api/generate",
         "local_url": "http://localhost:11434/api/generate",
-        "secondary_gpu": "http://82.221.170.234:27194/api/generate",
+        "secondary_gpu": "http://213.173.102.103:41932/api/generate",
         "vram_capacity_gb": 288,
         "gpu_mapping": {
             "explorer": "secondary_gpu",
