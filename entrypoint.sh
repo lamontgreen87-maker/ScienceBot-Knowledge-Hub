@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Start Ollama with Dual-GPU pooling (196GB VRAM Cluster)
-echo "[OLLAMA] Launching Pooled GPU Cluster (0,1) with Spreading enabled..."
+# Start Ollama with Triple-GPU pooling (288GB VRAM Cluster)
+echo "[OLLAMA] Launching Pooled 3-GPU Cluster (0,1,2) with Spreading enabled..."
 
 # Auto-detect persistent volume (RunPod default)
 if [ -d "/workspace" ]; then
@@ -24,16 +24,9 @@ if [ -d "/workspace" ]; then
   if [ -n "$FOUND_ROOT" ]; then
     export OLLAMA_MODELS="$FOUND_ROOT"
   else
-    # Fallback to the first manifests folder we see, or use default
-    FIRST_MANIFEST=$(echo "$ALL_MANIFESTS" | head -n 1)
-    if [ -n "$FIRST_MANIFEST" ]; then
-      export OLLAMA_MODELS=$(dirname "$FIRST_MANIFEST")
-      echo "[OLLAMA] DeepSeek not found. Falling back to first discovered root: $OLLAMA_MODELS"
-    else
-      export OLLAMA_MODELS="/workspace/ollama_models"
-      mkdir -p "$OLLAMA_MODELS"
-      echo "[OLLAMA] No manifests found. Defaulting to $OLLAMA_MODELS"
-    fi
+    export OLLAMA_MODELS="/workspace/ollama_models"
+    mkdir -p "$OLLAMA_MODELS"
+    echo "[OLLAMA] Defaulting to $OLLAMA_MODELS"
   fi
   
   # Sanity Audit: Detect and prune corrupted manifests
@@ -46,7 +39,7 @@ if [ -d "/workspace" ]; then
   echo "[OLLAMA] Integrity audit complete."
 fi
 
-CUDA_VISIBLE_DEVICES=0,1 OLLAMA_NUM_PARALLEL=2 OLLAMA_MAX_LOADED_MODELS=4 OLLAMA_FLASH_ATTENTION=1 OLLAMA_HOST=0.0.0.0:11434 ollama serve &
+CUDA_VISIBLE_DEVICES=0,1,2 OLLAMA_NUM_PARALLEL=4 OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_FLASH_ATTENTION=1 OLLAMA_HOST=0.0.0.0:11434 ollama serve &
 
 # Wait for Ollama to be ready
 echo "[OLLAMA] Waiting for server to hydrate..."
@@ -56,7 +49,7 @@ done
 
 # Pull models automatically (Background)
 echo "[OLLAMA] Initializing asynchronous model pulls..."
-models=("llama3.1:8b" "deepseek-r1:8b" "deepseek-r1:70b" "mightykatun/qwen2.5-math:72b" "llama3.3")
+models=("qwen3.5:27b" "qwq:32b" "qwen3.5" "deepseek-r1:8b" "deepseek-r1:70b")
 
 for model in "${models[@]}"; do
   # Use fixed string grep to avoid issues with special characters and slashes

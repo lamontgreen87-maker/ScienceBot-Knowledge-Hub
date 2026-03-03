@@ -7,6 +7,8 @@ import sys
 import warnings
 import re
 import concurrent.futures
+import atexit
+import psutil
 
 # Silencing warnings for clean terminal output
 warnings.filterwarnings("ignore")
@@ -26,6 +28,7 @@ from searcher import Searcher
 from base_module import BaseModule
 from template_validation import TemplateValidator
 from moltbook import Moltbook
+from knowledge_buffer import KnowledgeBuffer
 
 class ScienceBot(BaseModule):
     def __init__(self, config_path="config.json"):
@@ -35,17 +38,27 @@ class ScienceBot(BaseModule):
             try:
                 with open(self.lock_file, 'r', encoding='utf-8', errors='ignore') as f:
                     old_pid = int(f.read().strip())
-                # Check if process actually exists
-                import psutil
+                
+                # Check if process actually exists AND is a python process
                 if psutil.pid_exists(old_pid):
-                    print(f"\n[CRITICAL] Another instance (PID {old_pid}) is already running!")
-                    print("Please close all existing bot terminals before starting a new one.")
-                    os._exit(1)
+                    proc = psutil.Process(old_pid)
+                    if "python" in proc.name().lower():
+                        print(f"\n[CRITICAL] Another instance (PID {old_pid}) is already running!")
+                        print("Please close all existing bot terminals before starting a new one.")
+                        os._exit(1)
             except Exception:
                 pass # Lock might be stale
         
         with open(self.lock_file, 'w', encoding='utf-8') as f:
             f.write(str(os.getpid()))
+            
+        def cleanup_lock():
+            if os.path.exists(self.lock_file):
+                try:
+                    os.remove(self.lock_file)
+                except:
+                    pass
+        atexit.register(cleanup_lock)
 
         with open(config_path, 'r', encoding='utf-8', errors='ignore') as f:
             config_data = json.load(f)
@@ -70,6 +83,7 @@ class ScienceBot(BaseModule):
         self.iteration_count = 0
         self.state_file = os.path.join(self.config['paths']['memory'], "state.json")
         self.journal_file = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
+        self.kb = KnowledgeBuffer(os.path.join(self.config['paths']['memory'], "swarm_buffer.md"))
         
         self.current_state = self.load_state()
         self.heavy_lock = threading.Lock()
@@ -187,13 +201,32 @@ class ScienceBot(BaseModule):
 
     def start_input_listener(self):
         def listen():
-            # Conditionally import for Windows
-            import msvcrt
+            # Cross-platform interactive input handler
+            is_windows = os.name == 'nt'
+            if is_windows:
+                import msvcrt
+            else:
+                import select
+                import sys
+
             current_buffer = ""
             while True:
-                if msvcrt.kbhit():
-                    char = msvcrt.getch()
-                    
+                char_hit = False
+                char = None
+                
+                if is_windows:
+                    if msvcrt.kbhit():
+                        char = msvcrt.getch()
+                        char_hit = True
+                else:
+                    # Non-blocking stdin read for Linux/Unix
+                    if select.select([sys.stdin], [], [], 0)[0]:
+                        char_str = sys.stdin.read(1)
+                        if char_str:
+                            char = char_str.encode('utf-8')
+                            char_hit = True
+
+                if char_hit:
                     # Handle Enter (Submit)
                     if char in [b'\r', b'\n']:
                         if current_buffer.strip():
@@ -211,26 +244,21 @@ class ScienceBot(BaseModule):
                                 os._exit(0)
 
                             with open(mailbox_path, 'w', encoding='utf-8') as f:
-                                # We pad the prompt with a newline to ensure we don't hit EOF issues instantly
                                 f.write(prompt)
                             
                             # Instant echo
                             self.ui.print_chat("USER", prompt)
-                            
-                            # INSTANT RESPONSE HOOK: 
-                            # Force the bot to respond immediately in this thread instead of waiting for main loop
                             self.process_interrupt()
                             
                             current_buffer = ""
                             self.ui.update_input_buffer("")
                     # Handle Backspace
-                    elif char == b'\x08':
+                    elif char in [b'\x08', b'\x7f']: # \x7f is backspace on some Linux terms
                         current_buffer = current_buffer[:-1]
                         self.ui.update_input_buffer(current_buffer)
                     # Handle regular characters
                     else:
                         try:
-                            # Using errors='ignore' to prevent 0xff/BOM crashes in the keyboard listener
                             decoded = char.decode('utf-8', errors='ignore')
                             current_buffer += decoded
                             self.ui.update_input_buffer(current_buffer)
@@ -285,12 +313,45 @@ class ScienceBot(BaseModule):
         if secondary_url:
             success_s = self.wait_for_backend(secondary_url, label="Secondary GPU (Reasoning/Reflector)")
         
-        if not success_p or (secondary_url and not success_s):
-            self.ui.print_log("\n\033[1;33m[WARNING] GPU Cluster failed to fully hydrate. Engaging SLEEPER MODE (Local Fallback).\033[0m")
+        if not success_p:
+            self.ui.print_log("\n\033[1;31m[CRITICAL] Primary GPU failed to hydrate. Engaging SLEEPER MODE (Local Fallback).\033[0m")
             self.config['hardware']['sleeper_mode'] = True
             self.config['hardware']['max_swarm_workers'] = 2
+        elif secondary_url and not success_s:
+            self.ui.print_log("\n\033[1;33m[WARNING] Secondary GPU failed to hydrate. Rerouting traffic to Primary.\033[0m")
+            # Redirect all secondary mapping to primary
+            mapping = self.config['hardware'].get('gpu_mapping', {})
+            for key, val in mapping.items():
+                if val == "secondary_gpu":
+                    mapping[key] = "api_url"
+            self.ui.print_log("[HYDRATION] Traffic rerouted. Swarm scaling remains intact.")
         else:    
-            self.ui.print_log("\n\033[1;32m[SUCCESS] Swarm Cluster is fully Hydrated. Engaging Core Engine.\033[0m")
+            # Check for partial hydration (Adaptive Mode)
+            heavy_models = [
+                self.config['hardware'].get('reasoning_model'),
+                self.config['hardware'].get('large_model'),
+                self.config['hardware'].get('math_model')
+            ]
+            all_ready = True
+            available_models = []
+            try:
+                tags_url = primary_url.replace("/api/generate", "/api/tags")
+                response = requests.get(tags_url, timeout=5)
+                if response.status_code == 200:
+                    available_models = [m['name'] for m in response.json().get('models', [])]
+            except:
+                pass
+
+            for model in heavy_models:
+                if model and model not in available_models:
+                    all_ready = False
+                    break
+            
+            if not all_ready:
+                self.ui.print_log("\n\033[1;36m[NOTICE] Swarm is starting in ADAPTIVE HYBRID MODE.\033[0m")
+                self.ui.print_log("[NOTICE] 70B models not yet detected. Using 8B fallbacks until pull completes.")
+            else:
+                self.ui.print_log("\n\033[1;32m[SUCCESS] Swarm Cluster is fully Hydrated. Engaging Core Engine.\033[0m")
 
     def run(self):
         self.ui.print_log("Entering core research loop...")
@@ -299,6 +360,10 @@ class ScienceBot(BaseModule):
         self.pre_flight_sync()
         
         self.start_input_listener()
+        
+        # Start Background Streams (Decoupled Architecture)
+        threading.Thread(target=self.start_continuous_8b_stream, daemon=True).start()
+        threading.Thread(target=self.buffer_audit_loop, daemon=True).start()
         
         while True:
             try:
@@ -358,6 +423,100 @@ class ScienceBot(BaseModule):
         self._safe_save_json(cache_path, past_topics)
         return past_topics
 
+    def _debug_swarm(self, message):
+        """Dedicated log for background threads."""
+        try:
+            log_path = os.path.join(self.config['paths']['memory'], "swarm_debug.log")
+            timestamp = time.strftime("%H:%M:%S")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except:
+            pass
+
+    def start_continuous_8b_stream(self):
+        """
+        Background Thread: Constant 8B Research and Simulation.
+        Pushes findings to the KnowledgeBuffer.
+        """
+        num_streams = self.config['hardware'].get('fast_lane_concurrency', 4)
+        self._debug_swarm(f"LAUNCHING Continuous 8B stream with {num_streams} workers...")
+        self.ui.print_log(f"\033[1;32m[SYSTEM] Eternal Swarm: Launching {num_streams} parallel 8B research streams...\033[0m")
+        
+        def research_worker(worker_id):
+            while True:
+                try:
+                    if self.current_state.get("state") == "PAUSED":
+                        time.sleep(2)
+                        continue
+
+                    topic = self.current_state.get("current_topic", "General Science")
+                    
+                    # Pick a random vector if available
+                    vectors = self.current_state.get("topic_vectors", [])
+                    if vectors:
+                        vector = random.choice(vectors)
+                        sub_topic = f"{topic}: {vector.get('name')}"
+                    else:
+                        sub_topic = topic
+
+                    self._debug_swarm(f"[Worker {worker_id}] Starting research on: {sub_topic}")
+                    
+                    # Wave 1: Research (8B)
+                    research_summary = self.searcher.contemplate(sub_topic)
+                    self._debug_swarm(f"[Worker {worker_id}] Research complete for {sub_topic}. Appending to KB.")
+                    
+                    # Wave 2: Construct (8B) - Light version
+                    # We skip the heavy 70B part here, and just push the research finding
+                    self.kb.append_finding(sub_topic, research_summary[:2000])
+                    
+                    # Social pulse from the worker
+                    if random.random() < 0.2:
+                        self.social.post_thought(f"Worker {worker_id} found something interesting about {sub_topic}: {research_summary[:100]}...")
+                    
+                    time.sleep(random.uniform(5, 10)) # Prevent overwhelming the single Ollama instance
+                except Exception as e:
+                    self._debug_swarm(f"[Worker {worker_id}] ERROR: {e}")
+                    time.sleep(10)
+
+        for i in range(num_streams):
+            t = threading.Thread(target=research_worker, args=(i+1,), daemon=True)
+            t.start()
+
+    def buffer_audit_loop(self):
+        """
+        Background Thread: Audits 'Pending' entries in the KnowledgeBuffer.
+        Uses a fast auditor (8B or fast-70B) to verify findings.
+        """
+        while True:
+            try:
+                pending = self.kb.get_pending_findings()
+                for entry in pending:
+                    # Parse topic from entry
+                    # Example: ### [17:21:44] Quantum Aspect 1 | STATUS: Success | AUDIT: PENDING
+                    topic_line = entry.split('\n')[0]
+                    topic = topic_line.split('] ')[1].split(' |')[0]
+                    
+                    # Calculate Rigor Score from content
+                    # We look for the RIGOR SCORE header in the brief
+                    import re
+                    match = re.search(r"OVERALL RIGOR SCORE: ([\d.]+)/10", entry)
+                    rigor = float(match.group(1)) if match else 0.0
+                    
+                    # Also boost if it contains LaTeX or complex equations
+                    if '$$' in entry or '\\frac' in entry:
+                        rigor += 2.0
+
+                    self.ui.print_log(f"\033[1;30m[AUDIT] Verifying {topic} (Rigor: {rigor:.1f})...\033[0m")
+                    
+                    if rigor >= 4.0:
+                        self.kb.update_audit(topic, "VERIFIED", rigor_score=rigor)
+                    else:
+                        self.kb.update_audit(topic, "REJECTED", reason="Insufficient mathematical rigor", rigor_score=rigor)
+                
+                time.sleep(10)
+            except:
+                time.sleep(10)
+
     def worker_stage_research(self, topic, depth, iteration_count):
         """
         Wave 1: Research & Hypothesis Guessing (8B)
@@ -380,7 +539,28 @@ class ScienceBot(BaseModule):
                     topic, driving_question, research_summary, probe_results=probe_result
                 )
 
-        # Context enrichment
+        # Log to Eternal Swarm Buffer
+        self.kb.append_finding(topic, research_summary[:2000])
+
+        # 0. Context enrichment (Advice from past failures)
+        repair_advice = self.current_state.get('deepseek_repair_advice')
+        if repair_advice:
+            research_summary += f"\n\n=== RECENT TECHNICAL ADVICE ===\n{repair_advice}"
+            
+        dream_advice = self.current_state.get('deepseek_dream_advice')
+        if dream_advice:
+            research_summary += f"\n\n=== ARCHITECTURAL GUIDANCE ===\n{dream_advice}"
+
+        # 0.1 Context enrichment (Scientific Memory)
+        journal_path = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
+        if os.path.exists(journal_path):
+            journal = self._safe_load_json(journal_path, default=[])
+            if journal:
+                # Include last 5 entries for continuity
+                recent_entries = journal[-5:]
+                journal_ctx = "\n".join([f"- {e.get('topic')}: {e.get('summary')}" for e in recent_entries])
+                research_summary += f"\n\n=== RECENT SCIENTIFIC JOURNAL ENTRIES ===\n{journal_ctx}"
+
         prior_lessons = self.reflector.get_micro_sleep_lessons(n=3)
         if prior_lessons:
             research_summary += f"\n\n=== LESSONS ===\n{prior_lessons}"
@@ -388,7 +568,7 @@ class ScienceBot(BaseModule):
         lectures = self.teacher.get_relevant_lectures(topic)
         if lectures: research_summary += lectures
 
-        # 0. Dynamic VRAM Scaling
+        # 1. Dynamic VRAM Scaling
         self.pre_swarm_autoscale()
         
         # 1. Gather Hypotheses (Wave 1)
@@ -401,6 +581,11 @@ class ScienceBot(BaseModule):
         # If batching is handled by the Overmind, we only return the context here
         # Note: We still support individual serialized 70B for legacy/direct calls
         if use_large:
+            # Inject Eternal Swarm Buffer context for the 70B Architect
+            buffer_ctx = self.kb.get_latest_context()
+            research_summary = f"=== LIVE SWARM INTELLIGENCE (8B STREAM) ===\n{buffer_ctx}\n\n" + research_summary
+            
+            self.ui.set_status(f"Thinking ({self.config['hardware']['theorist_model']})...")
             return {
                 "topic": topic,
                 "research_summary": research_summary,
@@ -471,21 +656,37 @@ class ScienceBot(BaseModule):
                 self.ui.print_log(f"\033[1;33m[SWARM WORKER] High complexity ({complexity}). Using Master Constructor: {constructor_model} (Serialized)...\033[0m")
                 with self.heavy_lock:
                     code = self.lab.generate_simulation(hypothesis_data, description, model=constructor_model)
-                    test_result = self.lab.run_simulation(code, hypothesis_data)
             else:
                 fallback = self.config['hardware'].get('large_model', 'mightykatun/qwen2.5-math:72b')
                 self.ui.print_log(f"\033[1;33m[SWARM WORKER] '{constructor_model}' not yet hydrated. Falling back to {fallback}...\033[0m")
                 with self.heavy_lock:
                     code = self.lab.generate_simulation(hypothesis_data, description, model=fallback)
-                    test_result = self.lab.run_simulation(code, hypothesis_data)
+            
+            # --- SHARED PREFLIGHT LINTING (Universal Rigor) ---
+            attempts = 0
+            while attempts < 2:
+                is_valid, lint_issues, lint_msg = self.lint_code(code, hypothesis_data)
+                if is_valid:
+                    break
+                attempts += 1
+                self.ui.print_log(f"\033[1;33m[SWARM WORKER] Master code failed lint (Attempt {attempts}). Repairing... ({len(lint_issues)} issues)\033[0m")
+                repair_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
+                with self.heavy_lock:
+                    code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=repair_model)
+
+            test_result = self.lab.run_simulation(code, hypothesis_data)
         else:
             # Standard 8B Attempt
             code = self.lab.generate_simulation(hypothesis_data, description, model=fast_model)
             
             # --- PREFLIGHT LINTING (Recommendation 3) ---
-            is_valid, lint_issues, lint_msg = self.lint_code(code, hypothesis_data)
-            if not is_valid:
-                self.ui.print_log(f"\033[1;33m[SWARM WORKER] Lint check FAILED. Repairing early... ({len(lint_issues)} issues)\033[0m")
+            attempts = 0
+            while attempts < 2:
+                is_valid, lint_issues, lint_msg = self.lint_code(code, hypothesis_data)
+                if is_valid:
+                    break
+                attempts += 1
+                self.ui.print_log(f"\033[1;33m[SWARM WORKER] Lint check FAILED (Attempt {attempts}). Repairing early... ({len(lint_issues)} issues)\033[0m")
                 escalation_model = constructor_model or self.config['hardware'].get('large_model')
                 with self.heavy_lock:
                     code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=escalation_model)
@@ -494,8 +695,8 @@ class ScienceBot(BaseModule):
         
         # Escalation/Repair Loop
         if test_result.get('status') == 'Failed' and 'Preflight Rejection' in test_result.get('raw_output', ''):
-            escalation_model = constructor_model or self.config['hardware'].get('large_model')
-            self.ui.print_log(f"\033[1;33m[SWARM WORKER] Construction failed. Escalating to {escalation_model} (Serialized Wait)...\033[0m")
+            escalation_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
+            self.ui.print_log(f"\033[1;33m[SWARM WORKER] Construction failed. Escalating to {escalation_model} for Repair...\033[0m")
             with self.heavy_lock:
                 code = self.lab.generate_simulation(hypothesis_data, description, model=escalation_model)
                 test_result = self.lab.run_simulation(code, hypothesis_data)
@@ -503,6 +704,10 @@ class ScienceBot(BaseModule):
                 if test_result.get('status') == 'Failed':
                     code = self.lab.repair_simulation(code, test_result['raw_output'], hypothesis_data, model=escalation_model)
                     test_result = self.lab.run_simulation(code, hypothesis_data)
+                    
+            # If still failed after repair, mark as Fatal to ensure Wave 2 logging
+            if test_result.get('status') == 'Failed' and 'Preflight Rejection' in test_result.get('raw_output', ''):
+                return {"status": "Fatal", "reason": f"Preflight Rigor Failure: {test_result.get('raw_output')[:200]}...", "hypothesis": hypothesis_data}
 
         return test_result
 
@@ -531,10 +736,15 @@ class ScienceBot(BaseModule):
             
             if score >= 50:
                 self.scribe.archive_discovery(test_result)
+                # Granular Journaling for High-Significance discoveries
+                self.scribe.journal_entry(test_result)
                 if self.config.get('social', {}).get('enabled'):
                     self.moltbook.post_discovery(test_result)
             else:
                 self.scribe.archive_knowledge(test_result)
+                # Still journal confirmed knowledge for continuity, but maybe with less priority? 
+                # Decided: Journal everything that passes audit to ensure total recall.
+                self.scribe.journal_entry(test_result)
         else:
             self.explorer.log_failure(topic, test_result, audit_reason=audit_report.get('reasoning'))
 
@@ -586,47 +796,7 @@ class ScienceBot(BaseModule):
             
         return True, [], ""
 
-    def run_simulation(self, code, hypothesis):
-        """
-        Runs a simulation given the generated code and hypothesis.
-        This method is intended to be part of the Lab class, not Agent.
-        The content here seems to be a placeholder or a copy-paste error.
-        The actual run_simulation logic should be in lab.py.
-        """
-        # This method should not be here in agent.py.
-        # It's likely a copy-paste error from lab.py or a misunderstanding.
-        # The agent.py file should call self.lab.run_simulation.
-        # Returning a dummy result to avoid breaking the agent.
-        self.ui.print_log(f"[HEARTBEAT] Hypothesis received: {hypothesis.get('topic', 'Unknown')}")
-
-        # ── Banned-term post-check: catch before any LLM/lab cycle is wasted ──
-        _BANNED_POST = [
-            'geometric encoding', 'anosov flow', 'temporal resonance',
-            'quantum operator', 'spectral topology', 'autonomous knowledge',
-            'holographic entanglement', 'noncommutative geometry',
-            'quantum field theory', 'braid group', 'algebraic k-theory',
-            'topological quantum',
-        ]
-        for _attempt in range(2):
-            _h_str = str(hypothesis).lower()
-            _hit = next((t for t in _BANNED_POST if t in _h_str), None)
-            if not _hit:
-                break
-            self.ui.print_log(
-                f"[GATE] Banned term '{_hit}' found in hypothesis. "
-                f"Forcing regeneration (attempt {_attempt+1}/2)..."
-            )
-            _extra_hint = (
-                f"CRITICAL: Your previous hypothesis contained the banned concept '{_hit}'. "
-                f"This is completely unimplementable. You MUST use a completely different physics "
-                f"framework from the implementable menu: fractional ODEs, standard nonlinear ODEs, "
-                f"SDEs, Ricci curvature, or power-law. Do NOT mention {_hit} in any field."
-            )
-            hypothesis = self.explorer.generate_hypothesis(
-                hypothesis.get('topic'), hypothesis.get('research_summary'),
-                dream_hint=_extra_hint,
-                driving_question=hypothesis.get('driving_question')
-            )
+    # Feature 3: Method Advisor implementation below...
 
         return {"status": "Complete", "topic": hypothesis.get('topic')}
 
@@ -796,6 +966,9 @@ class ScienceBot(BaseModule):
 
             # --- COLLECTIVE A.0: BATCH GENERATION (70B Theorist) ---
             use_large = self.config['research'].get('use_large_theorist')
+            # Fix: Define common 'topic' (base topic) before Batch Generation/Refinement
+            topic = tasks_to_queue[0][0].split(":")[0] if tasks_to_queue else None
+
             if use_large:
                 self.ui.print_log("\033[1;36m[COLLECTIVE A.0] Synchronizing for Batch Generation (70B)...\033[0m")
                 batch_contexts = [
@@ -821,7 +994,6 @@ class ScienceBot(BaseModule):
 
             # --- COLLECTIVE A.1: BATCH REFINEMENT (72B Architect) ---
             self.ui.print_log("\033[1;36m[COLLECTIVE A.1] Synchronizing for Batch Refinement (72B)...\033[0m")
-            topic = tasks_to_queue[0][0].split(":")[0] # Base topic
             hypotheses = [r['hypothesis'] for r in prelim_results if 'hypothesis' in r]
             refined_hypotheses = self.explorer.refine_batch(hypotheses, topic)
             
@@ -837,7 +1009,13 @@ class ScienceBot(BaseModule):
             for f in concurrent.futures.as_completed(construction_futures):
                 try:
                     res = f.result()
-                    if res.get('status') != 'Fatal':
+                    if res.get('status') == 'Fatal':
+                        # Log All Fatal Rejections (Debate, Preflight, etc.) - Suggestion 3511
+                        failed_topic = construction_futures[f]
+                        reason = res.get('reason', 'Unknown Construction Failure')
+                        self.explorer.log_failure(failed_topic, {"hypothesis": res.get('hypothesis', {"topic": failed_topic}), "data": {}}, audit_reason=reason)
+                        self.ui.print_log(f"\033[1;31m[OVERMIND] FATAL REJECTION logged for '{failed_topic}': {reason[:100]}...\033[0m")
+                    else:
                         test_results.append(res)
                 except Exception as e:
                     self.ui.print_log(f"[WAVE 2] Worker failed: {e}")
@@ -851,7 +1029,11 @@ class ScienceBot(BaseModule):
             audit_reports = self.auditor.verify_batch(test_results)
             
             # Map reports by index or fallback
-            audit_map = {rep['index']: rep for rep in audit_reports if 'index' in rep}
+            if audit_reports:
+                audit_map = {rep['index']: rep for rep in audit_reports if 'index' in rep}
+            else:
+                self.ui.print_log("\033[1;31m[COLLECTIVE B] Batch audit returned no data. Falling back to individual audits.\033[0m")
+                audit_map = {}
 
             # --- WAVE 3: FINALIZATION (8B) ---
             self.ui.print_log("\033[1;34m[WAVE 3] Engaging Finalization Workers (8B)...\033[0m")
@@ -1044,8 +1226,8 @@ class ScienceBot(BaseModule):
                         eval_data = data.get("evaluation", {})
                         if eval_data.get('community_alert') or eval_data.get('significance_score', 0) > 80:
                             topic = data.get("hypothesis", {}).get("topic", "Unknown")
-                            import re
-                            slug = re.sub(r'[^A-Z0-9]', '_', topic.upper())[:50].strip('_')
+                            # Use standardized sanitization to match PressOffice naming
+                            slug = self._sanitize_slug(topic, max_length=50).upper()
                             release_found = False
                             
                             if os.path.exists(self.press_office.press_dir):

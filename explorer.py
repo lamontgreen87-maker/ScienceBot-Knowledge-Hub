@@ -37,7 +37,7 @@ class CuriosityEngine(BaseModule):
         discoveries_dir = self.config['paths']['discoveries']
         discoveries_ctx = []
         if os.path.exists(discoveries_dir):
-            files = sorted([f for f in os.listdir(discoveries_dir) if f.endswith('.json')])[-5:]
+            files = sorted([f for f in os.listdir(discoveries_dir) if f.endswith('.json')])[-50:]
             for fn in files:
                 d = self._safe_load_json(os.path.join(discoveries_dir, fn), default={})
                 if isinstance(d, dict) and d:
@@ -47,7 +47,7 @@ class CuriosityEngine(BaseModule):
         # Recent failures — structure: {"data": {"hypothesis": {"hypothesis": "..."}}, ...}
         failures = self._safe_load_json(self.failure_log, default=[])
         failure_ctx = []
-        for fv in failures[-5:]:
+        for fv in failures[-50:]:
             try:
                 data = fv.get('data', {}) or {}
                 if isinstance(data, dict):
@@ -76,9 +76,10 @@ class CuriosityEngine(BaseModule):
             f"likely to yield novel, mathematically verifiable discoveries? "
             f"Focus areas available: {', '.join(shuffled_focus[:7])}. "
             f"Avoid these past topics: {', '.join(past_topics[-10:])}. "
-            f"CRITICAL: Choose a topic that maps clearly to {physics_str} — NOT abstract theory. "
+            f"CRITICAL: Choose a topic that maps clearly to one of these frameworks: {physics_str} — NOT abstract theory. "
             f"Respond with ONLY the topic name (max 8 words)."
         )
+
 
         if self.ui:
             self.ui.print_log(f"[STRATEGIST] Selecting optimal next topic (FastMode: {fast_mode})...")
@@ -124,20 +125,17 @@ Topic:"""
         if self.ui:
             self.ui.print_log(f"[EXPLORER] Decomposing broad topic: {topic} (StudyMode: {study_mode})")
             
-        # Math-First: Decomposition is a theoretical task.
-        # Use fast model for guessing, heavy model for deep study
-        target_model = None
-        if study_mode:
-            target_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('reasoning_model')
-        
-        if not target_model or not study_mode:
-            target_model = self.config['hardware'].get('theorist_model') or self.config['hardware'].get('reasoning_model')
+        # 70B Intelligence is required for high-fidelity "Atomic" decomposition.
+        # _query_llm handles the swap to Llama 3.3 for speed when deep_research_mode is OFF.
+        target_model = "deepseek-r1:70b"
         
         prompt = f"""
 Topic: {topic}
 
-As a Lead Scientist, break this broad research topic into 3 specific, "Atomic" research vectors.
-Each vector must be narrow enough to be tested by a single mathematical simulation with one independent variable.
+As a Lead Scientist, perform a **LOGIC HOLE AUDIT** of this research vector.
+1. Identify 3 specific "Logic Holes" or missing mathematical links in this topic.
+2. Formulate 3 "Synthesis Bridges" (research vectors) designed to resolve these holes.
+3. Each bridge must be "Atomic" (solvable in 3 minutes) but "Structural" (contributes to the larger theory).
 
 You MUST think carefully about this before answering. 
 Start your response with a <think>...</think> block to reason through the physics.
@@ -168,12 +166,17 @@ After thinking, respond in strict JSON format:
             target_model = self.config['hardware'].get('reasoning_model')
         
         if os.path.exists(discoveries_dir):
-            for file in os.listdir(discoveries_dir):
-                if file.endswith(".json"):
-                    with open(os.path.join(discoveries_dir, file), 'r', encoding='utf-8', errors='ignore') as f:
-                        data = json.load(f)
-                        if data['hypothesis']['topic'] == topic:
-                            learnings.append(f"VERIFIED: {data['hypothesis']['hypothesis']}")
+            for root, dirs, files in os.walk(discoveries_dir):
+                for file in files:
+                    if file.endswith(".json"):
+                        try:
+                            with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
+                                data = json.load(f)
+                                discovery_topic = data.get('hypothesis', {}).get('topic', '')
+                                if discovery_topic.lower() == topic.lower():
+                                    learnings.append(f"VERIFIED: {data['hypothesis'].get('hypothesis', '')}")
+                        except Exception:
+                            continue
         
         prompt = f"""Topic: {topic}
 Verified Findings:
@@ -183,13 +186,13 @@ Provide a HIGH-FIDELITY TECHNICAL SYNTHESIS of our research on this topic.
 Your goal is to ensure NO CRITICAL DATA (constants, scaling laws, or validated equations) is lost during the topic transition.
 
 Structure your response as follows:
-1. **Consolidated Theory**: The most accurate mathematical equation(s) verified.
-2. **Validated Constants**: List ALL specific numerical values (ALPHA, BETA, etc.) that passed audit.
-3. **Failed Hypotheses**: What didn't work and why (to avoid repeating mistakes).
-4. **Knowledge Threads**: 1-2 unanswered questions that still warrant future research.
+1. **Consolidated Theory**: The most accurate mathematical equation(s) verified so far.
+2. **Foundational Constants**: List ALL specific numerical values (ALPHA, BETA, etc.) that passed audit.
+3. **Audit Hardening**: What failure patterns were observed and how to avoid them (e.g. .subs() issues).
+4. **Knowledge Threads**: 1-2 unanswered questions that serve as the next logical steps for exploration.
 
 You MUST think carefully about the physics before answering. 
-Start your response with a <think>...</think> block to reason through the verified findings.
+Start your response with a <think>...</think> block to reason through the verified findings and how they form a foundation for future work.
 After thinking, respond with the synthesis structured exactly as requested above.
 
 Synthesis:"""
@@ -334,19 +337,27 @@ Your hypothesis MUST be a direct, falsifiable answer to this question.
                 self.ui.print_log(f"[EXPLORER] Hypothesis will answer: {str(driving_question)[:80]}...")
 
         # ── MODULAR PROMPT INJECTION ──
-        from prompt_templates import HYPOTHESIS_GENERATION_PROMPT
+        from prompt_templates import HYPOTHESIS_GENERATION_PROMPT, FAST_CYCLE_MANDATE, DEEP_RESEARCH_MANDATE
         
+        # Select mandate based on Deep Research Mode toggle
+        is_deep_mode = self.config['research'].get('deep_research_mode', False)
+        rigor_mandate = DEEP_RESEARCH_MANDATE if is_deep_mode else FAST_CYCLE_MANDATE
+
         # Randomize the physics menu to prevent the LLM from biasing toward the first item (e.g., Fractional Calculus)
         import random
         physics_menu_items = [
-            "- Fractional Calculus: Anomalous diffusion, memory effects -> uses `grunwald_letnikov_diff`",
-            "- Ricci Flow / Non-Euclidean: Curvature diagnostics -> uses `ricci_curvature_scalar`",
-            "- Standard Nonlinear ODEs: Complex system modeling -> uses `solve_ivp` + `lambdify`",
-            "- Stochastic/SDE Systems: Noise-driven dynamics -> uses `add_noise`",
-            "- Power-Law / Scale-Free: Critical phenomena -> uses `verify_power_law`"
+            "Fractional Calculus (grunwald_letnikov_diff) - Memory Effects",
+            "Nonlinear Dynamics (add_noise, ODE solvers)",
+            "Stochastic Systems (SDEs with Brownian noise)",
+            "Manifold Geometry (ricci_scalar_symbolic) - Kerr/Schwarzschild Metrics",
+            "Black Hole Thermodynamics (Energy extraction kernels)",
+            "High-Fidelity Event Horizon Simulations (Requires massive VRAM/Matrices)",
+            "Manifold Geometry (ricci_scalar_symbolic) - Kerr/Schwarzschild Metrics (High-VRAM)",
+            "Black Hole Thermodynamics (Energy extraction kernels) (High-VRAM)",
+            "Black Hole Metrics (Kerr/Schwarzschild) - Requires `ricci_scalar_symbolic` and `einstein_tensor_from_metric` (High-VRAM)"
         ]
         random.shuffle(physics_menu_items)
-        shuffled_physics_menu = "\n".join(physics_menu_items)
+        physics_menu = "\n".join([f"- {item}" for item in physics_menu_items])
 
         prompt = HYPOTHESIS_GENERATION_PROMPT.format(
             topic=topic,
@@ -354,9 +365,13 @@ Your hypothesis MUST be a direct, falsifiable answer to this question.
             dream_guidance=dream_guidance_section,
             dynamic_rules=dynamic_rulebook_section,
             driving_question=driving_question_section,
-            implementable_physics_menu=shuffled_physics_menu,
-            study_mode=study_mode
+            implementable_physics_menu=physics_menu,
+            rigor_mandate=rigor_mandate
         )
+        
+        # Inject High-VRAM Mandate for Black Hole research
+        if "Black Hole" in topic:
+            prompt += "\n**VRAM MANDATE**: This is a high-fidelity simulation. Use 4x4 or larger SymPy matrices. Allocate large numerical grids (e.g. 500x500 steps) to utilize the cluster's 288GB VRAM pool. Placeholder physics will be REJECTED.\n"
 
         # specialized Math Engine is now the primary THEORIST for Study phase.
         # If in Guess mode (Phase 1), use fast_model (8B).
@@ -539,3 +554,40 @@ Respond in strict JSON format:
         }
         log.append(log_entry)
         self._safe_save_json(self.failure_log, log)
+
+    def synthesize(self, topic, study_mode=False):
+        """
+        Gonzo Synthesis (Feature 3520): Builds larger hypotheses from atomic findings.
+        Ingests the journal and generates a unified theory.
+        """
+        journal_path = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
+        journal = self._safe_load_json(journal_path, default=[])
+        
+        # Extract recent verified findings
+        findings = []
+        for entry in journal[-15:]:
+            findings.append(f"Result: {entry.get('summary', 'N/A')}\nOpen Questions: {entry.get('open_questions', 'None')}")
+        
+        findings_ctx = "\n\n".join(findings) if findings else "No verified findings yet."
+        
+        prompt = f"""
+As the Lead Scientific Architect, perform an **INTEGRAL SYNTHESIS** of our recent findings.
+
+TOPIC: {topic}
+RECENT VERIFIED FINDINGS:
+{findings_ctx}
+
+YOUR TASK:
+1. **The Building Blocks**: Connect these atomic findings into a coherent technical summary.
+2. **The Logic Hole**: Identify the most critical "Hole" or contradiction that we need to bridge next.
+3. **The Next Foundation**: Propose the next specific, implementable research phase.
+
+Maintain high physical rigor. Your synthesis should feel like a peer-reviewed summary of a long-term study.
+"""
+        target_model = self.config['hardware'].get('reasoning_model') or "llama3.3:latest"
+        
+        if self.ui:
+            self.ui.print_log(f"[EXPLORER] Performing Synthesis on '{topic}'...")
+            
+        summary = self.consult_reasoner(prompt, context="Incremental Synthesis Phase", label="[SYNTHESIS]")
+        return summary or "Synthesis failed to generate viable theory."

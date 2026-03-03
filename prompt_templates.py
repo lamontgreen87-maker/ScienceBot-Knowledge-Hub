@@ -16,20 +16,17 @@ Research Data: {research_context}
 === IMPLEMENTABLE PHYSICS MENU ===
 {implementable_physics_menu}
 
-### RIGOR MANDATE (Iter 3456, 3511, 3356):
-1. NO Trivial constants (1.0, 0.5). Use non-repeating, high-precision physical values (e.g. 0.7291, 1.4582).
-2. MUST include a `mathematical_implementation_guide` that details state transitions, memory windows, or resource pools.
-3. MUST define specific contextual constants in `required_constants` utilizing clear placeholders like `{constant_value}`.
-4. COMPLEXITY MANDATE: Mandate the use of 'resource-limited kernels', 'dynamic thresholds', or 'non-linear state decay' to ensure simulation depth.
-5. VOCABULARY MANDATE: Use domain-specific terminology (e.g., 'Anomalous Relaxation', 'Manifold Curvature') in the `hypothesis` and `simulation_context`.
+### RESEARCH MANDATE:
+{rigor_mandate}
 
-Respond in JSON ONLY:
+Respond in JSON ONLY (after your <think> block):
 {{
     "topic": "{topic}",
     "hypothesis": "Non-trivial falsifiable prediction using specific physics vocabulary",
+    "derivation_steps": "A rigorous step-by-step mathematical bridge from the theoretical concept to the RHS blueprint (50-100 words).",
     "simulation_context": "Physics/Environment context with literature-grounded terminology",
     "literature_grounding": "Citations supporting the use of specific constants/primitives",
-    "physics_primer": "Reasoning for the framework, explicitly naming the primitives to be used (e.g. 'grunwald_letnikov_diff' or 'add_noise' depending on menu choice)",
+    "physics_primer": "A rigorous technical overview (3-5 sentences) explaining why this mathematical approach is valid for the topic and how it aligns with the requested primitives.",
     "atomic_specification": {{
         "independent_variable": {{"name": "t", "symbol": "t"}},
         "dependent_variable": {{"name": "y", "symbol": "y"}},
@@ -38,8 +35,24 @@ Respond in JSON ONLY:
     "mathematical_blueprint": "SymPy-ready RHS (e.g. constants['ALPHA'] * y + constants['BETA'] * t)",
     "mathematical_implementation_guide": "High-Fidelity architecture (e.g. 50-step Rolling Memory Window with specific kernels. Resource depletion enabled.)",
     "required_constants": {{ "ALPHA": "0.7291", "BETA": "1.4582" }},
-    "target_complexity_score": "50-80"
+    "target_complexity_score": "75"
 }}
+"""
+
+# --- MANDATE VARIANTS ---
+FAST_CYCLE_MANDATE = """
+1. **LOGIC HOLE IDENTIFICATION**: Identify a specific "hole" or contradiction in our current understanding of the manifold/tensor.
+2. **INCREMENTAL SYNTHESIS**: Focus on building a bridge between existing findings. Do not attempt a total solution.
+3. **FOUNDATIONAL-LOGIC**: This is a HIGH-SPEED 70B cycle. Focus on hardening the mathematical foundation in under 2 minutes.
+4. **PITHY DERIVATION**: Max 3 sentences. No sprawling theories; just the essential incremental logic to build upon.
+"""
+
+DEEP_RESEARCH_MANDATE = """
+1. **KNOWLEDGE CONSOLIDATION**: You MUST start with a <think> block synthesizing all atomic 8B findings into a coherent theoretical framework.
+2. **INCREMENTAL RIGOR**. Build meticulously on previously validated constants. NO "giant leaps" without proof.
+3. **DERIVATION FIELD**: You MUST include a rigorous `derivation_steps` field (50-100 words) explaining how this finding completes a specific logic hole.
+4. **COMPLEXITY**: Mandate 'non-linear state decay', 'stochastic resource pools', or 'Ricci-tensor curvature dynamics' to ensure physical fidelity.
+5. **MANDATORY SKELETON**: All simulation code resulting from this hypothesis MUST follow the 5-part structure: # 1. SYMBOLIC SETUP, # 2. CONSTANT INJECTION, # 3. THE IMMUTABLE LAW, # 4. HIGH-FIDELITY EXECUTION, # 5. DATA LOGGING.
 """
 
 # === SIMULATION GENERATION ===
@@ -66,7 +79,7 @@ Architecture: {guide}
 import numpy as np
 import sympy as sp
 {import_block}
-from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_curvature_scalar
+from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_scalar_symbolic
 
 # 1. SYMBOLIC SETUP
 {symbolic_setup}
@@ -98,11 +111,16 @@ constants = {{
 ```
 
 ### LITERAL LAWS (Violation = Immediate Rejection):
-- NO `.subs()`: Use variables as algebraic multipliers (e.g., `ALPHA * y`).
-- NO `def` for physics: Use `lambdify` or `lambda` for the main RHS.
-- NO Trivial Loops: For complexity {target_complexity_score}, you MUST implement multi-step state updates (resource/energy/decay).
-- NO Placeholders: All constants MUST be initialized with high-precision values and utilized as algebraic multipliers.
-- ARCHITECTURAL FIDELITY: If you promise 'Memory Windows', 'Resource Depletion', or 'Fractal Maps' in your guide, they MUST be present in the code.
+- **MULTIPLIER RULE**: NO `.subs()`. Use constants['VAR'] as an algebraic multiplier.
+    - *INCORRECT*: `expr = y.subs(ALPHA, 0.5)`
+    - *CORRECT*: `expr = constants['ALPHA'] * y`
+- **NO PHYSICS DEFS**: NO `def` for physics laws. Use `sp.lambdify` or `lambda`.
+    - *INCORRECT*: `def rhs(t, y): return constants['ALPHA'] * y`
+    - *CORRECT*: `f_rhs = sp.lambdify((t, y), expr, 'numpy')`
+- **EXPLICIT CONSTANTS**: You MUST define a `constants = { ... }` dictionary in section #2 exactly matching the hypothesis requirements.
+
+- ARCHITECTURAL FIDELITY: If you promise 'Memory Windows' or 'Resource Depletion', they MUST be present in the code.
+- **ENERGY/MATHEMATICAL CONSERVATION**: You MUST implement an `ENERGY_CHECK` variable in your loop.
 - VOCABULARY ALIGNMENT: Use the physics terminology from the hypothesis in your comments and variables.
 """
 
@@ -134,7 +152,7 @@ expr = constants['ALPHA'] * y + constants['BETA'] * t
 
 ### 2. Required Import Block
 ```python
-from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_curvature_scalar
+from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_scalar_symbolic
 ```
 
 ### 3. High-Fidelity Execution (Loops, not simple ODEs)
@@ -149,9 +167,14 @@ for i in range(1, len(t_vals)):
 
 ## MANDATORY REPAIR STEPS
 1.  Address EVERY failure in the audit report above.
-2.  Maintain the 5-part mandatory template: (1) Symbolic Setup, (2) Constant Injection, (3) Immutable Law, (4) High-Fidelity Execution, (5) ScientificReport.
+2.  Maintain the 5-part mandatory template: (1) Symbolic Setup, (2) Constant Injection, (3) Immutable Law, (4) High-Fidelity Execution, (5) DATA LOGGING.
 3.  Ensure ALL constants are used algebraically (e.g., `ALPHA * y`).
-4.  Return ONLY the complete, corrected Python code.
+4.  **CHECKLIST FOR SUCCESS (NON-NEGOTIABLE):**
+    - [ ] NO `def` blocks for physics laws or derivatives. Use `sp.lambdify` or `lambda`.
+    - [ ] NO `.subs()` inside the main simulation loop.
+    - [ ] Use `sp.symbols` for all independent/dependent variables.
+    - [ ] The simulation must produce a `ScientificReport` within the DATA LOGGING section.
+5.  Return ONLY the complete, corrected Python code.
 """
 
 # === QUESTION FORMATION ===
