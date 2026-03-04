@@ -17,7 +17,7 @@
         "secondary_gpu": [
             "http://localhost:11434/api/generate"
         ],
-        "vram_capacity_gb": 288,
+        "vram_capacity_gb": 16,
         "gpu_mapping": {
             "explorer": "secondary_gpu",
             "lab": "api_url",
@@ -35,7 +35,7 @@
         "teacher_model": "gemini-pro-latest",
         "teacher_api_key": "AIzaSyAcZYVWYDpOpBYowU9h2JpxvYg-ifyK5ys",
         "cpu_threads": 8,
-        "max_swarm_workers": 1,
+        "max_swarm_workers": 2,
         "turbo_workers": 1,
         "heavy_concurrency_limit": 1,
         "fast_lane_concurrency": 1,

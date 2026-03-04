@@ -117,8 +117,15 @@ class BaseModule:
                     # Calculate total loaded VRAM from /api/ps
                     total_loaded_mb = sum(m.get('size_vram', 0) for m in data.get('models', [])) / 1e6
                     
-                    # Assume a standard 16GB V100/RTX if vram_capacity_gb is missing
-                    total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 16)
+                    # For integrated graphics (APUs like SER5), system RAM is acting as VRAM
+                    # Fallback to config value if psutil isn't available
+                    try:
+                        import psutil
+                        # Total RAM in GB
+                        total_capacity_gb = psutil.virtual_memory().total / (1024**3)
+                    except:
+                        total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 16)
+                        
                     return total_capacity_gb - (total_loaded_mb / 1024.0)
             except:
                 pass
