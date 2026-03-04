@@ -1151,24 +1151,9 @@ class ScienceBot(BaseModule):
         # Sort by priority (High Curiosity first)
         tasks_to_queue.sort(key=lambda x: x[3] if len(x) > 3 else False, reverse=True)
         
-        # Determine target GPU URLs based on Phase Pinning (V100 Optimization)
-        primary_url = self.config['hardware'].get('api_url')
-        secondary_url = self.config['hardware'].get('secondary_gpu')
-        is_study_phase = self.current_state.get("phase") == "STUDY"
-        
-        # Adaptive Cluster Pinning: If multi-pod (api_url has > 1 item), pool all GPUs.
-        # Otherwise, use strict Dual-GPU pinning (STUDY -> GPU 1, GUESS -> GPU 0).
-        if isinstance(primary_url, list) and len(primary_url) > 1:
-            target_gpu_urls = primary_url.copy()
-            if isinstance(secondary_url, list):
-                target_gpu_urls.extend(secondary_url)
-            elif secondary_url:
-                target_gpu_urls.append(secondary_url)
-            # Remove duplicates if any
-            target_gpu_urls = list(dict.fromkeys(target_gpu_urls))
-        else:
-            # Fallback: Use primary if secondary is missing.
-            target_gpu_urls = secondary_url if (is_study_phase and secondary_url) else primary_url
+        # Rely on base_module's dynamic gpu_mapping rather than thread-local clamping,
+        # otherwise we disrupt the strict segregation between 70B and 32B pods.
+        target_gpu_urls = None
         
         # Determine stagger delay
         stagger_delay = self.config['hardware'].get('swarm_stagger_s', 5)
@@ -1186,17 +1171,19 @@ class ScienceBot(BaseModule):
                     t, d, i = task_data
                 
                 # ADAPTIVE VRAM GUARD (12GB Threshold)
-                # Check first URL in pool for headroom
-                check_url = target_gpu_urls[0] if isinstance(target_gpu_urls, list) else target_gpu_urls
+                # Check first URL in secondary pool for headroom since STUDY relies heavily on explorer/searcher
+                sec_urls = self.config['hardware'].get('secondary_gpu', [])
+                check_url = sec_urls[0] if isinstance(sec_urls, list) and sec_urls else (sec_urls if isinstance(sec_urls, str) else None)
+                
                 while self.get_vram_headroom(url=check_url) < 12.0:
-                    self.ui.set_status(f"THROTTLED: GPU {idx % 2} VRAM < 12GB")
+                    self.ui.set_status(f"THROTTLED: Waiting for VRAM (Target GPU < 12GB)")
                     time.sleep(10)
                 
                 if idx > 0:
                     time.sleep(stagger_delay)
                 
-                # Pass target_gpu_urls to the worker stage (Pinned)
-                future = executor.submit(self.worker_stage_research, t, d, i, target_gpu_urls)
+                # Defer to dynamic load balancing by passing None
+                future = executor.submit(self.worker_stage_research, t, d, i, None)
                 research_futures[future] = t
 
             prelim_results = []
