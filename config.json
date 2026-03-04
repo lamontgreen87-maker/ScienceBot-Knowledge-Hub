@@ -11,14 +11,11 @@
         "theorist_model": "deepseek-r1:70b",
         "explorer_model": "deepseek-r1:32b",
         "api_url": [
-            "http://195.26.233.93:30917/api/generate",
-            "http://198.13.252.23:14476/api/generate",
-            "http://195.26.233.100:19634/api/generate",
-            "http://195.26.233.54:36092/api/generate"
+            "http://localhost:11434/api/generate"
         ],
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
-            "http://69.30.85.228:22147/api/generate"
+            "http://localhost:11434/api/generate"
         ],
         "vram_capacity_gb": 288,
         "gpu_mapping": {
@@ -37,12 +34,12 @@
         "api_key": null,
         "teacher_model": "gemini-pro-latest",
         "teacher_api_key": "AIzaSyAcZYVWYDpOpBYowU9h2JpxvYg-ifyK5ys",
-        "cpu_threads": 48,
-        "max_swarm_workers": 4,
-        "turbo_workers": 8,
-        "heavy_concurrency_limit": 8,
-        "fast_lane_concurrency": 2,
-        "num_ctx": 16384
+        "cpu_threads": 8,
+        "max_swarm_workers": 1,
+        "turbo_workers": 1,
+        "heavy_concurrency_limit": 1,
+        "fast_lane_concurrency": 1,
+        "num_ctx": 8192
     },
     "research": {
         "deep_research_mode": true,
@@ -70,8 +67,8 @@
         ],
         "research_depth": 15,
         "study_loop_count": 3,
-        "turbo_mode": true,
-        "use_large_theorist": true
+        "turbo_mode": false,
+        "use_large_theorist": false
     },
     "social": {
         "moltbook_api_key": "moltbook_sk_4JKDjbJR2gpK67tWfJmLR5HQ7qndYolh",
