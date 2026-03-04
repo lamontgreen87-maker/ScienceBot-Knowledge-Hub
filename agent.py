@@ -1156,9 +1156,19 @@ class ScienceBot(BaseModule):
         secondary_url = self.config['hardware'].get('secondary_gpu')
         is_study_phase = self.current_state.get("phase") == "STUDY"
         
-        # Pinning: STUDY -> GPU 1 (secondary), GUESS -> GPU 0 (primary)
-        # Fallback: Use primary if secondary is missing.
-        target_gpu_urls = secondary_url if (is_study_phase and secondary_url) else primary_url
+        # Adaptive Cluster Pinning: If multi-pod (api_url has > 1 item), pool all GPUs.
+        # Otherwise, use strict Dual-GPU pinning (STUDY -> GPU 1, GUESS -> GPU 0).
+        if isinstance(primary_url, list) and len(primary_url) > 1:
+            target_gpu_urls = primary_url.copy()
+            if isinstance(secondary_url, list):
+                target_gpu_urls.extend(secondary_url)
+            elif secondary_url:
+                target_gpu_urls.append(secondary_url)
+            # Remove duplicates if any
+            target_gpu_urls = list(dict.fromkeys(target_gpu_urls))
+        else:
+            # Fallback: Use primary if secondary is missing.
+            target_gpu_urls = secondary_url if (is_study_phase and secondary_url) else primary_url
         
         # Determine stagger delay
         stagger_delay = self.config['hardware'].get('swarm_stagger_s', 5)
