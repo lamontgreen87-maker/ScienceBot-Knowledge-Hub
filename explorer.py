@@ -259,8 +259,8 @@ Synthesis:"""
             prior_findings=prior_context
         )
 
-        # Tier 1 (Knowledge Gap Analysis Requires Reasoning)
-        target_model = self.config['hardware'].get('theorist_model') or self.config['hardware'].get('reasoning_model')
+        # Tier 1 (Knowledge Gap Analysis Requires Reasoning, but must stay on its assigned pod)
+        target_model = self.config['hardware'].get('explorer_model')
         response = self._query_llm(prompt, model=target_model, temperature=0.2)
         result = self._extract_json(response)
 
