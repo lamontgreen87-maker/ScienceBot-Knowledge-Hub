@@ -118,13 +118,19 @@ class BaseModule:
                     total_loaded_mb = sum(m.get('size_vram', 0) for m in data.get('models', [])) / 1e6
                     
                     # For integrated graphics (APUs like SER5), system RAM is acting as VRAM
-                    # Fallback to config value if psutil isn't available
-                    try:
-                        import psutil
-                        # Total RAM in GB
-                        total_capacity_gb = psutil.virtual_memory().total / (1024**3)
-                    except:
-                        total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 16)
+                    # But we only want to do this if the url is localhost.
+                    is_local = url and ('localhost' in url or '127.0.0.1' in url)
+                    
+                    if is_local:
+                        try:
+                            import psutil
+                            # Total RAM in GB
+                            total_capacity_gb = psutil.virtual_memory().total / (1024**3)
+                        except:
+                            total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 16)
+                    else:
+                        # For remote pods, use the configured VRAM capacity
+                        total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 90)
                         
                     return total_capacity_gb - (total_loaded_mb / 1024.0)
             except:
