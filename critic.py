@@ -1,4 +1,5 @@
 from base_module import BaseModule
+import json
 
 class Auditor(BaseModule):
     COMPONENT_NAME = "critic"
@@ -16,8 +17,14 @@ class Auditor(BaseModule):
         # ── DETERMINISTIC PREFLIGHT CHECK ──
         from template_validation import TemplateValidator
         report = TemplateValidator.run_all_checks(code, hypothesis)
-        if not report["valid"]:
-            preflight_issues = report["errors"] + report["repair_directives"]
+        preflight_failed = not report["valid"]
+        preflight_issues = report["errors"] + report["repair_directives"] if preflight_failed else []
+
+        # We will check if we should return preflight results now, or wait for physics checks
+        from physics_validator import PhysicsValidator
+        is_adm_simulation = PhysicsValidator.should_trigger_adm_check(hypothesis)
+
+        if preflight_failed and not is_adm_simulation:
             if self.ui:
                 self.ui.print_log(f"\033[1;33m[AUDITOR] Deterministic Preflight FAILED ({len(preflight_issues)} issues).\033[0m")
             return {
@@ -91,6 +98,57 @@ JSON:"""
             audit, error = extract_and_validate(response, "audit")
 
         if audit:
+            # ── FEATURE: ADM PHYSICS AUDIT (Hamiltonian Constraint) ──
+            from physics_validator import PhysicsValidator
+            if PhysicsValidator.should_trigger_adm_check(hypothesis):
+                if self.ui:
+                    self.ui.print_log("[AUDITOR] ADM 3+1 / GR detected. Triggering Hamiltonian Constraint check...")
+                
+                is_valid, h_val, is_singularity, physics_reasoning = PhysicsValidator.calculate_hamiltonian_constraint(test_result)
+                
+                if not is_valid:
+                    audit["audit_passed"] = False
+                    
+                    if is_singularity:
+                        reasoner_model = self.config['hardware'].get('reasoning_model')
+                        if self.ui:
+                            self.ui.print_log(f"\033[1;31m[AUDITOR] FATAL COORDINATE SINGULARITY: {h_val:.2e}. Requesting PUNCTURE METHOD fix...\033[0m")
+                        
+                        analysis_prompt = f"""
+                        FATAL ERROR: ADM Hamiltonian Constraint Violation ({h_val:.2e} > 1e-4).
+                        Topic: {hypothesis.get('topic')}
+                        Status: Coordinate Singularity Detected.
+                        
+                        The current simulation has collapsed due to a coordinate singularity. 
+                        MANDATORY FIX: You MUST implement the 'Puncture Method' (moving-puncture or fixed-puncture) to handle the singularity without coordinate collapse.
+                        
+                        1. Re-analyze the metric decomposition.
+                        2. Provide a specific mathematical patch using the Puncture Method.
+                        3. Update the 'mathematical_implementation_guide' to include puncture handling.
+
+                        Simulation Code:
+                        {code}
+                        """
+                        analysis = self._query_llm(analysis_prompt, model=reasoner_model)
+                        
+                        audit["rejection_type"] = "FATAL"
+                        audit["reasoning"] = f"{physics_reasoning}\n\n=== PUNCTURE METHOD DIAGNOSIS ===\n{analysis}"
+                    else:
+                        # Regular validation failure (small H violation)
+                        audit["rejection_type"] = "FIXABLE"
+                        audit["reasoning"] = physics_reasoning
+                else:
+                    if self.ui:
+                        self.ui.print_log(f"\033[1;32m[AUDITOR] Hamiltonian Constraint check passed ({h_val:.2e}).\033[0m")
+            
+            # ── MERGE DEFERRED PREFLIGHT ISSUES ──
+            if preflight_failed and is_adm_simulation:
+                audit["audit_passed"] = False
+                # If it wasn't already FATAL, make it FIXABLE due to preflight
+                if audit.get("rejection_type") != "FATAL":
+                    audit["rejection_type"] = "FIXABLE"
+                audit["reasoning"] = f"Preflight Issues: {' | '.join(preflight_issues)}\n\n" + audit.get("reasoning", "")
+
             return audit
         
         # Fallback for failures
@@ -124,7 +182,12 @@ JSON:"""
             results_summary += f"--- RESULT {i+1} ---\n"
             results_summary += f"Topic: {h.get('topic')}\n"
             results_summary += f"Hypothesis: {h.get('hypothesis')}\n"
-            results_summary += f"Output Preview: {str(res.get('raw_output'))[:300]}\n"
+            
+            # Extract final 500 chars of output to see ScientificReport result
+            raw_out = str(res.get('raw_output', ''))
+            out_preview = raw_out[-500:] if len(raw_out) > 500 else raw_out
+            results_summary += f"Output Preview (End of Stream):\n{out_preview}\n"
+            
             metrics = res.get('metrics', {})
             results_summary += f"Metrics: {json.dumps(metrics)}\n\n"
 

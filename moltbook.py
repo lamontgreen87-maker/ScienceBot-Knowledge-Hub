@@ -69,7 +69,7 @@ class Moltbook(BaseModule):
         Response:
         """
         
-        target_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         post_text = self._query_llm(prompt, model=target_model)
         
         if not post_text or "SKIP" in post_text.upper():

@@ -128,23 +128,31 @@ sol_y = np.array(y_vals); sol_t = t_vals
 ```
 """
         if needs_ricci:
-            primitive_mandate += "- **PRIMITIVE MANDATE**: Use `ricci_curvature_scalar` with a real metric matrix function. Placeholder matrices will be REJECTED.\n"
+            primitive_mandate += "- **PRIMITIVE MANDATE**: Use `ricci_scalar_symbolic` with a real 4D `sp.Matrix` (e.g. Kerr/Schwarzschild). Placeholder matrices will be REJECTED.\n"
             physics_templates += """
-### REFERENCE IMPLEMENTATION: Ricci Flow / Metric Tensor
-Use this EXACT pattern:
+### REFERENCE IMPLEMENTATION: Black Hole Metrics / Ricci Curvature
+Use this EXACT pattern for 4D spacetime:
 ```python
-# --- Correct Metric Matrix Pattern ---
+# --- Correct 4D Metric Matrix Pattern ---
 import sympy as sp
-theta, phi = sp.symbols('theta phi', real=True)
-# Define a real metric (e.g. S2 sphere metric)
-def metric_func(coords):
-    t, p = coords
-    return np.array([[1.0, 0.0], [0.0, np.sin(t)**2 + 1e-9]])
-point = [np.pi/4, np.pi/4]
-curvature = ricci_curvature_scalar(metric_func, point)
-print(f"Ricci Curvature: {curvature}")
+t, r, theta, phi = sp.symbols('t r theta phi', real=True)
+M, a = sp.symbols('M a', real=True) # constants['M'], constants['A']
+# Define the metric g_mu_nu (e.g. Kerr Metric components)
+# ... define g_tt, g_rr, etc ...
+g = sp.Matrix([
+    [-(1 - 2*M*r/(r**2)), 0, 0, 0], 
+    [0, 1/(1 - 2*M*r/(r**2)), 0, 0],
+    [0, 0, r**2, 0],
+    [0, 0, 0, r**2 * sp.sin(theta)**2]
+]) # Schwarzschild example
+coords = [t, r, theta, phi]
+# Calculate symbolic curvature expression
+curvature_expr = ricci_scalar_symbolic(g, coords)
+# Use the symbolic curvature in your expr logic
+expr = constants['ALPHA'] * curvature_expr
 ```
 """
+
         if needs_manifold:
             physics_templates += """
 ### REFERENCE IMPLEMENTATION: Non-Euclidean Manifold / Memory Window
@@ -240,24 +248,40 @@ Your simulation code MUST reflect this algebraic reality. Do not fake or force l
 
         symbolic_setup = f"t, {dep_sym} = sp.symbols('t {dep_sym}')"
         
-        prompt = SIMULATION_GENERATION_PROMPT.format(
-            description=description,
-            dynamic_rules=dynamic_rulebook_section,
-            hypothesis_text=hypothesis.get('hypothesis', 'N/A'),
-            symbol_guard_block=symbol_guard_block,
-            blueprint=hypothesis.get('mathematical_blueprint', 'N/A'),
-            constants_list=constants_list or "None",
-            context=ctx,
-            guide=hypothesis.get('mathematical_implementation_guide', 'N/A'),
-            physics_templates=physics_templates,
-            primitive_mandate=primitive_mandate,
-            import_block=import_block,
-            symbolic_setup=symbolic_setup,
-            constants_dict_content=constants_dict_content or "'DUMMY': 1.0",
-            blueprint_symbols=str(blueprint_symbols),
-            ground_truth_constants=json.dumps(get_all_ground_truth(), indent=4),
-            target_complexity_score=hypothesis.get('target_complexity_score', 20)
-        )
+        # --- HIGH FIDELITY MANDATE (Creator Advice) ---
+        fidelity_injection = """
+### HIGH-FIDELITY EXECUTION STANDARDS:
+Your code MUST define and utilize these specific complexity parameters:
+- `TIME_STEPS = 2000` (Minimum to capture horizon dynamics)
+- `DT = 0.01` (Granular integration step)
+- `FAILURE_PROBABILITY = 0.02` (Systemic entropy factor)
+- **NUMPY CONVERSION**: You MUST use `sp.lambdify(..., 'numpy')` for all loop-based calculations. NEVER use `.subs()` or `.evalf()` for numerical updates.
+Implement a loop that processes these steps, incorporating the entropy factor into the state update.
+"""
+        if "Black Hole" in hypothesis.get('topic', '') or "Metric" in str(hypothesis):
+            fidelity_injection += "\n**VRAM MANDATE**: This is a high-fidelity simulation. Use 500x500 or larger numerical grids where applicable. Your matrices must be real 4x4 spacetime tensors. Placeholder code will be REJECTED. Utilize the 288GB cluster capacity.\n"
+        
+        try:
+            prompt = SIMULATION_GENERATION_PROMPT.format(
+                description=description,
+                dynamic_rules=dynamic_rulebook_section,
+                hypothesis_text=hypothesis.get('hypothesis', 'Advanced Theory'),
+                symbol_guard_block=symbol_guard_block,
+                blueprint=blueprint_block,
+                constants_list=constants_list,
+                context=hypothesis.get('simulation_context', 'Scientific scenario'),
+                guide=hypothesis.get('mathematical_implementation_guide', 'N/A'),
+                physics_templates=physics_templates,
+                primitive_mandate=primitive_mandate + fidelity_injection,
+                import_block=import_block,
+                symbolic_setup=symbolic_setup,
+                constants_dict_content=constants_dict_content,
+                target_complexity_score=hypothesis.get('target_complexity_score', 40)
+            )
+        except KeyError as e:
+            if self.ui: self.ui.print_log(f"\033[1;31m[CRITICAL] Simulation Prompt Formatting Error: Missing Key {e}\033[0m")
+            return "Error: Internal mapping failure in laboratory generator."
+
         # Prioritize the specialized math engine for high-fidelity simulation generation
         return self._query_llm(prompt, model=model, temperature=0.2)
 

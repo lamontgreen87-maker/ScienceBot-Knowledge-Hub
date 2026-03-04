@@ -1,0 +1,3 @@
+api_url|http://195.26.233.93:30917/api/generate|ONLINE|['deepseek-r1:70b']
+api_url|http://198.13.252.23:14476/api/generate|ONLINE|['deepseek-r1:70b']
+secondary_gpu|http://69.30.85.228:22147/api/generate|ONLINE|['deepseek-r1:8b', 'deepseek-r1:32b']

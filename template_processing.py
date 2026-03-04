@@ -39,10 +39,10 @@ def validate_fractional_primitives(code):
         if re.search(r'grunwald_letnikov_diff\s*\([^,)]+\s*\)', code):
             issues.append("grunwald_letnikov_diff called with too few arguments.")
             
-    # Check for ricci_curvature_scalar usage
-    if "ricci_curvature_scalar" in code:
-        if "metric_func" not in code:
-            issues.append("ricci_curvature_scalar requires a 'metric_func' definition.")
+    # Check for ricci_scalar_symbolic usage
+    if "ricci_scalar_symbolic" in code:
+        if "sp.Matrix" not in code and "Matrix" not in code:
+            issues.append("ricci_scalar_symbolic requires an 'sp.Matrix' definition.")
             
     return issues
 
@@ -111,7 +111,7 @@ def validate_primitive_runtime(code):
     Only checks if the symbols exist and can be initialized.
     """
     issues = []
-    if "grunwald_letnikov_diff" in code or "ricci_curvature_scalar" in code:
+    if "grunwald_letnikov_diff" in code or "ricci_scalar_symbolic" in code:
         # We don't want to run the FULL simulation, just check if the primitives are loadable
         import subprocess
         import os
@@ -119,7 +119,7 @@ def validate_primitive_runtime(code):
         test_script = f"""
 import sys
 try:
-    from sci_utils import grunwald_letnikov_diff, ricci_curvature_scalar
+    from sci_utils import grunwald_letnikov_diff, ricci_scalar_symbolic
     # Success if we can import them
     sys.exit(0)
 except Exception as e:

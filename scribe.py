@@ -10,6 +10,9 @@ class Scribe(BaseModule):
         self.memory_dir = self.config['paths']['memory']
         self.sync = GitHubSync(self.config, ui)
         self.sync.initialize_repo()
+        
+        from vector_memory import VectorMemory
+        self.vector_mem = VectorMemory(self.config)
 
     def _append_past_topic(self, topic):
         """Maintains a lightweight O(1) cache of past topics to avoid os.walk bottlenecks."""
@@ -34,6 +37,14 @@ class Scribe(BaseModule):
         save_path = os.path.join(field_dir, filename)
         self._safe_save_json(save_path, test_result)
         self._append_past_topic(topic)
+
+        # Vector Reflection
+        self.vector_mem.embed_research(
+            topic=topic,
+            text=f"Hypothesis: {test_result['hypothesis']['hypothesis']}\nBlueprint: {test_result['hypothesis']['mathematical_blueprint']}",
+            metadata={"field": field, "score": test_result.get('evaluation', {}).get('significance_score', 0)},
+            is_failure=False
+        )
 
         # Add to Review Queue immediately (Peer-Review Protocol 4002)
         queue_path = os.path.join(self.memory_dir, "review_queue.json")
@@ -72,6 +83,14 @@ class Scribe(BaseModule):
         self._safe_save_json(save_path, test_result)
         self._append_past_topic(topic)
 
+        # Vector Reflection
+        self.vector_mem.embed_research(
+            topic=topic,
+            text=f"Hypothesis: {test_result['hypothesis']['hypothesis']}\nBlueprint: {test_result['hypothesis']['mathematical_blueprint']}",
+            metadata={"field": "verified_knowledge"},
+            is_failure=False
+        )
+
         if self.ui:
             self.ui.print_log(f"[SCRIBE] Verified knowledge archived at {save_path}")
         return save_path
@@ -81,23 +100,49 @@ class Scribe(BaseModule):
         
         journal = self._safe_load_json(journal_path, default=[])
                 
+        from json_utils import extract_json
+        
         evaluation = discovery.get('evaluation', {})
         prompt = f"""
 Topic: {discovery['hypothesis']['topic']}
 Hypothesis: {discovery['hypothesis']['hypothesis']}
+Research Brief: {discovery['hypothesis'].get('simulation_context', 'N/A')}
+Blueprint: {discovery['hypothesis'].get('mathematical_blueprint', 'N/A')}
 Review Score: {evaluation.get('significance_score', 'N/A')}
 Verdict: {evaluation.get('verdict', 'N/A')}
 
-Write a DETAILED SCIENTIFIC SUMMARY for the permanent journal. 
-Include the exact mathematical laws confirmed and one 'lesson learned' for future researchers.
-JSON: {{"summary": "..."}}
+Write a RIGOROUS SCIENTIFIC SUMMARY for the permanent journal.
+This entry must be a 'Knowledge Anchor' for future research.
+
+Include:
+1. THE CORE LAW: The final mathematical equation confirmed by simulation.
+2. VERIFIED CONSTANTS: List specific numerical values (e.g. ALPHA=0.729) that passed audit.
+3. DISCOVERY INSIGHT: One non-obvious relationship observed between variables.
+4. FAILED PATHS: What specific math or assumptions failed during this research.
+5. OPEN QUESTIONS: 1-2 falsifiable questions for next-gen models.
+
+Respond in JSON ONLY:
+{{"summary": "A 5-8 sentence technical synthesis containing the equations and constants...", "open_questions": "..."}}
 """
         response = self._query_llm(prompt, model=self.config['hardware']['reasoning_model'])
-        try:
-            summary_data = json.loads(response[response.find('{'):response.rfind('}')+1])
-            summary_text = summary_data.get('summary', f"Exploration of {discovery['hypothesis']['topic']} complete.")
-        except:
-            summary_text = f"Scientific verification of {discovery['hypothesis']['topic']} concluded."
+        summary_data = extract_json(response)
+        
+        summary_text = ""
+        if summary_data and 'summary' in summary_data:
+            text = summary_data['summary']
+            # Validation: Must be technical and long enough (Suggestion 3466)
+            if len(text) > 200 and any(kw in text.upper() for kw in ['LAW', 'CONSTANTS', 'CONFIRMED', 'SYMBOLIC', 'RELATIONSHIP']):
+                summary_text = text
+            else:
+                if self.ui:
+                    self.ui.print_log(f"[SCRIBE] WARNING: LLM summary failed technical depth check. Content: {text[:50]}...")
+
+        if not summary_text:
+            # High-Fidelity Fallback: Construct a technical summary from the discovery dict if LLM fails
+            summary_text = f"TECHNICAL MEMORANDUM: Verification of {discovery['hypothesis']['topic']} (Significance: {discovery.get('evaluation', {}).get('significance_score')}). "
+            summary_text += f"Blueprint: {discovery['hypothesis'].get('mathematical_blueprint')}. "
+            summary_text += f"Constants: {json.dumps(discovery['hypothesis'].get('required_constants'))}. "
+            summary_text += "Automatic synthesis triggered due to LLM fidelity failure."
 
         journal.append({
             "topic": discovery['hypothesis']['topic'],

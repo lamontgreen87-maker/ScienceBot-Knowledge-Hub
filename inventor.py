@@ -44,7 +44,7 @@ class Inventor(BaseModule):
         }}
         JSON:"""
             
-        target_model = self.config['hardware'].get('reasoning_model') or self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('reasoning_model') or self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         response = self._query_llm(prompt, model=target_model)
         try:
             return json.loads(response[response.find('{'):response.rfind('}')+1])
@@ -58,7 +58,7 @@ class Inventor(BaseModule):
         
         context = f"\nExisting Tech Context: {existing_tech['tech_synthesis']}" if existing_tech else ""
         
-        target_model = self.config['hardware'].get('reasoning_model') or self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('reasoning_model') or self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         response = self._query_llm(prompt, model=target_model)
         if not response:
             return {

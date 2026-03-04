@@ -24,7 +24,7 @@ Respond in JSON format:
 }}
 JSON:"""
         
-        target_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         response = self._query_llm(prompt, model=target_model)
         try:
             json_str = response[response.find('{'):response.rfind('}')+1]
@@ -58,7 +58,7 @@ JSON:"""
         
         Research Statement:"""
         
-        target_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         return self._query_llm(prompt, model=target_model)
 
     def distill_technical_guidance(self, search_results):
@@ -79,5 +79,5 @@ JSON:"""
         
         Engineering Consensus:"""
 
-        target_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         return self._query_llm(prompt, model=target_model)

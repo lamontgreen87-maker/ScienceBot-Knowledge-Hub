@@ -21,7 +21,7 @@ class Tutor(BaseModule):
         )
         
         # Tutors handle requests quickly so we use the fast model
-        fast_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        fast_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         response = self._query_llm(payload_prompt, model=fast_model, timeout=60, temperature=0.7)
         
         if response:

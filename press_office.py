@@ -32,7 +32,7 @@ Respond in Markdown format.
 """
 
         # Tier 3 (Fast Tier) for creative writing
-        target_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+        target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         release_text = self._query_llm(prompt, model=target_model)
         if not release_text:
             return None

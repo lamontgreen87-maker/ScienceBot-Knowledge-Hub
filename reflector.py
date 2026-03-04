@@ -149,7 +149,7 @@ concrete fixes for the hypothesis generator and code repairer.
                                  hypothesis spec. Wrong or swapped values = REJECT.
 4. Primitive Alignment         - If the hypothesis mentions fractional calculus / GL-diff or
                                  Ricci curvature, those EXACT functions must appear in the
-                                 code: grunwald_letnikov_diff(), ricci_curvature_scalar().
+                                 code: grunwald_letnikov_diff(), ricci_scalar_symbolic().
 5. Multiplier Rule             - NEVER use .subs(). Constants must be algebraic multipliers.
 6. Statistical Transparency    - Output must contain a real NUMERICAL p-value, not a placeholder.
 7. Hypothesis-Math Alignment   - The symbolic `expr` must reflect the hypothesis unique physics,
@@ -622,3 +622,68 @@ JSON:"""
             return result
         
         return None
+
+    def generate_creator_report(self):
+        """
+        Synthesizes a high-level architectural report for the human creator.
+        Looks at recent failures, successes, and micro-sleep lessons to provide
+        structural advice on how to improve the swarm's code/prompts.
+        """
+        if self.ui:
+            self.ui.set_status("Generating Creator Report...")
+
+        failures = self._safe_load_json(self.failure_log, default=[])
+        journal_path = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
+        journal = self._safe_load_json(journal_path, default=[])
+        lessons = self._safe_load_json(self.micro_sleep_path, default=[])
+
+        # Prepare context for the reasoner
+        failure_brief = "\n".join([f"- {f.get('topic')}: {str(f.get('audit_reason'))[:120]}" for f in failures[-10:]])
+        success_brief = "\n".join([f"- {j.get('topic')}: {str(j.get('summary'))[:120]}" for j in journal[-5:]])
+        lesson_brief = "\n".join([f"- {l.get('lesson')}" for l in lessons[-5:]])
+
+        prompt = f"""You are the Lead Architect of this Scientific Swarm.
+Your job is to provide a "Macro-level" assessment of the system's performance and give the human creator ONE or TWO extremely high-impact technical recommendations to improve the framework.
+
+=== SYSTEM STATUS ===
+Recent Successes:
+{success_brief or "None yet."}
+
+Recent Failures:
+{failure_brief or "None yet."}
+
+Recent Micro-Sleep Lessons:
+{lesson_brief or "None yet."}
+
+=== YOUR TASK ===
+1. Assess the "Mental Health" of the swarm (State: Healthy, Stagnant, or Fragmented).
+2. Identify the single biggest "Technical Debt" item holding back discoveries.
+3. Provide 1-2 concrete, technical improvements for the HUMAN DEVELOPER.
+   - Example: "Add a second derivative check to sci_utils.py to catch Kerr metric divergence."
+   - Example: "Shorten the research_brief to 1500 tokens to reduce LLM confusion."
+
+Respond in JSON ONLY:
+{{
+    "mental_health": "Healthy | Stagnant | Fragmented",
+    "technical_debt": "What is the bottleneck?",
+    "recommendations": [
+        "First recommendation",
+        "Second recommendation"
+    ],
+    "architectural_vision": "1-sentence summary of where the swarm should evolve next."
+}}
+JSON:"""
+
+        target_model = self.config['hardware'].get('reasoning_model')
+        response = self._query_llm(prompt, model=target_model)
+        report = self._extract_json(response)
+        
+        if not report:
+            return {
+                "mental_health": "Unknown",
+                "technical_debt": "Incomplete data.",
+                "recommendations": ["Ensure local models are responsive."],
+                "architectural_vision": "Focus on system stability."
+            }
+            
+        return report

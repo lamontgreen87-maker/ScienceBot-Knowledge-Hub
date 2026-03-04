@@ -8,7 +8,7 @@ echo "[RESILIENT-SWARM] Starting..."
 start_cluster() {
     echo "[RUNPOD] Launching Massive 3-GPU Cluster (0,1,2) on Port 11434 [288GB VRAM]..."
     # Pooling GPUs to support massive 70B+ model context
-    CUDA_VISIBLE_DEVICES=0,1,2 OLLAMA_NUM_PARALLEL=4 OLLAMA_MAX_LOADED_MODELS=1 OLLAMA_HOST=0.0.0.0:11434 nohup ollama serve > ollama_cluster.log 2>&1 &
+    CUDA_VISIBLE_DEVICES=0,1,2 OLLAMA_NUM_PARALLEL=16 OLLAMA_MAX_LOADED_MODELS=5 OLLAMA_HOST=0.0.0.0:11434 nohup ollama serve > ollama_cluster.log 2>&1 &
 }
 
 # Kill any existing ollama processes to start fresh

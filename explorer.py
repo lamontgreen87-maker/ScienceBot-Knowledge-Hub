@@ -8,6 +8,8 @@ class CuriosityEngine(BaseModule):
     def __init__(self, config, ui=None):
         super().__init__(config, ui)
         self.failure_log = os.path.join(self.config['paths']['memory'], "failures.json")
+        from vector_memory import VectorMemory
+        self.vector_mem = VectorMemory(self.config)
 
     def get_new_topic(self, past_topics=None, fast_mode=False):
         """Delegates to strategic_topic_selection() with DeepSeek reasoning."""
@@ -33,42 +35,22 @@ class CuriosityEngine(BaseModule):
         physics_str = ", ".join(physics_types)
 
         # ── Gather context ──────────────────────────────────────────────────────
-        # Recent verified discoveries
-        discoveries_dir = self.config['paths']['discoveries']
-        discoveries_ctx = []
-        if os.path.exists(discoveries_dir):
-            files = sorted([f for f in os.listdir(discoveries_dir) if f.endswith('.json')])[-50:]
-            for fn in files:
-                d = self._safe_load_json(os.path.join(discoveries_dir, fn), default={})
-                if isinstance(d, dict) and d:
-                    hyp_text = str(d.get('hypothesis', {}).get('hypothesis', '') or '')
-                    discoveries_ctx.append(f"- {hyp_text[:120]}")
+        # Use Vector memory for more relevant strategic context
+        recent_successes = self.vector_mem.query_past_research("General Scientific Discoveries", n_results=10, filter_type="success")
+        recent_failures = self.vector_mem.query_past_research("Scientific Failures and Audit Rejections", n_results=10, filter_type="failure")
 
-        # Recent failures — structure: {"data": {"hypothesis": {"hypothesis": "..."}}, ...}
-        failures = self._safe_load_json(self.failure_log, default=[])
-        failure_ctx = []
-        for fv in failures[-50:]:
-            try:
-                data = fv.get('data', {}) or {}
-                if isinstance(data, dict):
-                    h = data.get('hypothesis', {}) or {}
-                    text = str(h.get('hypothesis', '') or '') if isinstance(h, dict) else ''
-                else:
-                    text = ''
-                reason = str(fv.get('audit_reason', '') or '')
-                failure_ctx.append(f"- {text[:80]} [{reason[:40]}]")
-            except Exception:
-                pass
+        discoveries_ctx = [f"- {r['topic']}: {r['content'][:120]}" for r in recent_successes]
+        failure_ctx = [f"- {r['topic']}: {r['content'][:120]} [FAIL]" for r in recent_failures]
 
-        # Journal
+        # Journal fallback for open questions
         journal_path = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
         journal = self._safe_load_json(journal_path, default=[])
         open_questions = [e.get('open_questions', '') for e in journal[-3:] if e.get('open_questions')]
 
         context = (
-            f"Verified discoveries:\n" + "\n".join(discoveries_ctx or ["None yet."]) +
-            f"\n\nRecent failures:\n" + "\n".join(failure_ctx or ["None."]) +
-            f"\n\nOpen questions from journal:\n" + "\n".join(open_questions or ["None."])
+            f"Recent Verified Discoveries (Vector Memory):\n" + "\n".join(discoveries_ctx or ["None yet."]) +
+            f"\n\nRecent Failures (Vector Memory):\n" + "\n".join(failure_ctx or ["None."]) +
+            f"\n\nOpen Questions from Journal:\n" + "\n".join(open_questions or ["None."])
         )
 
         question = (
@@ -77,6 +59,7 @@ class CuriosityEngine(BaseModule):
             f"Focus areas available: {', '.join(shuffled_focus[:7])}. "
             f"Avoid these past topics: {', '.join(past_topics[-10:])}. "
             f"CRITICAL: Choose a topic that maps clearly to one of these frameworks: {physics_str} — NOT abstract theory. "
+            f"MANDATORY: Prioritize 'PARADOX-LEVEL' topics that involve extreme singularities, non-Euclidean manifolds, or quantum entanglement at scale. "
             f"Respond with ONLY the topic name (max 8 words)."
         )
 
@@ -120,31 +103,59 @@ Topic:"""
         return f"{random.choice(focus_areas)} Theoretical Research"
 
 
-    def decompose_topic(self, topic, study_mode=False):
+    def decompose_topic(self, topic, study_mode=False, count=16):
         """Breaks a broad topic into specific research vectors."""
         if self.ui:
-            self.ui.print_log(f"[EXPLORER] Decomposing broad topic: {topic} (StudyMode: {study_mode})")
+            self.ui.print_log(f"[EXPLORER] Decomposing broad topic: {topic} (StudyMode: {study_mode}, Vectors: {count})")
             
-        # 70B Intelligence is required for high-fidelity "Atomic" decomposition.
-        # _query_llm handles the swap to Llama 3.3 for speed when deep_research_mode is OFF.
         target_model = "deepseek-r1:70b"
         
-        prompt = f"""
-Topic: {topic}
+        # Build just enough example lines to show format without biasing count
+        example_lines = "\n".join(
+            f'        {{"name": "Specific Vector {i+1}", "area": "Focus"}}' + ("," if i < count - 1 else "")
+            for i in range(min(count, 3))
+        )
+        if count > 3:
+            example_lines += f'\n        ... (total of {count} vectors)'
 
-As a Lead Scientist, perform a **LOGIC HOLE AUDIT** of this research vector.
-1. Identify 3 specific "Logic Holes" or missing mathematical links in this topic.
-2. Formulate 3 "Synthesis Bridges" (research vectors) designed to resolve these holes.
+        # ── Semantic Recall (Top 3 Successes, Top 3 Failures) ────────────────────
+        past_successes = self.vector_mem.query_past_research(topic, n_results=3, filter_type="success")
+        past_failures = self.vector_mem.query_past_research(topic, n_results=3, filter_type="failure")
+
+        success_ctx = "\n".join([f"- {r['topic']}: SUCCESS. Results: {r['content'][:150]}..." for r in past_successes])
+        failure_ctx = "\n".join([f"- {r['topic']}: FAILURE. Pitfall: {r['content'][:150]}..." for r in past_failures])
+
+        past_context = ""
+        if success_ctx or failure_ctx:
+            past_context = "\n### SEMANTIC RECALL (PAST ATTEMPTS):\n"
+            if success_ctx: past_context += f"**Validated Successes**:\n{success_ctx}\n"
+            if failure_ctx: past_context += f"**Critical Failures to Avoid**:\n{failure_ctx}\n"
+
+        prompt = f"""Topic: {topic}
+{past_context}
+
+As a Lead Scientist, perform a **LOGIC HOLE AUDIT** based on PEER-REVIEWED PHYSICS (arXiv, OpenAlex).
+MANDATORY: Do NOT invent new framework names or acronyms (e.g., USGD-H). Use established concepts.
+1. Identify exactly {count} specific "Logic Holes" or missing mathematical links in this topic that are documented in the literature.
+2. Formulate exactly {count} "Synthesis Bridges" (research vectors) designed to resolve these holes.
 3. Each bridge must be "Atomic" (solvable in 3 minutes) but "Structural" (contributes to the larger theory).
+4. **PRIORITIZATION**: Mark vectors that involve direct paradoxes, singularity math, or "High Curiosity" anomalies with a `"high_curiosity": true` flag. 
+
+MANDATORY: Do NOT invent new framework names, acronyms, or non-standard physical constants (e.g., alpha=0.729). Use ONLY established physics from peer-reviewed literature.
+MANDATORY: Forbid "Event Horizon" unless it includes specific Kerr/Schwarzschild metric requirements.
+MANDATORY: You MUST return exactly {count} vectors. No more, no fewer.
 
 You MUST think carefully about this before answering. 
 Start your response with a <think>...</think> block to reason through the physics.
 After thinking, respond in strict JSON format:
 {{
     "vectors": [
-        {{"name": "Specific Vector 1", "area": "Focus"}},
-        {{"name": "Specific Vector 2", "area": "Focus"}},
-        {{"name": "Specific Vector 3", "area": "Focus"}}
+        {{
+            "name": "Specific Vector Name",
+            "area": "Focus Area",
+            "high_curiosity": true/false
+        }},
+        ...
     ]
 }}
 """
@@ -154,6 +165,7 @@ After thinking, respond in strict JSON format:
             return json.loads(json_str).get('vectors', [])
         except:
             return [{"name": topic, "area": "General"}]
+
 
     def synthesize(self, topic, study_mode=False):
         discoveries_dir = self.config['paths']['discoveries']
@@ -383,7 +395,7 @@ Your hypothesis MUST be a direct, falsifiable answer to this question.
                 target_model = self.config['hardware'].get('theorist_model') or self.config['hardware'].get('reasoning_model')
                 label = "[LARGE THEORIST]"
             else:
-                target_model = self.config['hardware'].get('fast_model', 'llama3.1:8b')
+                target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
                 label = "[GUESSER]"
 
         if self.ui:
@@ -451,6 +463,7 @@ Your hypothesis MUST be a direct, falsifiable answer to this question.
 
         prompt = f"""
 You are the Lead Scientific Theorist. You have been given research data from {len(research_contexts)} parallel investigation vectors.
+MANDATORY: Do NOT invent or name new theoretical frameworks (no USGD-H, etc.). Use established terminology.
 Your task is to generate one high-fidelity hypothesis for EACH context.
 
 Topic: {topic}
@@ -554,6 +567,14 @@ Respond in strict JSON format:
         }
         log.append(log_entry)
         self._safe_save_json(self.failure_log, log)
+
+        # Vector Reflection
+        self.vector_mem.embed_research(
+            topic=topic,
+            text=f"Reason: {audit_reason}\nHypothesis: {data.get('hypothesis', {}).get('hypothesis', 'N/A')}",
+            metadata={"audit_reason": audit_reason},
+            is_failure=True
+        )
 
     def synthesize(self, topic, study_mode=False):
         """

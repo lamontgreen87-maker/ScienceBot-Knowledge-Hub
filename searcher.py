@@ -18,6 +18,14 @@ class Searcher(BaseModule):
         else:
             print(msg)
         results = []
+        noise_filters = (
+            " -academy -cosmetology -hair -beauty -fashion -salon"
+            " -grammar -linguistics -etymology -dictionary -prefix -hyphenation"
+        )
+        # Sanitize special chars that break DDG queries (& and | get misread as operators)
+        safe_query = query.replace(" & ", " and ").replace("&", "and")
+        # Force scientific sources and block English grammar/generic sites
+        clean_query = safe_query + " physics" + noise_filters + " -site:english.stackexchange.com -site:ell.stackexchange.com"
         try:
             import contextlib
             import io
@@ -26,7 +34,7 @@ class Searcher(BaseModule):
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     with DDGS() as ddgs:
-                        for r in ddgs.text(query, max_results=max_results):
+                        for r in ddgs.text(clean_query, max_results=max_results):
                             results.append({
                                 "title": r['title'],
                                 "body": r['body'],
@@ -136,8 +144,24 @@ class Searcher(BaseModule):
             return "No recent data found."
         
         summary = ""
+        total_rigor = 0
+        math_symbols = ['∫', '∑', '∆', '∂', '√', '∞', '≈', '≠', '≡', '\\frac', '\\delta', '\\rho']
+        tech_keywords = ['tensor', 'metric', 'manifold', 'geodesic', 'spinor', 'lagrangian', 'hamiltonian']
+        
         for i, res in enumerate(results):
-            summary += f"Source {i+1}: {res['title']}\nSnippet: {res['body']}\n\n"
+            text = (res['title'] + " " + res['body']).lower()
+            score = 1 # Base score
+            
+            # Boost score for math/tech content
+            if any(sym in text for sym in math_symbols): score += 3
+            if any(word in text for word in tech_keywords): score += 2
+            if res.get('source') in ['arXiv', 'OpenAlex']: score += 2
+            
+            total_rigor += score
+            summary += f"Source {i+1} [Rigor:{score}]: {res['title']}\nSnippet: {res['body']}\n\n"
+        
+        avg_rigor = total_rigor / len(results) if results else 0
+        summary = f"OVERALL RIGOR SCORE: {avg_rigor:.1f}/10\n\n" + summary
         return summary
 
     def contemplate(self, topic):
@@ -187,8 +211,9 @@ class Searcher(BaseModule):
         if internal_knowledge and self.ui:
             self.ui.print_log("[CONTEMPLATION] Found prior internal knowledge to build upon.")
 
-        # ── Round 1: Broad sweep (Web + Academic) ────────────────────────────────
-        broad_results = self.search(f"current research frontiers {topic} 2024 2025", max_results=5)
+        # ── Round 1: Broad sweep (Academic Priority) ────────────────────────────────
+        # Force academic focus to avoid DCOM/forum "trash data"
+        broad_results = self.search(f"{topic} physics mathematical framework derivation -forum -support -setup -error", max_results=5)
         
         # Mandatory Scientific Sweep (Suggestion 3466)
         academic_results = self.search_academic(topic, max_results=5)
@@ -209,7 +234,8 @@ class Searcher(BaseModule):
 {broad_summary[:2000]}
 
 Based on this, generate exactly 3 targeted follow-up search queries to fill knowledge gaps.
-Focus on: (1) mathematical models or equations used, (2) recent experimental anomalies or open problems, (3) competing theories or alternative mechanisms.
+Focus on: (1) formal mathematical derivations or LaTeX equations, (2) recent experimental anomalies or 'Logic Holes' in current peer-reviewed theories, (3) specific numerical constants or scaling laws.
+MANDATORY: Append '-forum -support -setup -error -DCOM' to all queries to filter out low-rigor technical noise.
 
 Respond ONLY with a JSON array of 3 strings:
 ["query one", "query two", "query three"]
@@ -248,28 +274,25 @@ JSON:"""
         if self.ui:
             self.ui.print_log("[CONTEMPLATION] Synthesizing research brief...")
 
-        synthesize_prompt = f"""You are a Lead Research Scientist. Synthesize this multi-source research into a concise brief.
-
+        synthesize_prompt = f"""You are a Lead Research Scientist. Synthesize this multi-source research into a rigorous technical brief.
+MANDATORY: Do NOT invent or name new theoretical frameworks (no USGD-H, etc.). Use established terminology from the provided sources.
 Topic: {topic}
 
-=== BROAD RESEARCH ===
-{broad_summary[:1200]}
+{broad_summary}
 
-=== ACADEMIC/PEER-REVIEWED FINDINGS ===
-{academic_summary[:1500]}
+{academic_summary}
 
-=== TARGETED FOLLOW-UPS ===
-{all_follow_up[:2000]}
+{all_follow_up}
 
-=== PRIOR INTERNAL KNOWLEDGE ===
-{internal_knowledge[:1500] if internal_knowledge else "No immediate prior findings on this exact vector."}
+{internal_knowledge if internal_knowledge else ""}
 
-Write a research brief (4-6 sentences) covering:
-1. The current state of the field and dominant theories.
-2. The key open problems or anomalies that need explaining.
-3. The mathematical frameworks currently in use.
-4. Where the most promising research opportunities lie.
+Write a technical research brief (4-6 sentences) covering:
+1. The **Mathematical Framework** (PDEs, Tensors, etc.) currently governing this topic.
+2. The **Logic Hole**: Identify a specific contradiction or missing link in the data.
+3. **Validated Constants**: Mention any specific numerical values found. MANDATORY: Do NOT invent or name new theoretical frameworks (no USGD-H, etc.) or non-standard constants (e.g., alpha=0.729). Use only what is in the provided sources.
+4. **Research Vector**: Where the most promising mathematical breakthrough lies.
 
+Use LaTeX notation for equations.
 Research Brief:"""
 
         brief = self._query_llm(synthesize_prompt)

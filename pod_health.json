@@ -1,0 +1,63 @@
+[
+  {
+    "cat": "api_url",
+    "url": "http://194.68.245.59:22113/api/generate",
+    "status": "OFFLINE",
+    "error": "HTTPConnectionPool(host='194.68.245.59', port=22113): Max retries exceeded with url: /api/tags (Caused by NewConnectionError(\"HTTPConnection(host='194.68.245.59', port=22113): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  },
+  {
+    "cat": "api_url",
+    "url": "http://69.30.85.45:22068/api/generate",
+    "status": "OFFLINE",
+    "error": "HTTPConnectionPool(host='69.30.85.45', port=22068): Max retries exceeded with url: /api/tags (Caused by NewConnectionError(\"HTTPConnection(host='69.30.85.45', port=22068): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  },
+  {
+    "cat": "api_url",
+    "url": "http://69.30.85.149:22039/api/generate",
+    "status": "OFFLINE",
+    "error": "HTTPConnectionPool(host='69.30.85.149', port=22039): Max retries exceeded with url: /api/tags (Caused by NewConnectionError(\"HTTPConnection(host='69.30.85.149', port=22039): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  },
+  {
+    "cat": "api_url",
+    "url": "http://194.68.245.19:22025/api/generate",
+    "status": "OFFLINE",
+    "error": "HTTPConnectionPool(host='194.68.245.19', port=22025): Max retries exceeded with url: /api/tags (Caused by NewConnectionError(\"HTTPConnection(host='194.68.245.19', port=22025): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  },
+  {
+    "cat": "api_url",
+    "url": "http://69.30.85.117:22172/api/generate",
+    "status": "OFFLINE",
+    "error": "HTTPConnectionPool(host='69.30.85.117', port=22172): Max retries exceeded with url: /api/tags (Caused by NewConnectionError(\"HTTPConnection(host='69.30.85.117', port=22172): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  },
+  {
+    "cat": "api_url",
+    "url": "http://195.26.233.93:30917/api/generate",
+    "status": "ONLINE",
+    "models": [
+      "deepseek-r1:70b"
+    ]
+  },
+  {
+    "cat": "api_url",
+    "url": "http://198.13.252.23:14476/api/generate",
+    "status": "ONLINE",
+    "models": [
+      "deepseek-r1:70b"
+    ]
+  },
+  {
+    "cat": "secondary_gpu",
+    "url": "http://69.30.85.45:22107/api/generate",
+    "status": "OFFLINE",
+    "error": "HTTPConnectionPool(host='69.30.85.45', port=22107): Max retries exceeded with url: /api/tags (Caused by NewConnectionError(\"HTTPConnection(host='69.30.85.45', port=22107): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))"
+  },
+  {
+    "cat": "secondary_gpu",
+    "url": "http://69.30.85.228:22147/api/generate",
+    "status": "ONLINE",
+    "models": [
+      "deepseek-r1:8b",
+      "deepseek-r1:32b"
+    ]
+  }
+]

@@ -1,0 +1,28 @@
+{
+    "FILING_STATUS": "DISPROVEN — moved from 01_breakthroughs to 04_failed_or_trivial",
+    "DISPROVEN_BY": "External statistical analysis (Antigravity, 2026-03-02)",
+    "DISPROVEN_METHOD": "Sieve of Eratosthenes to 10^7, t-test of gap ratios vs phi, KS test vs Poisson on 664,579 primes",
+    "DISPROVEN_RESULT": "Mean gap ratio = 2.1086 (NOT phi=1.618). t=123.72, p~0. phi hypothesis rejected at p<0.001. The original simulation returned True without any actual proof — circular reasoning.",
+    "CORRECT_FILING": "discoveries/02_confirmed_theory/discovery_prime_gaps_gue_statistics.json",
+    "hypothesis": {
+        "topic": "Prime Number Distribution",
+        "hypothesis": "The recursive complexity of Prime Number Distribution can be simplified by a factor of 1.618.",
+        "test_params": {
+            "iterations": 1000
+        }
+    },
+    "raw_output": "True",
+    "status": "INVALID — simulation never tested the claim, just returned True",
+    "invention": {
+        "name": "Project Prime-High",
+        "concept": "A specialized tool that applies Prime Number Distribution to solve High latency in real-time scientific data processing.",
+        "technical_specs": "Optimized parameters derived from verified lab tests.",
+        "estimated_impact": "High"
+    },
+    "evaluation": {
+        "significance_score": 0,
+        "novelty": "None — claim is false. Gap ratios do not converge to phi.",
+        "community_alert": false,
+        "verdict": "RETRACTED. See discovery_prime_gaps_gue_statistics.json for the correct finding."
+    }
+}

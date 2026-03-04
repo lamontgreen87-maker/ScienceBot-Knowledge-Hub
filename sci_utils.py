@@ -76,6 +76,31 @@ class ScientificReport:
         all_conservation_pass = all(a["passes"] for a in self.conservation_audits)
         print("True" if all_conservation_pass else "False")
 
+class SymbolGuard:
+    """
+    Ensures that coordinate symbols and parameters are correctly defined 
+    before performing complex tensor or symbolic operations.
+    Inspired by 'Symbol Guard' utility mandate.
+    """
+    @staticmethod
+    def verify_symbols(local_scope, required=None):
+        """
+        Verifies that specific SymPy symbols exist in the provided scope.
+        Default required: t, r, theta, phi, M, a
+        """
+        import sympy as sp
+        if required is None:
+            required = ['t', 'r', 'theta', 'phi', 'M', 'a']
+        
+        missing = []
+        for s in required:
+            if s not in local_scope or not isinstance(local_scope[s], sp.Symbol):
+                missing.append(s)
+        
+        if missing:
+            raise NameError(f"[SYMBOL-GUARD] Protection violation: Missing required SymPy symbols: {', '.join(missing)}. "
+                           f"Ensure they are declared using sp.symbols at the start of the simulation.")
+        return True
 
 def verify_power_law(scales, values, expected_alpha=None, r_threshold=0.98, min_decades=2.0):
     """
@@ -478,6 +503,45 @@ def ricci_curvature_scalar(metric_matrix_func, point_coords):
     # 6. Evaluate at point
     final_scalar = ricci_scalar_expr.subs(point_coords)
     return float(sp.simplify(final_scalar))
+
+def ricci_scalar_symbolic(metric_matrix, coords_list):
+    """
+    Returns the SymPy expression for the Ricci Scalar of a metric matrix.
+    Useful for Case 3 (IMMUTABLE LAW) where symbols are required.
+    """
+    import sympy as sp
+    dim = len(coords_list)
+    g = metric_matrix
+    g_inv = g.inv()
+    
+    christoffel = sp.MutableDenseNDimArray.zeros(dim, dim, dim)
+    for i in range(dim):
+        for j in range(dim):
+            for k in range(dim):
+                gamma_val = 0
+                for l in range(dim):
+                    term = sp.diff(g[l, j], coords_list[i]) + sp.diff(g[i, l], coords_list[j]) - sp.diff(g[i, j], coords_list[l])
+                    gamma_val += 0.5 * g_inv[k, l] * term
+                christoffel[k, i, j] = gamma_val
+    
+    ricci_tensor = sp.Matrix.zeros(dim, dim)
+    for i in range(dim):
+        for j in range(dim):
+            r_ij = 0
+            for k in range(dim):
+                r_ij += sp.diff(christoffel[k, i, j], coords_list[k])
+                r_ij -= sp.diff(christoffel[k, i, k], coords_list[j])
+                for m in range(dim):
+                    r_ij += christoffel[m, i, j] * christoffel[k, m, k]
+                    r_ij -= christoffel[m, i, k] * christoffel[k, m, j]
+            ricci_tensor[i, j] = r_ij
+            
+    ricci_scalar_expr = 0
+    for i in range(dim):
+        for j in range(dim):
+            ricci_scalar_expr += g_inv[i, j] * ricci_tensor[i, j]
+            
+    return sp.simplify(ricci_scalar_expr)
 
 def verify_primitive_alignment(code_str, primitives_list):
     """

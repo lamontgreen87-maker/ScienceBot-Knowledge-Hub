@@ -18,25 +18,27 @@ Research Data: {research_context}
 
 ### RESEARCH MANDATE:
 {rigor_mandate}
+5. **NO PLACEHOLDER PHYSICS**: Forbid generic equations (e.g., dy/dt = y/t) unless explicitly requested for simple tests.
+6. **MATHEMATICAL FIDELITY**: You MUST provide LaTeX-ready derivations in `derivation_steps` that bridge the hypothesis to the `mathematical_blueprint`.
 
 Respond in JSON ONLY (after your <think> block):
-{{
+{
     "topic": "{topic}",
     "hypothesis": "Non-trivial falsifiable prediction using specific physics vocabulary",
     "derivation_steps": "A rigorous step-by-step mathematical bridge from the theoretical concept to the RHS blueprint (50-100 words).",
     "simulation_context": "Physics/Environment context with literature-grounded terminology",
     "literature_grounding": "Citations supporting the use of specific constants/primitives",
     "physics_primer": "A rigorous technical overview (3-5 sentences) explaining why this mathematical approach is valid for the topic and how it aligns with the requested primitives.",
-    "atomic_specification": {{
-        "independent_variable": {{"name": "t", "symbol": "t"}},
-        "dependent_variable": {{"name": "y", "symbol": "y"}},
+    "atomic_specification": {
+        "independent_variable": {"name": "t", "symbol": "t"},
+        "dependent_variable": {"name": "y", "symbol": "y"},
         "symbolic_parameters": ["t", "y", "ALPHA", "BETA"]
-    }},
+    },
     "mathematical_blueprint": "SymPy-ready RHS (e.g. constants['ALPHA'] * y + constants['BETA'] * t)",
     "mathematical_implementation_guide": "High-Fidelity architecture (e.g. 50-step Rolling Memory Window with specific kernels. Resource depletion enabled.)",
-    "required_constants": {{ "ALPHA": "0.7291", "BETA": "1.4582" }},
+    "required_constants": { "ALPHA": "0.7291", "BETA": "1.4582" },
     "target_complexity_score": "75"
-}}
+}
 """
 
 # --- MANDATE VARIANTS ---
@@ -51,7 +53,7 @@ DEEP_RESEARCH_MANDATE = """
 1. **KNOWLEDGE CONSOLIDATION**: You MUST start with a <think> block synthesizing all atomic 8B findings into a coherent theoretical framework.
 2. **INCREMENTAL RIGOR**. Build meticulously on previously validated constants. NO "giant leaps" without proof.
 3. **DERIVATION FIELD**: You MUST include a rigorous `derivation_steps` field (50-100 words) explaining how this finding completes a specific logic hole.
-4. **COMPLEXITY**: Mandate 'non-linear state decay', 'stochastic resource pools', or 'Ricci-tensor curvature dynamics' to ensure physical fidelity.
+4. **EXTREME COMPLEXITY**: MANDATE 'non-linear tensor fields', 'singular boundary conditions (Kerr/Schwarzschild)', 'topological soliton dynamics', or 'fractal event-horizon encoding'. NO SIMPLE ODEs.
 5. **MANDATORY SKELETON**: All simulation code resulting from this hypothesis MUST follow the 5-part structure: # 1. SYMBOLIC SETUP, # 2. CONSTANT INJECTION, # 3. THE IMMUTABLE LAW, # 4. HIGH-FIDELITY EXECUTION, # 5. DATA LOGGING.
 """
 
@@ -79,7 +81,7 @@ Architecture: {guide}
 import numpy as np
 import sympy as sp
 {import_block}
-from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_scalar_symbolic
+from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_scalar_symbolic, SymbolGuard
 
 # 1. SYMBOLIC SETUP
 {symbolic_setup}
@@ -90,9 +92,13 @@ constants = {{
 }}
 
 # 3. THE IMMUTABLE LAW (Explicit RHS)
-# expr = constants['ALPHA'] * y + ... # Use algebraic multipliers. .subs() is FORBIDDEN.
+# NO .subs() ALLOWED FOR CALCULATIONS. 
+# Use constants['VAR'] as algebraic multipliers directly in the expression.
+# expr = constants['ALPHA'] * y + ... 
 
 # 4. HIGH-FIDELITY EXECUTION LOOP
+# MUST use sp.lambdify(symbols, expr, 'numpy') to convert symbolic logic to vectorized functions.
+# solve_ivp is discouraged; use manual loops for granular entropy/resource dynamics.
 # MUST implement granular state transitions (step-by-step).
 # MUST incorporate environmental factors (e.g., time_steps=200, initial_resource=100.0, resource_consumption_rate, failure_probability=0.05).
 # If the guide mentions 'Memory Windows', you MUST use a rolling buffer list.
@@ -110,18 +116,60 @@ constants = {{
 # report.finalize()
 ```
 
-### LITERAL LAWS (Violation = Immediate Rejection):
-- **MULTIPLIER RULE**: NO `.subs()`. Use constants['VAR'] as an algebraic multiplier.
-    - *INCORRECT*: `expr = y.subs(ALPHA, 0.5)`
+### COMPLIANT ONE-SHOT EXAMPLE (Copy this structure exactly):
+```python
+import numpy as np
+import sympy as sp
+from sci_utils import ScientificReport, verify_power_law, verify_conservation, verify_scale_invariance, symbolic_to_numeric_bridge, add_noise, verify_confidence_level, verify_structural_consistency, grunwald_letnikov_diff, ricci_scalar_symbolic
+
+# 1. SYMBOLIC SETUP
+t, y = sp.symbols('t y')
+# MANDATORY: Verify symbols exist before use
+SymbolGuard.verify_symbols(locals(), required=['t', 'y'])
+
+# 2. CONSTANT INJECTION
+# Use THE EXACT values provided in the constants list above.
+constants = {
+    'ALPHA': 0.729,  # Example: constant from hypothesis
+    'BETA': 1.458    # Example: constant from environment
+}
+
+# 3. THE IMMUTABLE LAW (Explicit RHS)
+# Use algebraic multipliers. .subs() is STRICTLY FORBIDDEN.
+expr = constants['ALPHA'] * y + constants['BETA'] * t
+
+# 4. HIGH-FIDELITY EXECUTION LOOP
+# Use a loop, not solve_ivp, to capture granular entropy.
+f_rhs = sp.lambdify((t, y), expr, 'numpy')
+t_vals = np.linspace(0, 10, 500)
+y_vals = [1.0]
+resource = 100.0
+for i in range(1, len(t_vals)):
+    resource -= 0.05 * y_vals[-1] # entropy factor
+    if resource < 0 or np.random.random() < 0.02: break
+    dy = f_rhs(t_vals[i], y_vals[-1])
+    y_vals.append(y_vals[-1] + dy * (t_vals[1] - t_vals[0]))
+sol_y = np.array(y_vals); sol_t = t_vals[:len(y_vals)]
+
+# 5. DATA LOGGING
+report = ScientificReport(simulation_id="demo_id")
+report.log_metric("final_state", float(sol_y[-1]))
+report.finalize()
+```
+
+### LITERAL LAWS (Violation = FATAL REJECTION):
+- **MULTIPLIER RULE**: NEVER use `.subs()` for final calculations. You MUST use `constants['VAR']` as an algebraic multiplier directly in the SymPy expression.
+    - *FATAL ERROR*: `expr = y.subs(ALPHA, 0.5)`
     - *CORRECT*: `expr = constants['ALPHA'] * y`
-- **NO PHYSICS DEFS**: NO `def` for physics laws. Use `sp.lambdify` or `lambda`.
-    - *INCORRECT*: `def rhs(t, y): return constants['ALPHA'] * y`
+- **NUMPY BACKEND MANDATE**: All symbolic expressions MUST be converted via `sp.lambdify(symbols, expr, 'numpy')` before evaluation in a loop. Evaluation via `.evalf()` or `.subs()` in a loop is FORBIDDEN.
     - *CORRECT*: `f_rhs = sp.lambdify((t, y), expr, 'numpy')`
+- **NO PHYSICS DEFS**: NO `def` for physics laws or derivatives. Use `sp.lambdify` or `lambda`. 
+    - *FATAL ERROR*: `def rhs(t, y): return constants['ALPHA'] * y`
 - **EXPLICIT CONSTANTS**: You MUST define a `constants = { ... }` dictionary in section #2 exactly matching the hypothesis requirements.
 
-- ARCHITECTURAL FIDELITY: If you promise 'Memory Windows' or 'Resource Depletion', they MUST be present in the code.
-- **ENERGY/MATHEMATICAL CONSERVATION**: You MUST implement an `ENERGY_CHECK` variable in your loop.
-- VOCABULARY ALIGNMENT: Use the physics terminology from the hypothesis in your comments and variables.
+- **RESOURCE DYNAMICS**: Implement an `initial_resource` and a `consumption_rate` variable to prevent infinite loops and simulate entropy.
+- **SYMBOL GUARD MANDATE**: You MUST call `SymbolGuard.verify_symbols(locals(), required=[...])` at the end of section #1. This prevents scope errors during tensor contractions.
+- VOCABULARY ALIGNMENT: Use the physics terminology (e.g., 'Schwarzschild Radius', 'Kerr Metric') from the hypothesis in your comments.
 """
 
 # === REPAIR PROMPT ===
@@ -170,9 +218,10 @@ for i in range(1, len(t_vals)):
 2.  Maintain the 5-part mandatory template: (1) Symbolic Setup, (2) Constant Injection, (3) Immutable Law, (4) High-Fidelity Execution, (5) DATA LOGGING.
 3.  Ensure ALL constants are used algebraically (e.g., `ALPHA * y`).
 4.  **CHECKLIST FOR SUCCESS (NON-NEGOTIABLE):**
-    - [ ] NO `def` blocks for physics laws or derivatives. Use `sp.lambdify` or `lambda`.
-    - [ ] NO `.subs()` inside the main simulation loop.
+    - [ ] NO `def` blocks for physics laws or derivatives. Use `sp.lambdify(..., 'numpy')`.
+    - [ ] NO `.subs()` or `.evalf()` used for final calculations or inside loops.
     - [ ] Use `sp.symbols` for all independent/dependent variables.
+    - [ ] **MANDATORY**: Call `SymbolGuard.verify_symbols(locals())` before any symbolic physics.
     - [ ] The simulation must produce a `ScientificReport` within the DATA LOGGING section.
 5.  Return ONLY the complete, corrected Python code.
 """

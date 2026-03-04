@@ -26,13 +26,26 @@ def calculate_swarm_expansion(config_path="config.json"):
 
     # 1. Aggregate unique GPU URLs (Multi-Port Support)
     urls = set()
-    if config['hardware'].get('api_url'): urls.add(config['hardware']['api_url'])
-    if config['hardware'].get('secondary_gpu'): urls.add(config['hardware']['secondary_gpu'])
+    api_url = config['hardware'].get('api_url')
+    if isinstance(api_url, list):
+        for u in api_url: urls.add(u)
+    elif api_url:
+        urls.add(api_url)
+
+    secondary_gpu = config['hardware'].get('secondary_gpu')
+    if isinstance(secondary_gpu, list):
+        for u in secondary_gpu: urls.add(u)
+    elif secondary_gpu:
+        urls.add(secondary_gpu)
+
     # Extract from mapping
     mapping = config['hardware'].get('gpu_mapping', {})
     for target in mapping.values():
         val = config['hardware'].get(target)
-        if val: urls.add(val)
+        if isinstance(val, list):
+            for u in val: urls.add(u)
+        elif val:
+            urls.add(val)
     
     total_loaded_vram = 0
     all_models = []
@@ -74,21 +87,19 @@ def calculate_swarm_expansion(config_path="config.json"):
             if detected_sum_gb > 12: TOTAL_CAPACITY_GB = 48 # Edge case
 
     # 3. Scaling Logic (Context windows are the primary cost on high-capacity nodes)
-    HEADROOM_GB = 25.0     # More headroom for the 397B MoE model to hydrate
-    WORKER_COST_GB = 18.0   # Qwen 3.5-27B / QwQ-32B cost (approx 15-18GB each)
+    HEADROOM_GB = 30.0     # More headroom for multiple high-param models
+    WORKER_COST_GB = 10.0   # Optimized for 8B models in Full Boar mode
     
     available_vram_gb = TOTAL_CAPACITY_GB - (total_loaded_vram / 1e9) - HEADROOM_GB
     
     recommended_workers = int(available_vram_gb // WORKER_COST_GB)
-    # Clip to 2-32 range for high-capacity clusters
-    max_cap = config['hardware'].get('turbo_workers', 24)
-    recommended_workers = max(2, min(recommended_workers, max_cap))
+    # Clip: never exceed the user-configured ceiling, never drop below 2
+    user_max = config['hardware'].get('max_swarm_workers', 4)
+    recommended_workers = max(2, min(recommended_workers, user_max))
 
     current_workers = config['hardware'].get('max_swarm_workers', 4)
-    
-    # Also scale the Fast Lane (8B researchers)
-    current_fast_lane = config['hardware'].get('fast_lane_concurrency', 4)
-    recommended_fast_lane = max(4, int(recommended_workers // 3))
+
+    # Note: fast_lane_concurrency is NOT autoscaled — those threads launch once at startup.
     
     # Check for offloading lag
     lag_detected = any(m.get('size', 0) > m.get('size_vram', 0) for m in all_models)
@@ -102,14 +113,14 @@ def calculate_swarm_expansion(config_path="config.json"):
     print(f"[AUTOSCALER] Available Headroom: {available_vram_gb:.2f} GB")
     print(f"[AUTOSCALER] Recommendation: {recommended_workers} workers (Current: {current_workers})")
 
-    if recommended_workers != current_workers or recommended_fast_lane != current_fast_lane:
+    if recommended_workers != current_workers:
+        print(f"[AUTOSCALER] WRITING TO CONFIG: {recommended_workers} workers.")
         config['hardware']['max_swarm_workers'] = recommended_workers
-        config['hardware']['fast_lane_concurrency'] = recommended_fast_lane
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=4)
-        print(f"[AUTOSCALER] Config UPDATED: {recommended_workers} workers, {recommended_fast_lane} fast-lanes.")
+        print(f"[AUTOSCALER] Config UPDATED: {recommended_workers} workers.")
     else:
-        print(f"[AUTOSCALER] No change required.")
+        print(f"[AUTOSCALER] No change required. Keeping {current_workers} workers.")
 
 if __name__ == "__main__":
     calculate_swarm_expansion()

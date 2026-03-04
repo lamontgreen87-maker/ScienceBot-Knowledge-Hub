@@ -152,58 +152,86 @@ def extract_json(response):
     except Exception:
         return None
 
+def _normalize_hypothesis_item(data):
+    """Internal helper to normalize a single hypothesis dictionary."""
+    if not isinstance(data, dict):
+        return data
+
+    # 1. Normalize required_constants: convert string values to numbers
+    constants = data.get("required_constants", {})
+    if isinstance(constants, dict):
+        new_constants = {}
+        for k, v in constants.items():
+            if isinstance(v, (int, float)):
+                new_constants[k] = v
+            elif isinstance(v, str):
+                try:
+                    v_clean = v.strip().replace(',', '').split()[0]
+                    num_match = re.search(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', v_clean)
+                    if num_match:
+                        new_constants[k] = float(num_match.group())
+                    else:
+                        new_constants[k] = v
+                except:
+                    new_constants[k] = v
+            else:
+                new_constants[k] = v
+        data["required_constants"] = new_constants
+
+    # 2. Ensure atomic_specification has defaults
+    if "atomic_specification" not in data:
+        data["atomic_specification"] = {
+            "independent_variable": {"name": "t", "symbol": "t"},
+            "dependent_variable": {"name": "y", "symbol": "y"},
+            "symbolic_parameters": ["t", "y"]
+        }
+    
+    # 3. Handle list vs string for symbolic_parameters
+    params = data["atomic_specification"].get("symbolic_parameters", [])
+    if isinstance(params, str):
+        data["atomic_specification"]["symbolic_parameters"] = [p.strip() for p in params.split(',')]
+
+    # 4. Mandatory Blueprint and Implementation Fallback
+    if "mathematical_blueprint" not in data or not str(data["mathematical_blueprint"]).strip():
+        ind_var = data["atomic_specification"]["independent_variable"]["symbol"]
+        dep_var = data["atomic_specification"]["dependent_variable"]["symbol"]
+        data["mathematical_blueprint"] = f"constants['ALPHA'] * {dep_var} + constants['BETA'] * {ind_var}"
+    
+    if "mathematical_implementation_guide" not in data or not str(data["mathematical_implementation_guide"]).strip():
+        data["mathematical_implementation_guide"] = "Use a 50-step Rolling Memory Window to evaluate fractional kernels and strictly deplete resource pools."
+        
+    if not data.get("required_constants"):
+        data["required_constants"] = {"ALPHA": 0.5, "BETA": 1.2}
+    
+    return data
+
 def normalize_data(data, schema_type):
     """
     Ensures data consistency by fixing common LLM formatting errors.
+    Recursively repairs batch lists and individual components.
     """
-    if not data or not isinstance(data, dict):
+    if not data:
         return data
 
+    # FEATURE 6: Auto-Wrap Raw Lists into Batch Objects
+    if isinstance(data, list):
+        if schema_type == "batch_hypotheses":
+            data = {"refined_hypotheses": data}
+        elif schema_type == "batch_audit":
+            data = {"audit_reports": data}
+
+    if not isinstance(data, dict):
+        return data
+
+    # 1. Normalize Batch Hypotheses
+    if schema_type == "batch_hypotheses" and "refined_hypotheses" in data:
+        items = data["refined_hypotheses"]
+        if isinstance(items, list):
+            data["refined_hypotheses"] = [_normalize_hypothesis_item(h) for h in items]
+
+    # 2. Normalize Single Hypothesis
     if schema_type == "hypothesis":
-        # 1. Normalize required_constants: convert string values to numbers
-        constants = data.get("required_constants", {})
-        if isinstance(constants, dict):
-            new_constants = {}
-            for k, v in constants.items():
-                if isinstance(v, str):
-                    try:
-                        # Strip units and cleanup whitespace
-                        v_clean = v.strip().replace(',', '')
-                        num_match = re.search(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', v_clean)
-                        if num_match:
-                            new_constants[k] = float(num_match.group())
-                        else:
-                            new_constants[k] = v
-                    except:
-                        new_constants[k] = v
-                else:
-                    new_constants[k] = v
-            data["required_constants"] = new_constants
-
-        # 2. Ensure atomic_specification has defaults
-        if "atomic_specification" not in data:
-            data["atomic_specification"] = {
-                "independent_variable": {"name": "t", "symbol": "t"},
-                "dependent_variable": {"name": "y", "symbol": "y"},
-                "symbolic_parameters": ["t", "y"]
-            }
-        
-        # 3. Handle list vs string for symbolic_parameters
-        params = data["atomic_specification"].get("symbolic_parameters", [])
-        if isinstance(params, str):
-            data["atomic_specification"]["symbolic_parameters"] = [p.strip() for p in params.split(',')]
-
-        # 4. Mandatory Blueprint and Implementation Fallback (Creator Advice)
-        if "mathematical_blueprint" not in data or not str(data["mathematical_blueprint"]).strip():
-            ind_var = data["atomic_specification"]["independent_variable"]["symbol"]
-            dep_var = data["atomic_specification"]["dependent_variable"]["symbol"]
-            data["mathematical_blueprint"] = f"constants['ALPHA'] * {dep_var} + constants['BETA'] * {ind_var}"
-        
-        if "mathematical_implementation_guide" not in data or not str(data["mathematical_implementation_guide"]).strip():
-            data["mathematical_implementation_guide"] = "Use a 50-step Rolling Memory Window to evaluate fractional kernels and strictly deplete resource pools."
-            
-        if not data.get("required_constants"):
-            data["required_constants"] = {"ALPHA": 0.5, "BETA": 1.2}
+        data = _normalize_hypothesis_item(data)
 
     return data
 
