@@ -169,6 +169,7 @@ report.finalize()
 
 - **RESOURCE DYNAMICS**: Implement an `initial_resource` and a `consumption_rate` variable to prevent infinite loops and simulate entropy.
 - **SYMBOL GUARD MANDATE**: You MUST call `SymbolGuard.verify_symbols(locals(), required=[...])` at the end of section #1. This prevents scope errors during tensor contractions.
+- **SINGULARITY SOFTENER**: For General Relativity (Schwarzschild/Kerr) metrics, you MUST add `EPSILON = 1e-9` to radial denominators (e.g., `1/(r - rs + EPSILON)`) and implement `if y_vals[-1] < 0.01: break` horizon guards in your loops to prevent NaN crashes.
 - VOCABULARY ALIGNMENT: Use the physics terminology (e.g., 'Schwarzschild Radius', 'Kerr Metric') from the hypothesis in your comments.
 """
 

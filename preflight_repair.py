@@ -106,4 +106,67 @@ class PreflightRepair:
         code, r2 = PreflightRepair.fix_symbol_mismatch(code, hypothesis)
         all_repairs.extend(r2)
         
+        # 3. Singularity Softener
+        code, r3 = SingularitySoftener.soften_radial_singularities(code, hypothesis)
+        all_repairs.extend(r3)
+        
         return code, all_repairs
+
+class SingularitySoftener:
+    """
+    Prevents NaN crashes in Schwarzschild/Kerr metrics by softening radial singularities.
+    Injects EPSILON = 1e-9 into denominators and adds boundary guards.
+    """
+    @staticmethod
+    def soften_radial_singularities(code, hypothesis):
+        """
+        Scans for metric-related topics and patches common singularity patterns.
+        """
+        repairs = []
+        new_code = code
+        topic = str(hypothesis.get('topic', '')).lower()
+        
+        # Only activate if topic involves general relativity metrics
+        metric_keywords = ['schwarzschild', 'kerr', 'metric', 'black hole', 'event horizon', 'gauss-bonnet']
+        if not any(kw in topic for kw in metric_keywords):
+            return new_code, repairs
+
+        # 1. Inject EPSILON definition if missing
+        if '1e-9' not in new_code and 'EPSILON' not in new_code:
+            epsilon_line = "\n# Singularity Softener: Epsilon injection\nEPSILON = 1e-9\n"
+            # Insert after CONSTANT INJECTION
+            if "# 2. CONSTANT INJECTION" in new_code:
+                new_code = new_code.replace("# 2. CONSTANT INJECTION", "# 2. CONSTANT INJECTION" + epsilon_line)
+                repairs.append("Injected EPSILON = 1e-9 for singularity softening.")
+            else:
+                new_code = epsilon_line + new_code
+                repairs.append("Injected EPSILON = 1e-9 for singularity softening.")
+
+        # 2. Patch Denominators: (r - rs) -> (r - rs + EPSILON) or (r - 2*M) -> (r - 2*M + EPSILON)
+        # Generic pattern for division by radial terms
+        denominator_patterns = [
+            (r'/\s*\((r\s*-\s*[^)]+)\)', r'/((\1) + EPSILON)'),
+            (r'/\s*r\b', r'/(r + EPSILON)'),
+            (r'/\s*\(r\s*\*\s*r\)', r'/(r*r + EPSILON)')
+        ]
+        
+        for p, r in denominator_patterns:
+            matches = re.findall(p, new_code)
+            if matches:
+                new_code = re.sub(p, r, new_code)
+                repairs.append(f"Softened radial denominator using pattern '{p}'.")
+
+        # 3. Inject Horizon Guard in execution loops
+        # Look for 'for' loops with 'r' or 'y' updates
+        loop_pattern = r'(for\s+\w+\s+in\s+range\([^)]+\):)'
+        if 'if r <' not in new_code and 'if r_vals' not in new_code:
+            def add_horizon_guard(match):
+                return match.group(1) + "\n    if y_vals[-1] < 0.01: break # Singularity Softener: Horizon Guard"
+            
+            if 'y_vals' in new_code:
+                new_code = re.sub(loop_pattern, add_horizon_guard, new_code)
+                repairs.append("Injected horizon guard into execution loop.")
+
+        return new_code, repairs
+
+        return new_code, repairs
