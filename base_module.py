@@ -320,16 +320,12 @@ class BaseModule:
         
         # --- DUAL-CLUSTER ROUTING & MULTI-URL LOAD BALANCING ---
         if not target_url:
-            # 1. Instance-level override (set by Agent load balancer)
-            if self.ollama_url:
-                target_url = self.ollama_url
-            else:
-                # 2. Hardware mapping from config
-                mapping = self.config['hardware'].get('gpu_mapping', {})
-                component_key = getattr(self, 'COMPONENT_NAME', self.__class__.__name__.lower())
-                gpu_key = mapping.get(component_key)
-                if gpu_key:
-                    target_url = self.config['hardware'].get(gpu_key)
+            # Hardware mapping from config
+            mapping = self.config['hardware'].get('gpu_mapping', {})
+            component_key = getattr(self, 'COMPONENT_NAME', self.__class__.__name__.lower())
+            gpu_key = mapping.get(component_key)
+            if gpu_key:
+                target_url = self.config['hardware'].get(gpu_key)
         
         # 2.1 Handle URL Lists (Load Balancing)
         if isinstance(target_url, list) and target_url:
@@ -550,7 +546,8 @@ class BaseModule:
                     if self.ui: self.ui.update_task(task_id, "Hydrating", attempt*30)
                     # Exponential backoff with jitter: 30s, 60s, 90s... capped at 120s
                     wait_time = min(120, (attempt + 1) * 30) + random.uniform(0, 5)
-                    if self.ui: self.ui.print_log(f"\033[1;33m[RETRY] GPU is busy/loading. Waiting {int(wait_time)}s... (Attempt {attempt+1})\033[0m")
+                    masked_url = target_url.replace('http://', '').split(':')[0] if target_url else "Local"
+                    if self.ui: self.ui.print_log(f"\033[1;33m[RETRY] GPU ({masked_url}) is busy/loading. Waiting {int(wait_time)}s... (Attempt {attempt+1})\033[0m")
                     time.sleep(wait_time)
                 else:
                     if self.ui: 
