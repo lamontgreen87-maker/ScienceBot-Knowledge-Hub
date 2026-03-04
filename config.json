@@ -1,15 +1,15 @@
 {
     "hardware": {
         "local_model": "deepseek-r1:8b",
-        "reasoning_model": "deepseek-r1:70b",
-        "large_model": "deepseek-r1:70b",
+        "reasoning_model": "deepseek-r1:8b",
+        "large_model": "deepseek-r1:8b",
         "fast_model": "deepseek-r1:8b",
-        "constructor_model": "deepseek-r1:32b",
-        "math_model": "deepseek-r1:70b",
+        "constructor_model": "deepseek-r1:8b",
+        "math_model": "deepseek-r1:8b",
         "sleeper_mode": false,
         "fallback_model": "deepseek-r1:8b",
-        "theorist_model": "deepseek-r1:70b",
-        "explorer_model": "deepseek-r1:32b",
+        "theorist_model": "deepseek-r1:8b",
+        "explorer_model": "deepseek-r1:8b",
         "api_url": [
             "http://localhost:11434/api/generate"
         ],
