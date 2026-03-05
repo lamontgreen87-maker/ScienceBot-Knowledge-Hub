@@ -19051,3 +19051,143 @@ on Geometry
 [10:29:57] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Higher Multipole Contributions
 [10:30:03] [Worker 2] ERROR: name 'max_retries' is not defined
 [10:30:03] [Worker 1] ERROR: name 'max_retries' is not defined
+[13:40:38] LAUNCHING Continuous 8B stream with 2 workers...
+[13:40:38] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Nonlinear Perturbation Analysis
+[13:40:38] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Higher Multipole Contributions
+[14:21:09] LAUNCHING Continuous 8B stream with 1 workers...
+[14:21:09] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Near-Horizon Perturbation Analysis for Extremal Black Holes
+[14:31:16] LAUNCHING Continuous 8B stream with 1 workers...
+[14:31:16] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Unified Gauge-Invariant Perturbation Framework
+[15:01:01] LAUNCHING Continuous 8B stream with 4 workers...
+[15:01:01] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Superradiance Boundary Condition Re-evaluation
+[15:01:01] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Numerical Validation of Quasinormal Mode Decay
+[15:01:01] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Semiclassical Quantum Correction to Metric Perturbations
+[15:01:01] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Semiclassical Quantum Correction to Metric Perturbations
+[15:04:30] LAUNCHING Continuous 8B stream with 4 workers...
+[15:04:30] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Non-linear Stability Threshold for Black Holes
+[15:04:30] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Boundary Condition Consistency for Asymptotic Flatness
+[15:04:30] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Non-linear Stability Threshold for Black Holes
+[15:04:30] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Singularity Stability in Perturbed Kerr Metrics
+[15:08:50] LAUNCHING Continuous 8B stream with 4 workers...
+[15:08:50] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[15:08:50] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[15:08:50] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 3
+[15:08:50] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 4
+[15:14:03] LAUNCHING Continuous 8B stream with 4 workers...
+[15:14:03] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 3
+[15:14:03] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[15:14:03] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 4
+[15:14:03] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 4
+[15:18:54] LAUNCHING Continuous 8B stream with 4 workers...
+[15:18:54] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Unified Framework for Perturbation Types
+[15:18:54] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Unified Framework for Perturbation Types
+[15:18:54] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Consistent Numerical-Analytical Perturbation Evolution
+[15:18:54] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Consistent Numerical-Analytical Perturbation Evolution
+[15:24:15] LAUNCHING Continuous 8B stream with 4 workers...
+[15:24:15] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:24:15] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Perturbation Interaction Framework
+[15:24:15] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:24:15] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Perturbation Interaction Framework
+[15:25:41] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:25:41] [Worker 1] ERROR: 'ScienceBot' object has no attribute 'social'
+[15:25:51] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:26:14] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:26:21] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Perturbation Interaction Framework
+[15:26:34] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Perturbation Interaction Framework. Appending to KB.
+[15:26:43] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Perturbation Interaction Framework
+[15:26:53] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Perturbation Interaction Framework. Appending to KB.
+[15:27:01] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:34:48] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:35:27] LAUNCHING Continuous 8B stream with 4 workers...
+[15:35:27] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:35:27] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:35:27] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:35:27] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration
+[15:36:51] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:36:58] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 8
+[15:37:13] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:37:13] [Worker 2] ERROR: 'ScienceBot' object has no attribute 'social'
+[15:37:23] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7
+[15:37:37] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:37:43] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 3
+[15:38:13] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Quantum Corrections Integration. Appending to KB.
+[15:38:23] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[15:43:02] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 8. Appending to KB.
+[15:43:08] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7
+[15:43:43] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7. Appending to KB.
+[15:43:53] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 6
+[15:45:00] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 3. Appending to KB.
+[15:45:00] [Worker 3] ERROR: 'ScienceBot' object has no attribute 'social'
+[15:45:10] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 6
+[15:48:45] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[15:48:51] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7
+[16:00:04] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7. Appending to KB.
+[16:00:11] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 4
+[16:00:17] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 6. Appending to KB.
+[16:00:23] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 8
+[16:00:46] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 6. Appending to KB.
+[16:00:56] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7
+[16:03:26] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7. Appending to KB.
+[16:03:32] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:09:11] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 4. Appending to KB.
+[16:09:18] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:09:42] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 8. Appending to KB.
+[16:09:42] [Worker 2] ERROR: 'ScienceBot' object has no attribute 'social'
+[16:09:52] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 4
+[16:12:02] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7. Appending to KB.
+[16:12:09] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7
+[16:15:09] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:15:16] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:18:09] LAUNCHING Continuous 8B stream with 4 workers...
+[16:18:09] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:18:09] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7
+[16:18:09] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:18:09] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:19:13] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:19:13] [Worker 1] ERROR: 'ScienceBot' object has no attribute 'social'
+[16:19:23] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:19:29] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 7. Appending to KB.
+[16:19:37] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:19:44] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:19:53] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:19:58] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:20:05] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:22:44] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:22:51] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:23:12] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:23:22] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:25:12] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:25:20] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:25:29] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:25:37] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:26:43] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:26:43] [Worker 1] ERROR: 'ScienceBot' object has no attribute 'social'
+[16:26:53] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:26:57] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:27:03] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:29:37] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:29:47] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:30:09] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:30:19] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:33:04] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:33:12] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:34:04] LAUNCHING Continuous 8B stream with 4 workers...
+[16:34:04] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:34:04] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:34:04] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:34:04] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:35:09] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:35:15] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:35:23] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:35:30] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:35:39] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2. Appending to KB.
+[16:35:47] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:35:51] [Worker 1] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:35:59] [Worker 1] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research
+[16:38:23] [Worker 3] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:38:23] [Worker 3] ERROR: 'ScienceBot' object has no attribute 'social'
+[16:38:33] [Worker 3] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:40:05] [Worker 4] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:40:15] [Worker 4] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2
+[16:40:25] [Worker 2] Research complete for Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research. Appending to KB.
+[16:40:31] [Worker 2] Starting research on: Metric Perturbations & Black Hole Stability Theoretical Research: Metric Perturbations & Black Hole Stability Theoretical Research aspect 2

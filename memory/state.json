@@ -1,28 +1,20 @@
 {
     "current_topic": "Metric Perturbations & Black Hole Stability Theoretical Research",
-    "depth_counter": 12,
-    "phase": "GUESS",
+    "depth_counter": 2,
+    "phase": "STUDY",
     "state": "IDLE",
-    "iteration_count": 4216,
+    "iteration_count": 4232,
     "topic_vectors": [
         {
-            "name": "Nonlinear Perturbation Analysis",
-            "area": "Metric Perturbations"
+            "name": "Metric Perturbations & Black Hole Stability Theoretical Research",
+            "area": "General"
         },
         {
-            "name": "Higher Multipole Contributions",
-            "area": "Black Hole Stability"
-        },
-        {
-            "name": "Quantum Corrections in Near-Horizon Geometry",
-            "area": "Quantum Gravity Effects"
-        },
-        {
-            "name": "Perturbations in Modified Gravity Theories",
-            "area": "Alternative Gravity Models"
+            "name": "Metric Perturbations & Black Hole Stability Theoretical Research aspect 2",
+            "area": "Deep dive"
         }
     ],
     "deepseek_repair_advice": "PRIORITY DIRECTIVE - CONCRETE NEXT STEPS: (1) CDT thread: build a Monte Carlo CDT lattice simulation in scipy measuring spectral dimension at E/E_P in [0.001,10], verifying d_s = 4 + (3/2)*(E/E_P)^-1 numerically. (2) Stochastic Ricci Flow: derive xi(g,t) from the Heat Kernel Expansion of the Laplace-Beltrami operator. Claim: xi = sum_n a_n(x)*t^n (Seeley-DeWitt coefficients). Show alpha=(4pi)^(-d/2)*a_2(x) from first principles, not empirically. Verify Perelman entropy monotonicity. (3) CORRECTED PRIME FINDING - phi=1.618 claim DISPROVEN (t=123.72, p~0, RETRACTED). Real result: prime gaps follow GUE statistics (Montgomery-Odlyzko Law), NOT Poisson (KS D=0.3568, p~0). Next: normalize gaps by local mean spacing, fit Wigner surmise P(s)=(32/pi^2)*s^2*exp(-4*s^2/pi) via scipy.optimize.curve_fit vs Poisson. Filed: discoveries/02_confirmed_theory/discovery_prime_gaps_gue_statistics.json.",
     "deepseek_dream_advice": "ARCHITECTURAL INSIGHT from 4013-iteration audit: Stop generating generic aspect-N vectors. The three attack vectors are: (A) CDT Non-Commutativity - spectral dimension deviation from d=4 at Planck scale via lattice simulation; (B) Stochastic Ricci Flow - derive xi from heat kernel first principles to close the Logic Hole; (C) Prime Gap GUE - phi claim RETRACTED. Fit normalized spacings to GUE Wigner surmise. Montgomery-Odlyzko connection to Riemann zeta zeros is the real frontier. Every hypothesis must name: (1) a specific equation, (2) a falsifiable numerical prediction, (3) a Python implementation plan.",
-    "burst_counter": 1
+    "burst_counter": 4
 }

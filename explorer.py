@@ -107,8 +107,7 @@ Topic:"""
         """Breaks a broad topic into specific research vectors."""
         if self.ui:
             self.ui.print_log(f"[EXPLORER] Decomposing broad topic: {topic} (StudyMode: {study_mode}, Vectors: {count})")
-            
-        target_model = "deepseek-r1:70b"
+        target_model = self.config['hardware'].get('explorer_model', 'deepseek-r1:32b')
         
         # Build just enough example lines to show format without biasing count
         example_lines = "\n".join(
