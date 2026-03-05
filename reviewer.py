@@ -5,11 +5,20 @@ class Reviewer(BaseModule):
     def __init__(self, config, ui=None):
         super().__init__(config, ui)
 
-    def evaluate_significance(self, discovery, invention=None, model=None):
+    def evaluate_significance(self, discovery, invention=None, model=None, vector_mem=None):
         msg = f"[REVIEWER] Evaluating scientific significance of: {discovery['hypothesis']['topic']} via {self.config['hardware']['reasoning_model']}..."
         if self.ui:
             self.ui.print_log(msg)
-        
+            
+        cross_study_context = ""
+        if vector_mem:
+            topic = discovery['hypothesis']['topic']
+            # Find the most rigorously verified science on this topic
+            past_successes = vector_mem.query_past_research(topic, n_results=3, filter_type="success")
+            if past_successes:
+                history = "\n".join([f"- {r['topic']}: {r['content'][:300]}..." for r in past_successes])
+                cross_study_context = f"\n### CROSS-STUDY VALIDATION (Verified Past Discoveries):\n{history}\n\nCompare the new simulation results against these previously verified findings. Do they align mathematically, or is there a direct physics contradiction?\n"
+
         prompt = f"""
 As a harsh, skeptical, world-class scientific peer reviewer, evaluate this work:
 
@@ -20,7 +29,7 @@ Simulation Code (The "Proof"):
 {discovery.get('code', 'N/A')}
 
 Invention Concept: {invention['concept'] if invention else 'N/A'}
-
+{cross_study_context}
 Evaluation Criteria:
 1. **Rigor Check**: Is the hypothesis precise and mathematically sound? Reject it if it is vague or missing specific variables/units.
 2. **Realism Check**: Is this grounded in known physics/math, or is it completely unrealistic "science fiction"?
@@ -37,7 +46,9 @@ Respond in JSON format:
     "rigor_analysis": "Critique of mathematical precision",
     "realism_score": 0-10,
     "verdict": "Detailed, skeptical summary",
-    "community_alert": true/false
+    "community_alert": true/false,
+    "conflict_detected": true/false,
+    "conflict_detail": "Detailed explanation of the physics contradiction, or 'None' if aligned."
 }}
 JSON:"""
         
@@ -58,5 +69,7 @@ JSON:"""
                 "significance_score": 50,
                 "novelty": "Standard application of known laws.",
                 "community_alert": False,
-                "verdict": "Archive as baseline research."
+                "verdict": "Archive as baseline research.",
+                "conflict_detected": False,
+                "conflict_detail": "None"
             }

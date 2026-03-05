@@ -891,8 +891,38 @@ class ScienceBot(BaseModule):
             
             # Serialized Significance Review (72B)
             with self.heavy_lock:
-                evaluation = self.reviewer.evaluate_significance(test_result, invention)
+                evaluation = self.reviewer.evaluate_significance(test_result, invention, vector_mem=self.scribe.vector_mem)
             test_result['evaluation'] = evaluation
+
+            # --- CROSS-STUDY VALIDATION LOGIC ---
+            if evaluation.get("conflict_detected"):
+                conflict_detail = evaluation.get("conflict_detail", "Unknown conflict.")
+                self.ui.print_log(f"\033[1;31m[PHYSICS DEBATE] Conflict detected with past discoveries!\033[0m")
+                
+                import os
+                # Append to REASONING_LOG.md
+                log_path = os.path.join(self.config['paths']['memory'], "REASONING_LOG.md")
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(f"## Physics Debate: {topic}\n")
+                    f.write(f"- **New Hypothesis**: {test_result['hypothesis']['hypothesis']}\n")
+                    f.write(f"- **Conflict Detail**: {conflict_detail}\n\n")
+
+                # Trigger Conflict Resolution vector
+                with self.state_lock:
+                    clean_topic = topic.split(':')[1].strip() if ':' in topic else topic
+                    new_vector = {
+                        "name": f"Conflict Resolution: {clean_topic[:50]} vs Past Discoveries",
+                        "area": "Resolving contradictions between recent simulation and established theory.",
+                        "high_curiosity": True
+                    }
+                    if "topic_vectors" not in self.current_state:
+                         self.current_state["topic_vectors"] = []
+                         
+                    # Determine current depth and insert the conflict resolution immediately
+                    current_depth = self.current_state.get("depth_counter", 0)
+                    self.current_state["topic_vectors"].insert(current_depth, new_vector)
+                    self.save_state()
+            # ------------------------------------
 
             # Scribe
             self.ui.print_discovery(test_result)
@@ -1540,7 +1570,7 @@ class ScienceBot(BaseModule):
                             if "evaluation" not in data:
                                 # Force fast model for recovery evaluation to prevent startup hang
                                 fast_m = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
-                                data["evaluation"] = self.reviewer.evaluate_significance(data, data.get("invention"), model=fast_m)
+                                data["evaluation"] = self.reviewer.evaluate_significance(data, data.get("invention"), model=fast_m, vector_mem=self.scribe.vector_mem)
                                 # Note: the reviewer method needs to be aware of the override or we just override the config temporarily
                                 modified = True
 
