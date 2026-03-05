@@ -1,5 +1,7 @@
 import json
 import os
+import smtplib
+from email.mime.text import MIMEText
 from base_module import BaseModule
 
 class PressOffice(BaseModule):
@@ -51,4 +53,40 @@ Respond in Markdown format.
             
         if self.ui:
             self.ui.print_log(f"[PRESS OFFICE] Press Release published at: {save_path}")
+            
+        self.send_email(f"Breakthrough Discovery: {topic}", release_text)
+        
         return save_path
+
+    def send_email(self, subject, body):
+        notif_cfg = self.config.get('notifications', {})
+        if not notif_cfg.get('email_enabled', False):
+            return
+
+        server = notif_cfg.get('smtp_server')
+        port = notif_cfg.get('smtp_port')
+        sender = notif_cfg.get('sender_email')
+        pwd = notif_cfg.get('sender_password')
+        to = notif_cfg.get('recipient_email')
+
+        if not all([server, port, sender, pwd, to]) or pwd == "YOUR_APP_PASSWORD":
+            if self.ui:
+                self.ui.print_log("[PRESS OFFICE] Email notifications enabled, but credentials are not fully configured.")
+            return
+
+        try:
+            msg = MIMEText(body, 'plain')
+            msg['Subject'] = subject
+            msg['From'] = sender
+            msg['To'] = to
+
+            with smtplib.SMTP(server, port) as smtp:
+                smtp.starttls()
+                smtp.login(sender, pwd)
+                smtp.send_message(msg)
+            
+            if self.ui:
+                self.ui.print_log(f"\033[1;32m[PRESS OFFICE] Email successfully sent to {to}\033[0m")
+        except Exception as e:
+            if self.ui:
+                self.ui.print_log(f"\033[1;31m[PRESS OFFICE] Failed to send email: {e}\033[0m")
