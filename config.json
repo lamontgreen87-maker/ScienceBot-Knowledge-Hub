@@ -25,12 +25,14 @@
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
             "http://194.68.245.67:22107/api/generate",
-            "http://69.30.85.154:22036/api/generate"
+            "http://69.30.85.154:22036/api/generate",
+            "http://69.30.85.79:22123/api/generate",
+            "http://194.68.245.31:22118/api/generate"
         ],
         "vram_capacity_gb": 90,
         "gpu_mapping": {
             "explorer": "secondary_gpu",
-            "lab": "api_url",
+            "lab": "secondary_gpu",
             "critic": "api_url",
             "reflector": "api_url",
             "math_engine": "api_url",
@@ -38,17 +40,18 @@
             "reviewer": "api_url",
             "scraper": "secondary_gpu",
             "scribe": "secondary_gpu",
-            "teacher": "api_url"
+            "teacher": "api_url",
+            "sciencebot": "api_url"
         },
         "logical_vram_limit_gb": 8,
         "api_key": null,
         "teacher_model": "gemini-pro-latest",
         "teacher_api_key": "AIzaSyAcZYVWYDpOpBYowU9h2JpxvYg-ifyK5ys",
         "cpu_threads": 48,
-        "max_swarm_workers": 2,
-        "turbo_workers": 8,
-        "heavy_concurrency_limit": 8,
-        "fast_lane_concurrency": 4,
+        "max_swarm_workers": 20,
+        "turbo_workers": 40,
+        "heavy_concurrency_limit": 16,
+        "fast_lane_concurrency": 10,
         "num_ctx": 32768
     },
     "research": {

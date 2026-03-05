@@ -1,14 +1,24 @@
 import requests
 import json
 import time
-import threading
 import os
+import threading
+from typing import Dict, Any, List
 from colorama import Fore
+
+# --- GLOBAL LOAD BALANCER STATE ---
+_RR_INDICES = {} # type: Dict[str, int]
+_RR_LOCK = threading.Lock()
+
+class _Context(threading.local):
+    def __init__(self):
+        self.api_url = None
+
+_THREAD_LOCAL_CONTEXT = _Context()
 
 _GLOBAL_FILE_LOCK = threading.RLock()
 _HEAVY_SEMAPHORE = None 
 _SEMAPHORE_LOCK = threading.Lock()
-_THREAD_LOCAL_CONTEXT = threading.local()
 
 class BaseModule:
     def __init__(self, config, ui=None):
@@ -247,35 +257,37 @@ class BaseModule:
             return None
 
     def _is_model_available(self, model_name, target_url):
-        """Checks if a specific model is present on ANY server in the pool (Cached for 60s)."""
-        with self._cache_lock:
-            if time.time() < self._cache_expiry:
-                return model_name in self._model_cache
+        """Checks if a specific model is present on the SPECIFIC target server (Cached per-URL for 60s)."""
+        if not target_url: return False
         
-        # Build full list of URLs to check — always check the whole pool for heavy models
-        api_pool = self.config['hardware'].get('api_url', [])
-        if isinstance(api_pool, str):
-            api_pool = [api_pool]
-        
-        # Include the specific target_url in case it's not in the pool
+        # Normalize target_url to a single string
         check_url = target_url[0] if isinstance(target_url, list) else target_url
-        urls_to_check = list({check_url} | set(api_pool)) if check_url else list(api_pool)
-        
-        # Refresh Cache by polling all URLs
-        found_models = set()
-        for url in urls_to_check:
-            try:
-                tags_url = url.replace("/api/generate", "/api/tags")
-                response = requests.get(tags_url, timeout=5)
-                if response.status_code == 200:
-                    for m in response.json().get('models', []):
-                        found_models.add(m['name'])
-            except:
-                pass  # Pod unreachable, try next
+        if not check_url: return False
+
+        cache_key = f"{check_url}_{model_name}"
         
         with self._cache_lock:
-            self._model_cache = found_models
-            self._cache_expiry = time.time() + 60
+            # We'll use a per-pod cache now
+            if not hasattr(self, '_pod_model_cache'):
+                self._pod_model_cache = {}
+            
+            cached_val, expiry = self._pod_model_cache.get(check_url, (set(), 0))
+            if time.time() < expiry:
+                return model_name in cached_val
+        
+        # Refresh Cache by polling ONLY the specific URL
+        found_models = set()
+        try:
+            tags_url = check_url.replace("/api/generate", "/api/tags")
+            response = requests.get(tags_url, timeout=3) # Faster timeout for availability
+            if response.status_code == 200:
+                for m in response.json().get('models', []):
+                    found_models.add(m['name'])
+        except:
+            pass
+        
+        with self._cache_lock:
+            self._pod_model_cache[check_url] = (found_models, time.time() + 60)
         
         return model_name in found_models
 
@@ -283,7 +295,12 @@ class BaseModule:
         """Hook for child classes to perform work while waiting for a heavy model."""
         pass
 
-    def _query_llm(self, prompt, model=None, timeout=600, api_url=None, temperature=None):
+    def _query_llm(self, prompt, model=None, temperature=0.7, max_tokens=4000, 
+                  is_8b=False, is_sleeper=False, allow_fallback=True, api_url=None, timeout=600):
+        """
+        Base query method with retry logic and sleeper mode handoff.
+        - allow_fallback: If False, will not engage Sleeper Mode on connection failure.
+        """
         if model is None:
             model = self.config['hardware'].get('local_model', 'deepseek-r1:8b')
             
@@ -314,79 +331,60 @@ class BaseModule:
                 if self.ui: self.ui.print_log(f"\033[1;33m[FAST-MODE] SWAP: {model} -> {fast_fallback} (Standard Duty Cycle)\033[0m")
                 model = fast_fallback
         # 0. RESOLVE API URL (Priority: Argument > Thread-Local Override > Instance Default)
-        target_url = api_url
-        if not target_url:
-            target_url = getattr(_THREAD_LOCAL_CONTEXT, 'api_url', None)
+        url_arg = api_url
+        url_context = getattr(_THREAD_LOCAL_CONTEXT, 'api_url', None)
         
-        # --- DUAL-CLUSTER ROUTING & MULTI-URL LOAD BALANCING ---
-        if not target_url:
-            # Hardware mapping from config
-            mapping = self.config['hardware'].get('gpu_mapping', {})
-            component_key = getattr(self, 'COMPONENT_NAME', self.__class__.__name__.lower())
-            gpu_key = mapping.get(component_key)
-            if gpu_key:
-                target_url = self.config['hardware'].get(gpu_key)
-        
-        # 2.1 Handle URL Lists (Load Balancing)
-        if isinstance(target_url, list) and target_url:
-            import random
-            target_url = random.choice(target_url)
-
-        # 3. Default to local for 8B if still no target
-        if not target_url and is_8b:
-            target_url = self.config['hardware'].get('local_url', 'http://localhost:11434/api/generate')
-
-        # --- MANDATORY CLAMPING FOR 8B (v1.1) ---
-        # 8B models MUST stay on local or secondary_gpu (Speed Hub) to avoid 404s on 70B pool
+        # --- CONSOLIDATED SWARM ROUTING (v3.2 - Dual-Track Resolution) ---
+        # 1. Resolve starting Pool (The source of authority)
+        url_pool = self.config['hardware'].get('api_url', [])
+        mapping = self.config['hardware'].get('gpu_mapping', {})
+        component_key = getattr(self, 'COMPONENT_NAME', self.__class__.__name__.lower())
+        gpu_key = mapping.get(component_key)
+        if gpu_key:
+            url_pool = self.config['hardware'].get(gpu_key, url_pool)
+            
+        # 2. Refine Pool based on model (8B isolation)
         secondary_gpu = self.config['hardware'].get('secondary_gpu')
         local_url = self.config['hardware'].get('local_url')
-        
-        flat_allowed = []
-        for u in [local_url, secondary_gpu]:
-            if isinstance(u, list): flat_allowed.extend(u)
-            elif u: flat_allowed.append(u)
-            
-        if is_8b and (not target_url or target_url not in flat_allowed):
-            target_url = secondary_gpu or local_url
+        if is_8b and not is_sleeper:
+            if url_pool != secondary_gpu and url_pool != local_url:
+                url_pool = secondary_gpu or local_url
 
-        # --- FINAL SAFETY NORMALIZATION ---
-        if isinstance(target_url, list) and target_url:
-            import random
-            target_url = random.choice(target_url)
-        elif not target_url:
-            target_url = self.config['hardware'].get('local_url', 'http://localhost:11434/api/generate')
-            
-        # Ensure it's a string, not a list of one string (double safety)
-        if isinstance(target_url, list): target_url = target_url[0]
-            
-        is_sleeper = self.config['hardware'].get('sleeper_mode', False)
+        # 3. Resolve Candidate Target (Pinned or Load Balanced)
+        # If a specific URL was passed or set in context, use it as the first candidate
+        candidate_url = url_arg or url_context
         
-        # Adaptive Availability Handover (New)
-        # If the user wants a heavy model but it's not on the server yet, use fallback
-        if not is_sleeper and is_heavy:
-            if not self._is_model_available(model, target_url):
-                fallback = self.config['hardware'].get('local_model', 'deepseek-r1:8b')
-                if self.ui:
-                    self.ui.print_log(f"\033[1;33m[ADAPTIVE] {model} not found on pod yet. Using {fallback} temporarily...\033[0m")
-                model = fallback
-                is_heavy = False
-                is_8b = True  # Re-flag so clamping below sends it to local/secondary
-                # Immediately reroute away from the remote 70B pod
-                target_url = self.config['hardware'].get('secondary_gpu') or self.config['hardware'].get('local_url', 'http://localhost:11434/api/generate')
-                if isinstance(target_url, list) and target_url:
-                    target_url = target_url[0]
-            else:
-                if self.ui:
-                    # Optional: Subtle log to show we successfully graduated
-                    pass
+        def resolve_url_from_pool(pool):
+            if not pool: return None
+            if isinstance(pool, list) and pool:
+                with _RR_LOCK:
+                    key = str(pool)
+                    idx = _RR_INDICES.get(key, 0)
+                    url = pool[idx % len(pool)]
+                    _RR_INDICES[key] = (idx + 1) % len(pool)
+                    return url
+            return pool
 
-        if is_sleeper:
-            # Reroute to local fallback immediately
-            target_url = self.config['hardware'].get('local_url', 'http://localhost:11434').rstrip('/') + '/api/generate'
+        target_url = candidate_url or resolve_url_from_pool(url_pool)
+
+        # 4. Sleeper Mode Reroute (Initial Phase)
+        is_sleeper_now = is_sleeper or self.config['hardware'].get('sleeper_mode', False)
+        if is_sleeper_now:
+            target_url = local_url
             model = self.config['hardware'].get('fallback_model', 'deepseek-r1:8b')
+
+        # 5. Default Fallback
+        if not target_url:
+            target_url = local_url or 'http://localhost:11434/api/generate'
         
+        # Ensure it's a string
+        if isinstance(target_url, list): target_url = target_url[0]
+
+        # 6. DISPATCH LOGGING
         if self.ui:
-            # self.ui.print_log(f"\033[1;30m[NETWORK] Requesting {model} from: {target_url}\033[0m")
+            pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
+            pod_port = str(target_url).split(":")[-1].split("/")[0]
+            self.ui.print_log(f"\033[1;30m[DISPATCH] {model} -> Pod {pod_id}:{pod_port}\033[0m")
             self.ui.clear_thought_buffer()
         
         # Determine temperature
@@ -556,8 +554,18 @@ class BaseModule:
                     stop_heartbeat.set()
                     return None
             except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                # Immediate Sleeper Handoff
-                if not is_sleeper and "127.0.0.1" not in target_url and "localhost" not in target_url:
+                # Pool Rotation Logic (New in v3.0)
+                if isinstance(url_pool, list) and len(url_pool) > 1:
+                    target_url = resolve_url_from_pool(url_pool)
+                    if self.ui: 
+                        pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
+                        self.ui.print_log(f"\033[1;36m[ROTATION] Connection failed. Rotating to next pod in pool: Pod {pod_id}\033[0m")
+                
+                # Delayed Sleeper Handoff - Only after trying a few things or exhausting the pool once
+                pool_size = len(url_pool) if isinstance(url_pool, list) else 1
+                # Threshold: Try at least two full rotations of the pool before giving up
+                sleeper_threshold = max(5, pool_size * 2) 
+                if not is_sleeper and attempt >= sleeper_threshold:
                     is_sleeper_enabled = self.config.get("research", {}).get("deep_research_mode", False) or self.config.get("hardware", {}).get("sleeper_mode", False)
                     if is_sleeper_enabled:
                         if self.ui: self.ui.print_log(f"\n\033[1;31m[WARNING] Primary API Offline ({type(e).__name__}). Engaging SLEEPER MODE (Local Fallback).\033[0m")
@@ -567,7 +575,7 @@ class BaseModule:
                         # Recursive Fallback: Try again using the local sleeper model
                         fallback_model = self.config['hardware'].get('fallback_model', 'deepseek-r1:8b')
                         if self.ui: self.ui.print_log(f"\033[1;33m[SLEEPER] Handoff activated. Resubmitting task to Local {fallback_model}...\033[0m")
-                        return self._query_llm(prompt, model, temperature, timeout, max_retries, is_sleeper=True)
+                        return self._query_llm(prompt, model=fallback_model, temperature=temperature, timeout=timeout, is_sleeper=True)
 
                 # Default retry logic for hydration or temporary flakes
                 if attempt < retries - 1:

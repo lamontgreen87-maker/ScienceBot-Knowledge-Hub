@@ -439,7 +439,7 @@ Your hypothesis MUST be a direct, falsifiable answer to this question.
             "test_params": {"complexity_level": 1}
         }
 
-    def generate_batch_hypotheses(self, research_contexts, topic):
+    def generate_batch_hypotheses(self, research_contexts, topic, allow_fallback=True):
         """
         [COLLECTIVE THEORIST]
         Generates N hypotheses in a single 70B call based on parallel research contexts.
@@ -484,7 +484,7 @@ Respond exactly like this:
     ]
 }}
 """
-        response = self._query_llm(prompt, model=target_model, temperature=0.2)
+        response = self._query_llm(prompt, model=target_model, temperature=0.2, allow_fallback=allow_fallback)
         
         from json_utils import extract_and_validate
         data, error = extract_and_validate(response, "batch_hypotheses")
@@ -497,7 +497,7 @@ Respond exactly like this:
         
         return [self._fallback_hypothesis(topic) for _ in research_contexts]
 
-    def refine_batch(self, hypotheses, topic):
+    def refine_batch(self, hypotheses, topic, allow_fallback=True):
         """
         [COLLECTIVE ARCHITECT] 
         Takes a list of 8B preliminary hypotheses and uses the 72B model
@@ -541,7 +541,7 @@ Respond in strict JSON format:
     ]
 }}
 """
-        response = self._query_llm(prompt, model=target_model, temperature=0.2)
+        response = self._query_llm(prompt, model=target_model, temperature=0.2, allow_fallback=allow_fallback)
         
         from json_utils import extract_and_validate
         data, error = extract_and_validate(response, "batch_hypotheses") 
