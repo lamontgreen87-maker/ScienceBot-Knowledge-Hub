@@ -19,14 +19,13 @@
         "theorist_model": "deepseek-r1:70b",
         "explorer_model": "deepseek-r1:32b",
         "api_url": [
-            "http://69.30.85.43:22153/api/generate",
             "http://69.30.85.79:22038/api/generate",
-            "http://194.68.245.77:22143/api/generate",
-            "http://69.30.85.65:22057/api/generate"
+            "http://194.68.245.77:22143/api/generate"
         ],
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
-            "http://194.68.245.67:22107/api/generate"
+            "http://194.68.245.67:22107/api/generate",
+            "http://69.30.85.154:22036/api/generate"
         ],
         "vram_capacity_gb": 90,
         "gpu_mapping": {
