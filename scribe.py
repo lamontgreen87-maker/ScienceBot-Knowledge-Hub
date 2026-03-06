@@ -45,6 +45,9 @@ class Scribe(BaseModule):
             metadata={"field": field, "score": test_result.get('evaluation', {}).get('significance_score', 0)},
             is_failure=False
         )
+        
+        # 1. Expand Symbolic Cache: Store tensors found during discovery
+        self._persist_symbolic_cache(test_result)
 
         # Add to Review Queue immediately (Peer-Review Protocol 4002)
         queue_path = os.path.join(self.memory_dir, "review_queue.json")
@@ -90,6 +93,9 @@ class Scribe(BaseModule):
             metadata={"field": "verified_knowledge"},
             is_failure=False
         )
+        
+        # 1. Expand Symbolic Cache: Store tensors found during archival
+        self._persist_symbolic_cache(test_result)
 
         if self.ui:
             self.ui.print_log(f"[SCRIBE] Verified knowledge archived at {save_path}")
@@ -155,3 +161,22 @@ Respond in JSON ONLY:
         # Trigger GitHub Sync
         if self.config.get('github', {}).get('sync_on_discovery'):
             self.sync.sync_knowledge(message=f"Archive discovery: {discovery['hypothesis']['topic']}")
+
+    def _persist_symbolic_cache(self, test_result):
+        """Helper to push symbolic tensor components to the persistent vector cache."""
+        symbolic_metric = test_result.get('symbolic_metric')
+        if not symbolic_metric: return
+        
+        import hashlib
+        metric_str = str(symbolic_metric)
+        metric_key = hashlib.md5(metric_str.encode()).hexdigest()
+        
+        # Store components if they exist
+        if 'ricci_scalar' in test_result:
+            self.vector_mem.store_tensor_component(metric_key, "ricci_scalar", test_result['ricci_scalar'])
+        
+        if 'einstein_tensor' in test_result:
+            self.vector_mem.store_tensor_component(metric_key, "einstein_tensor", test_result['einstein_tensor'])
+            
+        if 'ricci_tensor' in test_result:
+            self.vector_mem.store_tensor_component(metric_key, "ricci_tensor", test_result['ricci_tensor'])

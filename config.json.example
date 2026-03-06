@@ -1,0 +1,39 @@
+{
+    "notifications": {
+        "email_enabled": false,
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "sender_email": "YOUR_EMAIL@gmail.com",
+        "sender_password": "YOUR_APP_PASSWORD",
+        "recipient_email": "YOUR_DESTINATION_EMAIL"
+    },
+    "hardware": {
+        "local_model": "deepseek-r1:8b",
+        "reasoning_model": "deepseek-r1:70b",
+        "large_model": "deepseek-r1:70b",
+        "fast_model": "deepseek-r1:8b",
+        "math_model": "deepseek-r1:70b",
+        "api_url": [
+            "http://YOUR_REMOTE_OLLAMA_IP:11434/api/generate"
+        ],
+        "local_url": "http://localhost:11434/api/generate",
+        "api_key": null,
+        "teacher_api_key": "YOUR_GEMINI_API_KEY",
+        "cpu_threads": 8,
+        "max_swarm_workers": 10,
+        "num_ctx": 32768
+    },
+    "research": {
+        "deep_research_mode": true,
+        "current_topic": "Quantum Field Theory",
+        "min_complexity": 85,
+        "max_complexity": 110,
+        "simulation_fidelity": "ULTRA"
+    },
+    "paths": {
+        "discoveries": "discoveries/",
+        "logs": "research_logs/",
+        "memory": "memory/",
+        "tests": "tests/"
+    }
+}

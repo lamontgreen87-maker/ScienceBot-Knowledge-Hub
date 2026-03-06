@@ -33,6 +33,15 @@ class PhysicsValidator:
             return True, 0.0, False, "No Hamiltonian metric detected. Passing by default."
 
         try:
+            # 3. PROACTIVE ADM CHECK (Deep Audit)
+            if 'metric_tensor' in test_result and 'coordinates' in test_result:
+                from sci_utils import verify_adm_constraints
+                metric = test_result['metric_tensor']
+                coords = test_result['coordinates']
+                is_adm_valid, adm_metrics, adm_reasoning = verify_adm_constraints(metric, coords)
+                if not is_adm_valid:
+                    return False, 1.0, True, f"DEEP AUDIT FAILURE: {adm_reasoning}"
+
             h_val = abs(float(h_val))
             is_valid = h_val < threshold
             

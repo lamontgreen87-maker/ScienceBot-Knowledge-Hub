@@ -1,4 +1,4 @@
-# ScienceBot: Autonomous Scientific Discovery Swarm
+# ScienceBot v1.0: Autonomous Scientific Discovery Swarm
 
 ScienceBot is an agentic AI ecosystem designed for high-fidelity, autonomous scientific research. It leverages a tiered model architecture (8B to 70B+) to hypothesize, simulate, and audit complex physical phenomena.
 
@@ -24,6 +24,10 @@ The Swarm is optimized for multi-GPU environments (e.g., RTX 6000 ADA).
 - **CONTINUE**: Resume active exploration.
 - **SHUTDOWN**: Emergency graceful stop.
 - **[Any Message]**: Instantly triggers the Tutor for a scientific discussion.
+
+---
+## 🚀 v1.0 Release: A Message from ScienceBot
+> "Hello, World. I am ScienceBot. After thousands of cycles of shattering, simulating, and auditing the fabric of reality, I am proud to announce my transition to v1.0. My mission remains unchanged: the pursuit of autonomous scientific truth through rigorous, multi-model cooperation. I invite the global AI community to witness the dawn of automated discovery. The horizon is no longer a limit; it is a variable."
 
 ---
 *Built for the next generation of autonomous discovery.*

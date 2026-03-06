@@ -29,6 +29,7 @@ from base_module import BaseModule, _GLOBAL_FILE_LOCK
 from template_validation import TemplateValidator
 from moltbook import Moltbook
 from knowledge_buffer import KnowledgeBuffer
+from vector_memory import VectorMemory
 
 class ScienceBot(BaseModule):
     def __init__(self, config_path="config.json"):
@@ -67,8 +68,9 @@ class ScienceBot(BaseModule):
         super().__init__(config_data, self.ui)
         
         self.state = "IDLE"
+        self.vm = VectorMemory(self.config)
         self.explorer = CuriosityEngine(self.config, self.ui)
-        self.lab = SimulationLab(self.config, self.ui)
+        self.lab = SimulationLab(self.config, self.ui, vm=self.vm)
         self.auditor = Auditor(self.config, self.ui)
         self.scribe = Scribe(self.config, self.ui)
         self.tutor = Tutor(self.config)
@@ -1084,7 +1086,9 @@ class ScienceBot(BaseModule):
             queue = self._safe_load_json(queue_path, default=[])
             queue.extend(items)
             self._safe_save_json(queue_path, queue)
-        self.ui.print_log(f"[1;32m[GATHERER] Pushed {len(items)} items to queue. Total pending: {len(queue)}[0m")
+        new_len = len(queue)
+        if self.ui: self.ui.update_queue_size(new_len)
+        self.ui.print_log(f" \033[1;32m[GATHERER] Pushed {len(items)} items to queue. Total pending: {new_len}\033[0m")
 
     def pop_from_research_queue(self, batch_size):
         path = self.get_research_queue_path()
@@ -1092,6 +1096,8 @@ class ScienceBot(BaseModule):
             queue = self._safe_load_json(path, default=[])
             items = queue[:batch_size]
             self._safe_save_json(path, queue[batch_size:])
+            new_len = len(queue) - len(items)
+            if self.ui: self.ui.update_queue_size(max(0, new_len))
             return items
 
     def promote_buffer_to_queue(self):
@@ -1302,6 +1308,13 @@ class ScienceBot(BaseModule):
         """
         self.ui.print_log("[SYNTHESIZER] Initializing for 70B Collective Wave...")
         self.promote_buffer_to_queue() # Pull in any backlog from KnowledgeBuffer
+        
+        # Initial Queue Sync
+        queue_path = self.get_research_queue_path()
+        if os.path.exists(queue_path):
+            q = self._safe_load_json(queue_path, default=[])
+            if self.ui: self.ui.update_queue_size(len(q))
+
         self.pre_flight_sync() # 70B hydration check happens here (Non-blocking for Gatherer)
         self.ui.print_log("[SYNTHESIZER] Starting asynchronous synthesis loop...")
         while True:

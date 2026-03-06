@@ -140,7 +140,61 @@ JSON:"""
                 else:
                     if self.ui:
                         self.ui.print_log(f"\033[1;32m[AUDITOR] Hamiltonian Constraint check passed ({h_val:.2e}).\033[0m")
+                
+                # --- VACUUM EINSTEIN AUDIT (G_ab = 0) ---
+                symbolic_metric = test_result.get('metrics', {}).get('symbolic_metric')
+                coords = test_result.get('metrics', {}).get('coords')
+                if symbolic_metric and coords and "black hole" in str(hypothesis).lower():
+                    if self.ui: self.ui.print_log("[AUDITOR] Black Hole detected. Verifying Vacuum Einstein Equations (G_uv = 0)...")
+                    from sci_utils import verify_vacuum_einstein
+                    is_vacuum, vacuum_failures, vacuum_reasoning = verify_vacuum_einstein(symbolic_metric, coords)
+                    if not is_vacuum:
+                        audit["audit_passed"] = False
+                        audit["rejection_type"] = "FATAL"
+                        audit["reasoning"] = f"{audit.get('reasoning', '')}\n\nVACUUM VIOLATION: Metric is not a vacuum solution. G_uv components non-zero: {vacuum_failures}"
+                    else:
+                        if self.ui: self.ui.print_log("\033[1;32m[AUDITOR] Vacuum Einstein Audit PASSED.\033[0m")
             
+            # ── FEATURE: BIANCHI IDENTITY RIGOR CHECK ──
+            if PhysicsValidator.should_trigger_adm_check(hypothesis) or "metric" in code.lower():
+                if self.ui:
+                    self.ui.print_log("[AUDITOR] Manifold detected. Verifying Bianchi Identity (nabla_b G^a_b = 0)...")
+                
+                try:
+                    # We need to extract the metric matrix and coordinates from the code
+                    # This is complex, so we'll look for standard naming in the simulation output or code
+                    # For now, we'll try to re-simulate the symbolic part if possible, 
+                    # but a better way is to have the Lab provide a 'symbolic_metric' in test_result.
+                    symbolic_metric = test_result.get('symbolic_metric')
+                    coords = test_result.get('coords')
+                    
+                    if symbolic_metric and coords:
+                        from sci_utils import verify_bianchi_identity
+                        is_valid_bianchi, failures = verify_bianchi_identity(symbolic_metric, coords)
+                        
+                        if not is_valid_bianchi:
+                            audit["audit_passed"] = False
+                            audit["rejection_type"] = "FATAL"
+                            fail_msg = f"BIANCHI IDENTITY VIOLATION: Coordinate divergence in components: {failures}"
+                            audit["reasoning"] = f"{audit.get('reasoning', '')}\n\n{fail_msg}"
+                            
+                            # Log to hallucination_log.md
+                            log_path = os.path.join(self.config['paths']['memory'], "hallucination_log.md")
+                            with open(log_path, 'a', encoding='utf-8') as f:
+                                f.write(f"\n### [{time.strftime('%Y-%m-%d %H:%M:%S')}] Bianchi Violation: {hypothesis.get('topic')}\n")
+                                f.write(f"**Hypothesis**: {hypothesis.get('hypothesis')}\n")
+                                f.write(f"**Failures**: {json.dumps(failures, indent=2)}\n")
+                                f.write(f"**Status**: FATAL REJECTION\n---\n")
+                            
+                            if self.ui:
+                                self.ui.print_log(f"\033[1;31m[AUDITOR] FATAL: Bianchi Identity Violated! Logged to hallucination_log.md\033[0m")
+                        else:
+                            if self.ui:
+                                self.ui.print_log("\033[1;32m[AUDITOR] Bianchi Identity verified (nabla_b G^a_b = 0).\033[0m")
+                except Exception as e:
+                    if self.ui:
+                        self.ui.print_log(f"[AUDITOR] Bianchi Check skipped: {e}")
+
             # ── MERGE DEFERRED PREFLIGHT ISSUES ──
             if preflight_failed and is_adm_simulation:
                 audit["audit_passed"] = False

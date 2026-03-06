@@ -8,7 +8,8 @@ def calculate_rigor(entry):
                      '\\mu', '\\nu', '\\alpha', '\\sigma', '\\Lambda',
                      '\\hbar', '\\nabla', '\\int', '\\sum', '\\Gamma',
                      '\\mathcal', '\\begin{', '\\text{', '\\sqrt',
-                     'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈']
+                     'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈',
+                     '^\\alpha', '_0 D_t', '\\Gamma(']
     if any(m in entry for m in latex_markers):
         rigor += 2.0
         print(f"[DEBUG] LaTeX Boost: +2.0 (Detected: {[m for m in latex_markers if m in entry]})")
@@ -26,7 +27,11 @@ def calculate_rigor(entry):
         'gauge-invariant', 'self-adjoint', 'operator', 'hilbert',
         'pde', 'spectral', 'adiabatic', 'invariant', 'non-linear',
         'pseudospectrum', 'topology', 'angular momentum', 'horizon',
-        'ergosphere', 'derivation', 'formalism'
+        'ergosphere', 'derivation', 'formalism', 'fractional', 'derivative',
+        'integral', 'grunwald-letnikov', 'riemann-liouville', 'caputo',
+        'mittag-leffler', 'viscoelasticity', 'anomalous diffusion',
+        'power-law', 'memory kernel', 'hereditary', 'adm 3+1',
+        'hamiltonian constraint', 'momentum constraint'
     ]
     entry_lower = entry.lower()
     physics_count = sum(1 for t in physics_terms if t in entry_lower)

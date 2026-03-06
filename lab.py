@@ -8,8 +8,9 @@ from base_module import BaseModule
 
 class SimulationLab(BaseModule):
     COMPONENT_NAME = "lab"
-    def __init__(self, config, ui=None):
+    def __init__(self, config, ui=None, vm=None):
         super().__init__(config, ui)
+        self.vm = vm
 
     def run_probe(self, concept, context, model=None):
         """
@@ -248,19 +249,39 @@ Your simulation code MUST reflect this algebraic reality. Do not fake or force l
 
         symbolic_setup = f"t, {dep_sym} = sp.symbols('t {dep_sym}')"
         
-        # --- HIGH FIDELITY MANDATE (Creator Advice) ---
-        fidelity_injection = """
+        # --- HIGH FIDELITY MANDATE (Ultra-Fidelity Upgrade) ---
+        fidelity_level = self.config.get('research', {}).get('simulation_fidelity', 'STANDARD')
+        
+        if fidelity_level == 'ULTRA':
+            fidelity_injection = """
+### ULTRA-FIDELITY EXECUTION STANDARDS:
+- **PRECISION MANTRA**: You MUST use `np.float64` for all arrays and `sp.Float(val, 64)` for constants.
+- `TIME_STEPS = 10000` (Ultra-high resolution for horizon proximity)
+- `DT = 0.001` (Micro-granular integration)
+- `FAILURE_PROBABILITY = 0.005` (Reduced numerical noise)
+- **GPU ACCELERATION**: Use `sp.lambdify(..., modules=['cupy'])` or `modules=['torch', 'numpy']` for tensor operations.
+- **VRAM UTILIZATION**: Use large numerical grids (minimum 1000x1000). The A100/H100 VRAM is allocated for this.
+"""
+        else:
+            fidelity_injection = """
 ### HIGH-FIDELITY EXECUTION STANDARDS:
 Your code MUST define and utilize these specific complexity parameters:
-- `TIME_STEPS = 2000` (Minimum to capture horizon dynamics)
-- `DT = 0.01` (Granular integration step)
-- `FAILURE_PROBABILITY = 0.02` (Systemic entropy factor)
+- `TIME_STEPS = 2000`
+- `DT = 0.01`
+- `FAILURE_PROBABILITY = 0.02`
 - **NUMPY CONVERSION**: You MUST use `sp.lambdify(..., 'numpy')` for all loop-based calculations. NEVER use `.subs()` or `.evalf()` for numerical updates.
-Implement a loop that processes these steps, incorporating the entropy factor into the state update.
 """
         if "Black Hole" in hypothesis.get('topic', '') or "Metric" in str(hypothesis):
             fidelity_injection += "\n**VRAM MANDATE**: This is a high-fidelity simulation. Use 500x500 or larger numerical grids where applicable. Your matrices must be real 4x4 spacetime tensors. Placeholder code will be REJECTED. Utilize the 288GB cluster capacity.\n"
+            fidelity_injection += "\n**VACUUM MANDATE**: This simulation must satisfy the Vacuum Einstein Equations ($G_{\\mu\\nu} = 0$). An automatic audit script will verify your symbolic metric 'g'. If it is not a vacuum solution, the simulation will be REJECTED.\n"
         
+        # --- FEATURE: HIERARCHICAL PROBLEM DECOMPOSITION ---
+        # Broadened to include all complex Ricci/Geometric tasks that often hallucinate skeleton sections.
+        is_complex_geometric = any(kw in str(hypothesis).lower() for kw in ["ricci flow", "ricci curvature", "metric tensor", "spacetime metric", "curvature tensor"])
+        if is_complex_geometric:
+            if self.ui: self.ui.print_log("\033[1;36m[LAB] Complex Geometric Task detected. Triggering Hierarchical Decomposition (3-Phase)...\033[0m")
+            return self.decompose_geometric_task(hypothesis, description, model)
+
         try:
             prompt = SIMULATION_GENERATION_PROMPT.format(
                 description=description,
@@ -326,8 +347,28 @@ Implement a loop that processes these steps, incorporating the entropy factor in
         
 
         script_path = os.path.join(self.config['paths']['tests'], "last_simulation.py")
+        
+        # --- FEATURE: SYMBOLIC MANIFOLD EXTRACTION ---
+        # Append a snippet to the code to attempt to serialize 'g' (metric) and 'coords' 
+        # so the Auditor can perform Bianchi checks.
+        extraction_snippet = """
+import sympy as sp
+import json as _json
+try:
+    if 'g' in locals() and 'coords' in locals():
+        # Serialize the metric and coords for the Auditor
+        manifest = {
+            "metric": str(g),
+            "coords": [str(c) for c in coords]
+        }
+        print("\\n=== MANIFOLD_MANIFEST ===")
+        print(_json.dumps(manifest))
+        print("=== END_MANIFEST ===")
+except:
+    pass
+"""
         with open(script_path, 'w', encoding='utf-8') as f:
-            f.write(code)
+            f.write(code + extraction_snippet)
             
         target_complexity = int(hypothesis.get('target_complexity_score', 20))
         base_timeout = 20 + target_complexity # Scale timeout with complexity
@@ -346,6 +387,30 @@ Implement a loop that processes these steps, incorporating the entropy factor in
                     metrics = json.loads(metrics_segment.strip())
                 except:
                     pass
+            
+            # --- MANIFOLD MANIFEST PARSING ---
+            if "=== MANIFOLD_MANIFEST ===" in output:
+                try:
+                    manifest_segment = output.split("=== MANIFOLD_MANIFEST ===")[1].split("=== END_MANIFEST ===")[0]
+                    manifest = json.loads(manifest_segment.strip())
+                    
+                    # Parse back into SymPy objects for the Auditor
+                    from sympy import Matrix, symbols as sympy_symbols
+                    from sympy.parsing.sympy_parser import parse_expr
+                    
+                    # 1. Parse coordinates
+                    coords_syms = [sympy_symbols(c) for c in manifest['coords']]
+                    
+                    # 2. Parse metric matrix
+                    # Setup local dict for parsing
+                    local_dict = {str(s): s for s in coords_syms}
+                    # Matrix(str) works for simple representations
+                    g_expr = parse_expr(manifest['metric'], local_dict=local_dict)
+                    
+                    metrics['symbolic_metric'] = g_expr
+                    metrics['coords'] = coords_syms
+                except Exception as e:
+                    if self.ui: self.ui.print_log(f"[LAB] ERROR parsing manifold manifest: {e}")
 
             return {
                 "hypothesis": hypothesis,
@@ -417,3 +482,72 @@ Implement a loop that processes these steps, incorporating the entropy factor in
         )
         # Repair phase is highly mathematical; prioritize the specialized engine
         return self._query_llm(prompt, model=model, temperature=0.2)
+
+    def decompose_geometric_task(self, hypothesis, description, model=None):
+        """
+        Breaks down a complex Ricci Flow / Geometric task into 3 sequential phases
+        to ensure high fidelity and executability.
+        """
+        topic = hypothesis.get('topic', 'Geometric Manifold')
+        
+        # Phase 1: Symbolic Manifold Definition
+        if self.ui: self.ui.print_log("[LAB] DECOMPOSITION Phase 1: Symbolic Manifold Definition...")
+        
+        # Coordinate Resilience Mandate for Black Holes
+        coord_mandate = ""
+        if any(kw in topic.lower() for kw in ["black hole", "schwarzschild", "kerr", "singularity", "horizon"]):
+            coord_mandate = "MANDATE: Use Eddington-Finkelstein or Kruskal-Szekeres coordinates to avoid horizon singularities (r=2M)."
+
+        p1_prompt = f"""
+### RICCI FLOW DECOMPOSITION: PHASE 1 (SYMBOLIC MANIFOLD)
+Topic: {topic}
+Task: Define the symbolic coordinate system and the metric tensor matrix `g`.
+{coord_mandate}
+REQUIRED: 
+- Use `sp.symbols(..., real=True)`.
+- Define a 4x4 `sp.Matrix` named `g`.
+- Output ONLY the python code for this section. No preamble.
+"""
+        p1_code = self._query_llm(p1_prompt, model=model, temperature=0.1)
+        p1_code = self._extract_code(p1_code)
+
+        # Phase 2: Curvature & Flow Equations
+        if self.ui: self.ui.print_log("[LAB] DECOMPOSITION Phase 2: Curvature & Flow Derivation...")
+        p2_prompt = f"""
+### RICCI FLOW DECOMPOSITION: PHASE 2 (CURVATURE & FLOW)
+Topic: {topic}
+Context: {p1_code}
+Task: Using the metric `g` defined above, derive the Ricci Scalar / Tensor and formulate the Flow equation (dg/dt = -2*Ricci).
+REQUIRED:
+- Use `ricci_scalar_symbolic(g, coords)`.
+- Define the symbolic `expr` for the flow.
+- Output ONLY the python code for derivation and `expr` definition.
+"""
+        p2_code = self._query_llm(p2_prompt, model=model, temperature=0.1)
+        p2_code = self._extract_code(p2_code)
+
+        # Phase 3: Integration & Logging
+        if self.ui: self.ui.print_log("[LAB] DECOMPOSITION Phase 3: Integration & Logging...")
+        p3_prompt = f"""
+### RICCI FLOW DECOMPOSITION: PHASE 3 (NUMERICAL INTEGRATION)
+Topic: {topic}
+Hypothesis: {hypothesis.get('hypothesis')}
+Components: 
+{p1_code}
+{p2_code}
+Task: Combine the above into a full executable script.
+REQUIRED:
+- Implement `np.float64` precision.
+- Use `sp.lambdify` for the numerical loop.
+- Include a `# 5. DATA LOGGING` section with `=== SCIENTIFIC_METRICS ===`.
+- The final variable must be `sol_y` and `sol_t`.
+"""
+        final_code = self._query_llm(p3_prompt, model=model, temperature=0.2)
+        return final_code
+
+    def _extract_code(self, raw_text):
+        if '```python' in raw_text:
+            return raw_text.split('```python')[1].split('```')[0].strip()
+        elif '```' in raw_text:
+            return raw_text.split('```')[1].split('```')[0].strip()
+        return raw_text.strip()
