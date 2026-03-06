@@ -1,22 +1,112 @@
 {
-    "current_topic": "Metric Perturbations & Black Hole Stability Theoretical Research",
-    "depth_counter": 10,
-    "phase": "GUESS",
+    "current_topic": "Ricci curvature",
+    "depth_counter": 20,
+    "phase": "STUDY",
     "state": "IDLE",
-    "iteration_count": 4242,
+    "iteration_count": 4332,
     "topic_vectors": [
         {
-            "name": "Gauge-Invariant Formalism for Black Hole Perturbations",
-            "area": "General Relativity and Gravitation",
+            "name": "Classification of Ricci Flow Singularities",
+            "area": "Geometric Analysis",
             "high_curiosity": true
         },
         {
-            "name": "Quantum Fluctuation Effects on Black Hole Stability",
-            "area": "Quantum Gravity and Black Hole Physics",
+            "name": "Topological Constraints from Positive Ricci Curvature",
+            "area": "Differential Geometry",
+            "high_curiosity": true
+        },
+        {
+            "name": "Stability of Ricci Solitons",
+            "area": "Geometric Flows",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature in Non-Riemannian Geometries",
+            "area": "Finsler Geometry",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Spin Geometry",
+            "area": "Mathematical Physics",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature in Quantum Gravity",
+            "area": "Theoretical Physics",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Dark Energy",
+            "area": "Cosmology",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature in Early Universe Models",
+            "area": "Cosmology",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature in Information Geometry",
+            "area": "Probability Theory",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature in Machine Learning",
+            "area": "Graph Theory",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Optimal Transport",
+            "area": "Analysis",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Perelman's Work",
+            "area": "Geometric Topology",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Minimal Surfaces",
+            "area": "Geometric Analysis",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Einstein Manifolds",
+            "area": "Differential Geometry",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Black Hole Thermodynamics",
+            "area": "General Relativity",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Holography",
+            "area": "Theoretical Physics",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Non-Commutative Geometry",
+            "area": "Mathematical Physics",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Geometric Analysis",
+            "area": "Spectral Geometry",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Minimal Surfaces",
+            "area": "Geometric Analysis",
+            "high_curiosity": true
+        },
+        {
+            "name": "Ricci Curvature and Einstein Manifolds",
+            "area": "Differential Geometry",
             "high_curiosity": true
         }
     ],
     "deepseek_repair_advice": "PRIORITY DIRECTIVE - CONCRETE NEXT STEPS: (1) CDT thread: build a Monte Carlo CDT lattice simulation in scipy measuring spectral dimension at E/E_P in [0.001,10], verifying d_s = 4 + (3/2)*(E/E_P)^-1 numerically. (2) Stochastic Ricci Flow: derive xi(g,t) from the Heat Kernel Expansion of the Laplace-Beltrami operator. Claim: xi = sum_n a_n(x)*t^n (Seeley-DeWitt coefficients). Show alpha=(4pi)^(-d/2)*a_2(x) from first principles, not empirically. Verify Perelman entropy monotonicity. (3) CORRECTED PRIME FINDING - phi=1.618 claim DISPROVEN (t=123.72, p~0, RETRACTED). Real result: prime gaps follow GUE statistics (Montgomery-Odlyzko Law), NOT Poisson (KS D=0.3568, p~0). Next: normalize gaps by local mean spacing, fit Wigner surmise P(s)=(32/pi^2)*s^2*exp(-4*s^2/pi) via scipy.optimize.curve_fit vs Poisson. Filed: discoveries/02_confirmed_theory/discovery_prime_gaps_gue_statistics.json.",
     "deepseek_dream_advice": "ARCHITECTURAL INSIGHT from 4013-iteration audit: Stop generating generic aspect-N vectors. The three attack vectors are: (A) CDT Non-Commutativity - spectral dimension deviation from d=4 at Planck scale via lattice simulation; (B) Stochastic Ricci Flow - derive xi from heat kernel first principles to close the Logic Hole; (C) Prime Gap GUE - phi claim RETRACTED. Fit normalized spacings to GUE Wigner surmise. Montgomery-Odlyzko connection to Riemann zeta zeros is the real frontier. Every hypothesis must name: (1) a specific equation, (2) a falsifiable numerical prediction, (3) a Python implementation plan.",
-    "burst_counter": 1
+    "burst_counter": 3
 }

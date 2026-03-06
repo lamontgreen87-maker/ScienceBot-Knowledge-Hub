@@ -8,10 +8,30 @@ from urllib.parse import quote
 from base_module import BaseModule
 
 class Searcher(BaseModule):
+    _QUERY_BLACKLIST = [
+        "current", "brief", "summary", "status", "report", "update", "latest", 
+        "now", "recent", "today", "information", "data", "overview"
+    ]
+    
+    _NOISE_KEYWORDS = [
+        "banking", "finance", "money", "loan", "mortgage", "credit", "deal", 
+        "discount", "coupon", "shopping", "fashion", "style", "beauty", 
+        "salon", "hair", "recipe", "cooking", "travel", "hotel", "flight"
+    ]
+
     def __init__(self, config, ui=None):
         super().__init__(config, ui)
 
     def search(self, query, max_results=5):
+        # 1. Query Sanitization & Blacklist Check
+        clean_q = query.lower().strip()
+        words = clean_q.split()
+        
+        # Block generic garbage
+        if len(words) < 2 or all(w in self._QUERY_BLACKLIST for w in words):
+            if self.ui: self.ui.print_log(f"[SEARCHER] Blocking weak/generic query: '{query}'")
+            return []
+
         msg = f"[SEARCHER] Searching the web for: {query}..."
         if self.ui:
             self.ui.print_log(msg)
@@ -157,6 +177,10 @@ class Searcher(BaseModule):
             if any(word in text for word in tech_keywords): score += 2
             if res.get('source') in ['arXiv', 'OpenAlex']: score += 2
             
+            # Heavy penalty for noise
+            if any(word in text for word in self._NOISE_KEYWORDS):
+                score -= 8
+            
             total_rigor += score
             summary += f"Source {i+1} [Rigor:{score}]: {res['title']}\nSnippet: {res['body']}\n\n"
         
@@ -243,9 +267,25 @@ JSON:"""
 
         query_response = self._query_llm(query_prompt)
         from json_utils import extract_json
-        follow_up_queries = extract_json(query_response)
-        if not isinstance(follow_up_queries, list):
-            follow_up_queries = []
+        raw_queries = extract_json(query_response)
+        follow_up_queries = []
+        
+        # Anchor the queries to the topic
+        topic_keywords = [w.lower() for w in topic.split() if len(w) > 3]
+        anchor = " ".join(topic_keywords[:2])
+        
+        if isinstance(raw_queries, list):
+            for q in raw_queries:
+                if not isinstance(q, str): continue
+                # Block Generic Queries
+                if any(bad in q.lower() for bad in self._QUERY_BLACKLIST if len(bad) > 3):
+                    continue
+                # Anchor
+                if anchor not in q.lower():
+                    q = f"{anchor} {q}"
+                follow_up_queries.append(q)
+
+        if not follow_up_queries:
             follow_up_queries = [
                 f"{topic} mathematical models equations",
                 f"{topic} unsolved problems anomalies",

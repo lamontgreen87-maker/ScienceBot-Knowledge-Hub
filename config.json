@@ -4,8 +4,8 @@
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
         "sender_email": "lamontgreen87@gmail.com",
-        "sender_password": "omrfpfxksraxkdov",
-        "recipient_email": "lamontgreen87@gmail.com"
+        "sender_password": "PASSWORD_HERE",
+        "recipient_email": "EMAIL_HERE"
     },
     "hardware": {
         "local_model": "deepseek-r1:8b",
@@ -19,15 +19,13 @@
         "theorist_model": "deepseek-r1:70b",
         "explorer_model": "deepseek-r1:32b",
         "api_url": [
-            "http://69.30.85.79:22038/api/generate",
-            "http://194.68.245.77:22143/api/generate"
+            "http://38.147.83.11:23386/api/generate"
         ],
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
-            "http://194.68.245.67:22107/api/generate",
-            "http://69.30.85.154:22036/api/generate",
-            "http://69.30.85.79:22123/api/generate",
-            "http://194.68.245.31:22118/api/generate"
+            "http://194.68.245.144:22176/api/generate",
+            "http://194.68.245.208:22164/api/generate",
+            "http://194.68.245.63:22060/api/generate"
         ],
         "vram_capacity_gb": 90,
         "gpu_mapping": {
@@ -46,7 +44,7 @@
         "logical_vram_limit_gb": 8,
         "api_key": null,
         "teacher_model": "gemini-pro-latest",
-        "teacher_api_key": "AIzaSyAcZYVWYDpOpBYowU9h2JpxvYg-ifyK5ys",
+        "teacher_api_key": "YOUR_GEMINI_API_KEY",
         "cpu_threads": 48,
         "max_swarm_workers": 20,
         "turbo_workers": 40,
@@ -84,7 +82,7 @@
         "use_large_theorist": true
     },
     "social": {
-        "moltbook_api_key": "moltbook_sk_4JKDjbJR2gpK67tWfJmLR5HQ7qndYolh",
+        "moltbook_api_key": "YOUR_MOLTBOOK_API_KEY",
         "enabled": true,
         "default_submolt": "science",
         "pulse_frequency": 1000

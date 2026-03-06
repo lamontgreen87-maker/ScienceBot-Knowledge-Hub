@@ -6507,5 +6507,45 @@
         "topic": "Metric Perturbations & Black Hole Stability Theoretical Research",
         "summary": "This research investigates the stability of black holes under metric perturbations, focusing on the interplay between gravitational waves and spacetime geometry. The core equation derived is the Regge-Wheeler-Zerilli (RWZ) master equation, which governs the evolution of metric perturbations: \\( \\frac{\\partial^2 \\phi}{\\partial t^2} + \\frac{\\partial \\phi}{\\partial t} - \\frac{\\partial^2 \\phi}{\\partial r^*^2} + V(r)\\phi = 0 \\), where \\( V(r) \\) is the effective potential dependent on the black hole parameters. Simulations confirmed the stability of Schwarzschild black holes, with perturbations decaying over time. Verified constants include the gravitational constant \\( G = 6.67430 \\times 10^{-11} \\, \\text{m}^3 \\text{kg}^{-1} \\text{s}^{-2} \\) and the speed of light \\( c = 299792458 \\, \\text{m/s} \\). A key insight was the dominance of quasinormal modes in the late-time behavior, with frequencies proportional to the black hole mass \\( M \\). Failed approaches included assumptions of strict spherical symmetry, which neglected higher multipole contributions, and early attempts to linearize the Einstein equations without accounting for back-reaction effects. Open questions remain regarding the role of quantum corrections and the behavior of perturbations in higher-dimensional spacetimes.",
         "timestamp": "2026-03-03 03:12:45"
+    },
+    {
+        "topic": "Metric Perturbations & Black Hole Stability Theoretical Research",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Metric Perturbations & Black Hole Stability Theoretical Research (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-04 19:48:28"
+    },
+    {
+        "topic": "Fractional ODEs",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Fractional ODEs (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-04 19:50:22"
+    },
+    {
+        "topic": "Fractional ODEs",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Fractional ODEs (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-04 21:16:37"
+    },
+    {
+        "topic": "Nonlinear ODEs",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Nonlinear ODEs (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-04 21:18:24"
+    },
+    {
+        "topic": "Nonlinear ODEs",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Nonlinear ODEs (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-05 17:15:50"
+    },
+    {
+        "topic": "Fractional ODEs",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Fractional ODEs (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-05 17:17:56"
+    },
+    {
+        "topic": "Nonlinear ODEs",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Nonlinear ODEs (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-05 17:18:20"
+    },
+    {
+        "topic": "Ricci curvature",
+        "summary": "TECHNICAL MEMORANDUM: Verification of Ricci curvature (Significance: 0). Blueprint: None. Constants: null. Automatic synthesis triggered due to LLM fidelity failure.",
+        "timestamp": "2026-03-05 17:20:24"
     }
 ]

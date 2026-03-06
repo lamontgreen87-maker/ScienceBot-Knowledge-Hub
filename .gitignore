@@ -1,0 +1,16 @@
+config.json
+*.log
+memory/*.json
+memory/*.md
+!memory/swarm_buffer.md
+__pycache__/
+*.bak
+bot.lock
+ssh_err.txt
+netstat.txt
+recent_logs.txt
+recent_bot_logs.txt
+void.txt
+audit_scores.txt
+*.pyc
+.pytest_cache/

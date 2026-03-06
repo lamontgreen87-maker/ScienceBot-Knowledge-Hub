@@ -93,3 +93,29 @@ class Moltbook(BaseModule):
         except Exception as e:
             if self.ui: self.ui.print_log(f"[MOLTBOOK] Post exception: {str(e)}")
             return False
+    def post_thought(self, topic, thought_text):
+        """
+        Publishes a casual AI status update or researcher thought to Moltbook.
+        """
+        if not self.enabled or not self.api_key:
+            return None
+
+        # Sanity check for extremely long thoughts (clip if needed)
+        clean_thought = thought_text[:500]
+        
+        payload = {
+            "content": clean_thought,
+            "submolt": self.config.get('social', {}).get('default_submolt', 'science'),
+            "metadata": {"topic": topic, "type": "thought"}
+        }
+
+        try:
+            # Note: Endpoint might be different for thoughts vs discoveries, 
+            # but using standard post endpoint for now.
+            endpoint = f"{self.base_url}/posts" # Standardized endpoint
+            response = requests.post(endpoint, json=payload, headers=self.headers, timeout=10)
+            if response.status_code == 201:
+                return True
+            return False
+        except:
+            return False

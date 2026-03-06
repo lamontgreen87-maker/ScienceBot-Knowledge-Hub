@@ -17,7 +17,7 @@ class KnowledgeBuffer:
     def append_finding(self, topic, findings, status="Success"):
         """Atomic append to the live buffer."""
         timestamp = time.strftime("%H:%M:%S")
-        entry = f"### [{timestamp}] {topic} | STATUS: {status} | AUDIT: PENDING | RIGOR: 0\n{findings}\n\n---\n"
+        entry = f"### [{timestamp}] {topic} | STATUS: {status} | AUDIT: PENDING | SYNTH: PENDING | RIGOR: 0\n{findings}\n\n---\n"
         
         # Read current content
         try:
@@ -61,23 +61,6 @@ class KnowledgeBuffer:
                 content = f.read()
             
             import re
-            # Regex to find the topic line regardless of current audit/rigor status
-            # Group 1: Timestamp part
-            # Group 2: Topic part
-            # Group 3: Rest of the line (to be replaced)
-            pattern = rf"(### \[\d{{2}}:\d{{2}}:\d{{2}}\] {re.escape(topic)} \| STATUS: Success \| AUDIT: \w+ \| RIGOR: [\d.]+)(.*)"
-            
-            replacement_header = f"### [{{timestamp_placeholder}}] {topic} | STATUS: Success | AUDIT: {new_status}"
-            if rigor_score is not None:
-                replacement_header += f" | RIGOR: {rigor_score}"
-            else:
-                replacement_header += " | RIGOR: 0"
-
-            if reason:
-                replacement_header += f" | REASON: {reason}"
-
-            # We need to preserve the original timestamp. 
-            # A simpler way is to find the exact line and replace it.
             lines = content.split('\n')
             new_lines = []
             updated = False
@@ -87,7 +70,11 @@ class KnowledgeBuffer:
                     ts_match = re.search(r"### \[(\d{2}:\d{2}:\d{2})\]", line)
                     ts = ts_match.group(1) if ts_match else "00:00:00"
                     
-                    new_line = f"### [{ts}] {topic} | STATUS: Success | AUDIT: {new_status}"
+                    # Preserve SYNTH status if present
+                    synth_match = re.search(r"SYNTH: (\w+)", line)
+                    synth_status = synth_match.group(1) if synth_match else "PENDING"
+                    
+                    new_line = f"### [{ts}] {topic} | STATUS: Success | AUDIT: {new_status} | SYNTH: {synth_status}"
                     if rigor_score is not None:
                         new_line += f" | RIGOR: {rigor_score}"
                     else:
@@ -106,6 +93,36 @@ class KnowledgeBuffer:
         except Exception as e:
             pass
 
+    def update_synth_status(self, topic, new_status):
+        """Updates the SYNTH status for a specific finding."""
+        try:
+            with open(self.buffer_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            import re
+            lines = content.split('\n')
+            new_lines = []
+            updated = False
+            for line in lines:
+                if f"### [" in line and topic in line:
+                    # Capture the whole line and replace SYNTH part
+                    if "SYNTH:" in line:
+                        new_line = re.sub(r"SYNTH: \w+", f"SYNTH: {new_status}", line)
+                    else:
+                        # Append it if missing (legacy support)
+                        new_line = line.replace(" | RIGOR:", f" | SYNTH: {new_status} | RIGOR:")
+                    
+                    new_lines.append(new_line)
+                    updated = True
+                else:
+                    new_lines.append(line)
+
+            if updated:
+                with open(self.buffer_path, "w", encoding="utf-8") as f:
+                    f.write('\n'.join(new_lines))
+        except:
+            pass
+
     def get_pending_findings(self):
         """Returns a list of findings that haven't been audited yet."""
         try:
@@ -118,6 +135,21 @@ class KnowledgeBuffer:
                 if "AUDIT: PENDING" in entry:
                     pending.append(entry.strip())
             return pending
+        except:
+            return []
+
+    def get_promotable_findings(self):
+        """Returns verified findings that haven't been synthesized yet."""
+        try:
+            with open(self.buffer_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            entries = content.split("---")
+            promotable = []
+            for entry in entries:
+                if "AUDIT: VERIFIED" in entry and "SYNTH: PENDING" in entry:
+                    promotable.append(entry.strip())
+            return promotable
         except:
             return []
 
