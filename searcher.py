@@ -33,10 +33,8 @@ class Searcher(BaseModule):
             return []
 
         msg = f"[SEARCHER] Searching the web for: {query}..."
-        if self.ui:
-            self.ui.print_log(msg)
-        else:
-            print(msg)
+        # if self.ui: self.ui.print_log(msg)
+        # else: print(msg)
         results = []
         noise_filters = (
             " -academy -cosmetology -hair -beauty -fashion -salon"
@@ -74,8 +72,7 @@ class Searcher(BaseModule):
         Retrieves papers from arXiv and OpenAlex.
         Grounds theories in peer-reviewed literature.
         """
-        if self.ui:
-            self.ui.print_log(f"[ACADEMIC] Retrieving papers for: {query}...")
+        # if self.ui: self.ui.print_log(f"[ACADEMIC] Retrieving papers for: {query}...")
         
         results = []
         
@@ -145,8 +142,7 @@ class Searcher(BaseModule):
         domain = domains.get(site_type, 'stackoverflow.com')
         wrapped_query = f"site:{domain} {query}"
         
-        if self.ui:
-            self.ui.print_log(f"[TECHNICAL] Searching {domain} for: {query}...")
+        # if self.ui: self.ui.print_log(f"[TECHNICAL] Searching {domain} for: {query}...")
             
         return self.search(wrapped_query, max_results=max_results)
 
@@ -155,8 +151,7 @@ class Searcher(BaseModule):
         Retrieves code implementations and repository descriptions from GitHub.
         """
         wrapped_query = f"site:github.com {query} filetype:py OR filetype:ipynb"
-        if self.ui:
-            self.ui.print_log(f"[GITHUB] Searching for code in: {query}...")
+        # if self.ui: self.ui.print_log(f"[GITHUB] Searching for code in: {query}...")
         return self.search(wrapped_query, max_results=max_results)
 
     def summarize_results(self, results):
@@ -199,8 +194,7 @@ class Searcher(BaseModule):
 
         Returns a rich research brief string to inform hypothesis generation.
         """
-        if self.ui:
-            self.ui.print_log(f"[CONTEMPLATION] Beginning multi-round research on: {topic}")
+        # if self.ui: self.ui.print_log(f"[CONTEMPLATION] Beginning multi-round research on: {topic}")
 
         # ── Step 0: Internal Knowledge Retrieval ────────────────────────────────
         internal_knowledge = ""
@@ -232,8 +226,7 @@ class Searcher(BaseModule):
                 if any(word in entry_topic for word in search_keywords) or topic.lower() in entry_topic:
                     internal_knowledge += f"- Study Synthesis ({entry.get('timestamp')}) on '{entry.get('topic')}': {entry.get('summary', '')}\n"
 
-        if internal_knowledge and self.ui:
-            self.ui.print_log("[CONTEMPLATION] Found prior internal knowledge to build upon.")
+        # if self.ui: self.ui.print_log("[CONTEMPLATION] Found prior internal knowledge to build upon.")
 
         # ── Round 1: Broad sweep (Academic Priority) ────────────────────────────────
         # Force academic focus to avoid DCOM/forum "trash data"
@@ -250,8 +243,7 @@ class Searcher(BaseModule):
                 return "No recent data found."
 
         # ── Round 2: LLM generates targeted follow-up queries ───────────────────
-        if self.ui:
-            self.ui.print_log("[CONTEMPLATION] Generating targeted follow-up queries...")
+        # if self.ui: self.ui.print_log("[CONTEMPLATION] Generating targeted follow-up queries...")
 
         query_prompt = f"""You are a research strategist. A broad web search on the topic '{topic}' returned:
 
@@ -304,15 +296,13 @@ JSON:"""
             else:
                 query_str = str(raw_query)
                 
-            if self.ui:
-                self.ui.print_log(f"[CONTEMPLATION] Follow-up {i+1}/3: {query_str[:60]}...")
+            # if self.ui: self.ui.print_log(f"[CONTEMPLATION] Follow-up {i+1}/3: {query_str[:60]}...")
             results = self.search(query_str, max_results=4)
             summary = self.summarize_results(results)
             all_follow_up += f"\n--- Follow-up {i+1}: {query_str} ---\n{summary}"
 
         # ── Final synthesis ──────────────────────────────────────────────────────
-        if self.ui:
-            self.ui.print_log("[CONTEMPLATION] Synthesizing research brief...")
+        # if self.ui: self.ui.print_log("[CONTEMPLATION] Synthesizing research brief...")
 
         synthesize_prompt = f"""You are a Lead Research Scientist. Synthesize this multi-source research into a rigorous technical brief.
 MANDATORY: Do NOT invent or name new theoretical frameworks (no USGD-H, etc.). Use established terminology from the provided sources.
@@ -341,7 +331,8 @@ Research Brief:"""
             brief = broad_summary + all_follow_up
 
         if self.ui:
-            self.ui.print_log(f"[CONTEMPLATION] Brief complete ({len(brief)} chars).")
+            # self.ui.print_log(f"[CONTEMPLATION] Brief complete ({len(brief)} chars).")
+            pass
         return brief
 
     def deepen_research(self, topic, question, previous_brief, probe_results=None):

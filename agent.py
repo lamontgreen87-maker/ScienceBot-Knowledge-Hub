@@ -490,7 +490,7 @@ class ScienceBot(BaseModule):
                     self.scraper.config = self.config
                     self.inventor.config = self.config
                     self.reviewer.config = self.config
-                    self.ui.print_log("[OVERMIND] Configuration reloaded and synced to all components.")
+                    # self.ui.print_log("[OVERMIND] Configuration reloaded and synced to all components.")
             except Exception as e:
                 self.ui.print_log(f"[ERROR] Failed to reload config: {e}")
 
@@ -537,7 +537,12 @@ class ScienceBot(BaseModule):
         Background Thread: Constant 8B Research and Simulation.
         Pushes findings to the KnowledgeBuffer.
         """
-        num_streams = self.config['hardware'].get('fast_lane_concurrency', 4)
+        is_turbo = self.config['research'].get('turbo_mode', False)
+        if is_turbo:
+            num_streams = self.config['hardware'].get('turbo_workers', 40)
+        else:
+            num_streams = self.config['hardware'].get('fast_lane_concurrency', 10)
+            
         self._debug_swarm(f"LAUNCHING Continuous 8B stream with {num_streams} workers...")
         self.ui.print_log(f"\033[1;32m[SYSTEM] Eternal Swarm: Launching {num_streams} parallel 8B research streams...\033[0m")
         
@@ -741,24 +746,19 @@ class ScienceBot(BaseModule):
         """
         Wave 1: Research & Hypothesis Guessing (8B)
         """
-        self.ui.print_log(f"\033[1;36m[SWARM WORKER] Research Stage: '{topic}'\033[0m")
-        
-        # --- GPU Pinning (Thread-Local Context) ---
-        from base_module import _THREAD_LOCAL_CONTEXT
-        _THREAD_LOCAL_CONTEXT.api_url = target_url
-        
-        # Wait for VRAM in the worker thread (Async-Safe)
-        while self.get_vram_headroom(url=target_url) < 12.0:
-            if self.ui: self.ui.set_status(f"THROTTLED: {topic[:15]} waiting for VRAM")
-            time.sleep(10)
-        
-        # Register this worker on the display with a UNIQUE ID that won't be overwritten by LLM calls
+        self._debug_swarm(f"[SWARM WORKER] Research Stage Start: '{topic}'")
+        # Register Task IMMEDIATELY for visibility
         import threading
         from colorama import Fore
         _worker_task_id = f"worker_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
         if self.ui:
             self.ui.register_task(_worker_task_id, f"Research: {topic[:28]}", color=Fore.GREEN)
+
         try:
+            # Wait for VRAM in the worker thread (Async-Safe)
+            while self.get_vram_headroom(url=target_url) < 6.0:
+                if self.ui: self.ui.update_task(_worker_task_id, "VRAM-WAIT", 0)
+                time.sleep(10)
             # 1. Study Loop
             study_loops = self.config['research'].get('study_loop_count', 1)
             research_summary = self.searcher.contemplate(topic)
@@ -800,15 +800,21 @@ class ScienceBot(BaseModule):
             if dream_advice:
                 research_summary += f"\n\n=== ARCHITECTURAL GUIDANCE ===\n{dream_advice}"
 
-            # 0.1 Context enrichment (Scientific Memory)
+            # 0.1 Context enrichment (Hybrid Memory Architecture)
+            axioms_path = os.path.join(self.config['paths']['memory'], "spacetime_axioms.md")
+            if os.path.exists(axioms_path):
+                with open(axioms_path, 'r', encoding='utf-8') as f:
+                    axioms_data = f.read()
+                research_summary += f"\n\n=== COMPRESSED LONG-TERM KNOWLEDGE (SPACETIME AXIOMS) ===\n{axioms_data}"
+
             journal_path = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
             if os.path.exists(journal_path):
                 journal = self._safe_load_json(journal_path, default=[])
                 if journal:
-                    # Include last 5 entries for continuity
+                    # Include last 5 entries for verbatim continuity
                     recent_entries = journal[-5:]
                     journal_ctx = "\n".join([f"- {e.get('topic')}: {e.get('summary')}" for e in recent_entries])
-                    research_summary += f"\n\n=== RECENT SCIENTIFIC JOURNAL ENTRIES ===\n{journal_ctx}"
+                    research_summary += f"\n\n=== RECENT SHORT-TERM MEMORY (LAST 5 DISCOVERIES) ===\n{journal_ctx}"
 
             prior_lessons = self.reflector.get_micro_sleep_lessons(n=3)
             if prior_lessons:
@@ -872,101 +878,99 @@ class ScienceBot(BaseModule):
         _THREAD_LOCAL_CONTEXT.api_url = target_url
 
         # Wait for VRAM in the worker thread (Async-Safe)
-        while self.get_vram_headroom(url=target_url) < 12.0:
+        while self.get_vram_headroom(url=target_url) < 6.0:
             if self.ui: self.ui.set_status(f"THROTTLED: {topic[:15]} waiting for VRAM")
             time.sleep(10)
 
-        # Debate & Feasibility (Quick checks - 8B)
-        from debate import Adversary
-        adversary = Adversary(self.config, ui=self.ui)
-        fast_model = self.config['hardware'].get('fast_model')
-        adversary.critic_model = fast_model # Force 8B for worker-stage debate
-        
-        debate_survived, debate_reason = adversary.debate_hypothesis(hypothesis_data, max_rounds=1)
-        if not debate_survived:
-            return {"status": "Fatal", "reason": f"Failed logic debate: {debate_reason}"}
+        # Register Task for Construction
+        import threading
+        from colorama import Fore
+        _worker_task_id = f"const_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
+        if self.ui:
+            self.ui.register_task(_worker_task_id, f"Construct: {topic[:28]}", color=Fore.YELLOW)
 
-        # Code Gen - Wave 2
-        description = f"Topic: {topic}\nHypothesis: {hypothesis_data.get('hypothesis')}\nBlueprint: {hypothesis_data.get('mathematical_blueprint')}"
-        
-        constructor_model = self.config['hardware'].get('constructor_model')
-        fast_model = self.config['hardware'].get('fast_model')
-        
-        # Strategy: Use Constructor Model (Large) if complexity > 30 OR if explicitly configured.
-        # Otherwise, attempt 8B first to maintain swarm speed.
-        import re
-        raw_comp = str(hypothesis_data.get('target_complexity_score', 0))
-        match = re.search(r'(\d+)', raw_comp)
-        complexity = int(match.group(1)) if match else 0
-        
-        if constructor_model and complexity > 30:
-            # Hot-Check for Llama 3.3 Availability
-            try:
-                import requests
-                target_gpu = self.config['hardware'].get('api_url')
-                pod_urls = target_gpu if isinstance(target_gpu, list) else [target_gpu or 'http://localhost:11434']
-                is_ready = False
-                for pod in pod_urls:
-                    try:
-                        base_url = pod.rstrip('/').replace('/api/generate', '')
-                        tags_resp = requests.get(f"{base_url}/api/tags", timeout=3)
-                        available_models = [m['name'] for m in tags_resp.json().get('models', [])]
-                        if any(constructor_model in m for m in available_models):
-                            is_ready = True
-                            break
-                    except Exception:
-                        continue
-            except Exception:
-                is_ready = False # Default to fallback if API check or model list fails
+        try:
+            # Debate & Feasibility (Quick checks - 8B)
+            from debate import Adversary
+            adversary = Adversary(self.config, ui=self.ui)
+            fast_model = self.config['hardware'].get('fast_model')
+            adversary.critic_model = fast_model # Force 8B for worker-stage debate
+            
+            debate_survived, debate_reason = adversary.debate_hypothesis(hypothesis_data, max_rounds=1)
+            if not debate_survived:
+                return {"status": "Fatal", "reason": f"Failed logic debate: {debate_reason}"}
+
+            # Code Gen - Wave 2
+            description = f"Topic: {topic}\nHypothesis: {hypothesis_data.get('hypothesis')}\nBlueprint: {hypothesis_data.get('mathematical_blueprint')}"
+            
+            constructor_model = self.config['hardware'].get('constructor_model')
+            fast_model = self.config['hardware'].get('fast_model')
+            
+            # Strategy: Use Constructor Model (Large) if complexity > 30 OR if explicitly configured.
+            # Otherwise, attempt 8B first to maintain swarm speed.
+            import re
+            raw_comp = str(hypothesis_data.get('target_complexity_score', 0))
+            match = re.search(r'(\d+)', raw_comp)
+            complexity = int(match.group(1)) if match else 0
+            
+            if constructor_model and complexity > 30:
+                # Hot-Check for Llama 3.3 Availability
+                try:
+                    import requests
+                    target_gpu = self.config['hardware'].get('api_url')
+                    pod_urls = target_gpu if isinstance(target_gpu, list) else [target_gpu or 'http://localhost:11434']
+                    is_ready = False
+                    for pod in pod_urls:
+                        try:
+                            base_url = pod.rstrip('/').replace('/api/generate', '')
+                            tags_resp = requests.get(f"{base_url}/api/tags", timeout=3)
+                            available_models = [m['name'] for m in tags_resp.json().get('models', [])]
+                            if any(constructor_model in m for m in available_models):
+                                is_ready = True
+                                break
+                        except Exception:
+                            continue
+                except Exception:
+                    is_ready = False # Default to fallback if API check or model list fails
+                    
+                if is_ready:
+                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] High complexity ({complexity}). Using Master Constructor: {constructor_model} (Parallel-Capable)...\033[0m")
+                    code = self.lab.generate_simulation(hypothesis_data, description, model=constructor_model)
+                else:
+                    fallback = self.config['hardware'].get('large_model', 'mightykatun/qwen2.5-math:72b')
+                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] '{constructor_model}' not yet hydrated. Falling back to {fallback}...\033[0m")
+                    code = self.lab.generate_simulation(hypothesis_data, description, model=fallback)
                 
-            if is_ready:
-                self.ui.print_log(f"\033[1;33m[SWARM WORKER] High complexity ({complexity}). Using Master Constructor: {constructor_model} (Parallel-Capable)...\033[0m")
-                code = self.lab.generate_simulation(hypothesis_data, description, model=constructor_model)
+                # --- SHARED PREFLIGHT LINTING (Universal Rigor) ---
+                attempts = 0
+                while attempts < 2:
+                    is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
+                    if is_valid:
+                        break
+                    attempts += 1
+                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] Master code failed lint (Attempt {attempts}). Repairing... ({len(lint_issues)} issues)\033[0m")
+                    repair_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
+                    code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=repair_model)
+
+                test_result = self.lab.run_simulation(code, hypothesis_data)
             else:
-                fallback = self.config['hardware'].get('large_model', 'mightykatun/qwen2.5-math:72b')
-                self.ui.print_log(f"\033[1;33m[SWARM WORKER] '{constructor_model}' not yet hydrated. Falling back to {fallback}...\033[0m")
-                code = self.lab.generate_simulation(hypothesis_data, description, model=fallback)
-            
-            # --- SHARED PREFLIGHT LINTING (Universal Rigor) ---
-            attempts = 0
-            while attempts < 2:
-                is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
-                if is_valid:
-                    break
-                attempts += 1
-                self.ui.print_log(f"\033[1;33m[SWARM WORKER] Master code failed lint (Attempt {attempts}). Repairing... ({len(lint_issues)} issues)\033[0m")
-                repair_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
-                code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=repair_model)
-
-            test_result = self.lab.run_simulation(code, hypothesis_data)
-        else:
-            # Standard 8B Attempt
-            code = self.lab.generate_simulation(hypothesis_data, description, model=fast_model)
-            
-            # --- PREFLIGHT LINTING (Recommendation 3) ---
-            attempts = 0
-            while attempts < 2:
-                is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
-                if is_valid:
-                    break
-                attempts += 1
+                # Standard 8B Attempt
+                code = self.lab.generate_simulation(hypothesis_data, description, model=fast_model)
                 
-                # If structural failure, escalate IMMEDIATELY to 70B
-                if any("Missing mandatory template sections" in iss for iss in lint_issues):
-                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] Structural failure detected. Escalating to {escalation_model} for REGENERATION...\033[0m")
-                    code = self.lab.generate_simulation(hypothesis_data, description, model=escalation_model)
-                    continue
-
-                self.ui.print_log(f"\033[1;33m[SWARM WORKER] Lint check FAILED (Attempt {attempts}). Repairing early... ({len(lint_issues)} issues)\033[0m")
-                escalation_model = constructor_model or self.config['hardware'].get('large_model')
-                code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=escalation_model)
-            
-            test_result = self.lab.run_simulation(code, hypothesis_data)
-        
-        # Escalation/Repair Loop
-        if test_result.get('status') == 'Failed' and 'Preflight Rejection' in test_result.get('raw_output', ''):
-            escalation_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
-            self.ui.print_log(f"\033[1;33m[SWARM WORKER] Preflight Rigor failed. Escalating to {escalation_model} for full repair/regeneration...\033[0m")
+                # --- PREFLIGHT LINTING (Recommendation 3) ---
+                attempts = 0
+                while attempts < 2:
+                    is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
+                    if is_valid:
+                        break
+                    attempts += 1
+                    
+                    # If structural failure, escalate IMMEDIATELY to 70B
+                    if any("Missing mandatory template sections" in iss for iss in lint_issues):
+                        escalation_model = constructor_model or self.config['hardware'].get('large_model')
+                        self.ui.print_log(f"\033[1;33m[SWARM WORKER] Structural failure detected. Escalating to {escalation_model} for REGENERATION...\033[0m")
+                        code = self.lab.generate_simulation(hypothesis_data, description, model=escalation_model)
+                        continue
             with self.heavy_lock:
                 # First attempt a repair with the heavy model
                 code = self.lab.repair_simulation(test_result.get('code', ''), test_result.get('raw_output', ''), hypothesis_data, model=escalation_model)
@@ -982,7 +986,10 @@ class ScienceBot(BaseModule):
             if test_result.get('status') == 'Failed' and 'Preflight Rejection' in test_result.get('raw_output', ''):
                 return {"status": "Fatal", "reason": f"Preflight Rigor Failure: {test_result.get('raw_output')[:200]}...", "hypothesis": hypothesis_data}
 
-        return test_result
+            return test_result
+        finally:
+            if self.ui:
+                self.ui.finish_task(_worker_task_id)
 
     def worker_stage_self_fix(self, test_result, audit_report, target_url=None):
         """
@@ -1004,22 +1011,33 @@ class ScienceBot(BaseModule):
         self.ui.print_log(f"\033[1;33m[SWARM WORKER] Audit Reject: '{topic}'. Attempting Autonomous Self-Fix (70B)...\033[0m")
         self.ui.print_log(f"\033[1;30m  ↳ Reason: {reasoning[:150]}...\033[0m")
 
-        constructor_model = self.config['hardware'].get('constructor_model') or self.config['hardware'].get('large_model')
-        
-        with self.heavy_lock:
-            # High-fidelity repair using the heavy model and audit feedback
-            repaired_code = self.lab.repair_simulation(
-                test_result.get('code', ''), 
-                reasoning, 
-                test_result['hypothesis'], 
-                model=constructor_model,
-                searcher=self.searcher
-            )
+        # Register Task for Self-Fix
+        import threading
+        from colorama import Fore
+        _worker_task_id = f"fix_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
+        if self.ui:
+            self.ui.register_task(_worker_task_id, f"Self-Fix: {topic[:28]}", color=Fore.MAGENTA)
+
+        try:
+            constructor_model = self.config['hardware'].get('constructor_model') or self.config['hardware'].get('large_model')
             
-            # Re-run simulation with the fixed code
-            new_result = self.lab.run_simulation(repaired_code, test_result['hypothesis'])
-            
-        return new_result
+            with self.heavy_lock:
+                # High-fidelity repair using the heavy model and audit feedback
+                repaired_code = self.lab.repair_simulation(
+                    test_result.get('code', ''), 
+                    reasoning, 
+                    test_result['hypothesis'], 
+                    model=constructor_model,
+                    searcher=self.searcher
+                )
+                
+                # Re-run simulation with the fixed code
+                new_result = self.lab.run_simulation(repaired_code, test_result['hypothesis'])
+                
+            return new_result
+        finally:
+            if self.ui:
+                self.ui.finish_task(_worker_task_id)
 
     def worker_stage_finalize(self, test_result, audit_report, target_url=None):
         """
@@ -1032,54 +1050,65 @@ class ScienceBot(BaseModule):
         topic = test_result['hypothesis']['topic']
         self.ui.print_log(f"\033[1;36m[SWARM WORKER] Finalizing: '{topic}'\033[0m")
 
-        if audit_report.get('audit_passed'):
-            # Peer Review & Invention
-            pain_point = self.scraper.find_pain_point(topic)
-            existing_tech = self.inventor.synthesize_existing_tech(pain_point)
-            invention = self.inventor.design_application(test_result, pain_point, existing_tech)
-            test_result['invention'] = invention
-            
-            # Serialized Significance Review (72B)
-            with self.heavy_lock:
-                evaluation = self.reviewer.evaluate_significance(test_result, invention, vector_mem=self.scribe.vector_mem)
-            test_result['evaluation'] = evaluation
+        # Register Task for Finalize
+        import threading
+        from colorama import Fore
+        _worker_task_id = f"final_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
+        if self.ui:
+            self.ui.register_task(_worker_task_id, f"Finalize: {topic[:28]}", color=Fore.BLUE)
 
-            # --- CROSS-STUDY VALIDATION LOGIC ---
-            if evaluation.get("conflict_detected"):
-                conflict_detail = evaluation.get("conflict_detail", "Unknown conflict.")
-                self.ui.print_log(f"\033[1;31m[PHYSICS DEBATE] Conflict detected with past discoveries!\033[0m")
+        try:
+            if audit_report.get('audit_passed'):
+                # Peer Review & Invention
+                pain_point = self.scraper.find_pain_point(topic)
+                existing_tech = self.inventor.synthesize_existing_tech(pain_point)
+                invention = self.inventor.design_application(test_result, pain_point, existing_tech)
+                test_result['invention'] = invention
                 
-                import os
-                # Append to REASONING_LOG.md
-                log_path = os.path.join(self.config['paths']['memory'], "REASONING_LOG.md")
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(f"## Physics Debate: {topic}\n")
-                    f.write(f"- **New Hypothesis**: {test_result['hypothesis']['hypothesis']}\n")
-                    f.write(f"- **Conflict Detail**: {conflict_detail}\n\n")
+                # Serialized Significance Review (72B)
+                with self.heavy_lock:
+                    evaluation = self.reviewer.evaluate_significance(test_result, invention, vector_mem=self.scribe.vector_mem)
+                test_result['evaluation'] = evaluation
 
-                # Trigger Conflict Resolution vector
-                with self.state_lock:
-                    clean_topic = topic.split(':')[1].strip() if ':' in topic else topic
-                    new_vector = {
-                        "name": f"Conflict Resolution: {clean_topic[:50]} vs Past Discoveries",
-                        "area": "Resolving contradictions between recent simulation and established theory.",
-                        "high_curiosity": True
-                    }
-                    if "topic_vectors" not in self.current_state:
-                         self.current_state["topic_vectors"] = []
-                         
-                    # Determine current depth and insert the conflict resolution immediately
-                    current_depth = self.current_state.get("depth_counter", 0)
-                    self.current_state["topic_vectors"].insert(current_depth, new_vector)
-                    self.save_state()
-            # ------------------------------------
+                # --- CROSS-STUDY VALIDATION LOGIC ---
+                if evaluation.get("conflict_detected"):
+                    conflict_detail = evaluation.get("conflict_detail", "Unknown conflict.")
+                    self.ui.print_log(f"\033[1;31m[PHYSICS DEBATE] Conflict detected with past discoveries!\033[0m")
+                    
+                    import os
+                    # Append to REASONING_LOG.md
+                    log_path = os.path.join(self.config['paths']['memory'], "REASONING_LOG.md")
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(f"## Physics Debate: {topic}\n")
+                        f.write(f"- **New Hypothesis**: {test_result['hypothesis']['hypothesis']}\n")
+                        f.write(f"- **Conflict Detail**: {conflict_detail}\n\n")
 
-            # Scribe
-            self.ui.print_discovery(test_result)
-            score = int(re.findall(r'\d+', str(evaluation.get('significance_score', '0')))[0] or 0)
-            
-            if score >= 50:
-                self.scribe.archive_discovery(test_result)
+                    # Trigger Conflict Resolution vector
+                    with self.state_lock:
+                        clean_topic = topic.split(':')[1].strip() if ':' in topic else topic
+                        new_vector = {
+                            "name": f"Conflict Resolution: {clean_topic[:50]} vs Past Discoveries",
+                            "area": "Resolving contradictions between recent simulation and established theory.",
+                            "high_curiosity": True
+                        }
+                        if "topic_vectors" not in self.current_state:
+                             self.current_state["topic_vectors"] = []
+                             
+                        # Determine current depth and insert the conflict resolution immediately
+                        current_depth = self.current_state.get("depth_counter", 0)
+                        self.current_state["topic_vectors"].insert(current_depth, new_vector)
+                        self.save_state()
+                # ------------------------------------
+
+                # Scribe
+                self.ui.print_discovery(test_result)
+                score_str = str(evaluation.get('significance_score', '0'))
+                import re
+                scores = re.findall(r'\d+', score_str)
+                score = int(scores[0]) if scores else 0
+                
+                if score >= 50:
+                    self.scribe.archive_discovery(test_result)
                 # Granular Journaling for High-Significance discoveries
                 self.scribe.journal_entry(test_result)
                 if self.config.get('social', {}).get('enabled'):
@@ -1098,19 +1127,22 @@ class ScienceBot(BaseModule):
                         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {topic}: {evaluation.get('verdict')}\n")
             else:
                 self.scribe.archive_knowledge(test_result)
-                # Still journal confirmed knowledge for continuity, but maybe with less priority? 
-                # Decided: Journal everything that passes audit to ensure total recall.
+                # Journal confirmed knowledge for continuity
                 self.scribe.journal_entry(test_result)
-        else:
-            self.explorer.log_failure(topic, test_result, audit_reason=audit_report.get('reasoning'))
-
-        # Micro-sleep
-        self.reflector.micro_sleep({
-            'status': 'Success' if audit_report.get('audit_passed') else 'Failed',
-            'topic': topic,
-            'hypothesis': test_result['hypothesis'].get('hypothesis', ''),
-            'audit_reason': audit_report.get('reasoning', '')
-        })
+                self.explorer.log_failure(topic, test_result, audit_reason=audit_report.get('reasoning'))
+        except Exception as e:
+            self.ui.print_log(f"\033[1;31m[SWARM WORKER] Error during finalization: {e}\033[0m")
+        finally:
+            # Micro-sleep and finish
+            self.reflector.micro_sleep({
+                'status': 'Success' if audit_report.get('audit_passed') else 'Failed',
+                'topic': topic,
+                'hypothesis': test_result['hypothesis'].get('hypothesis', ''),
+                'audit_reason': audit_report.get('reasoning', '')
+            })
+            if self.ui:
+                self.ui.finish_task(_worker_task_id)
+        
         return {"status": "Complete", "topic": topic}
 
     def process_single_hypothesis(self, topic, depth, iteration_count):
@@ -1191,6 +1223,11 @@ class ScienceBot(BaseModule):
         with _GLOBAL_FILE_LOCK:
             queue = self._safe_load_json(queue_path, default=[])
             queue.extend(items)
+            
+            # Re-order by Novelty Score descending 
+            # Items without a score are treated as 0 priority
+            queue.sort(key=lambda x: x.get('novelty_score', 0) if isinstance(x, dict) else 0, reverse=True)
+            
             self._safe_save_json(queue_path, queue)
         new_len = len(queue)
         if self.ui: self.ui.update_queue_size(new_len)
@@ -1263,18 +1300,29 @@ class ScienceBot(BaseModule):
 
                 self.reload_config()
                 is_turbo = self.config['research'].get('turbo_mode', False)
-                if is_turbo and self.current_state.get("phase") == "GUESS":
-                    max_workers = self.config['hardware'].get('turbo_workers', 12)
+                if is_turbo:
+                    max_workers = self.config['hardware'].get('turbo_workers', 40)
                 else:
-                    max_workers = self.config['hardware'].get('max_swarm_workers', 2)
+                    max_workers = self.config['hardware'].get('max_swarm_workers', 18)
+
+                # --- Topic Sanity Guard (Fail-safe for malformed state) ---
+                curr_topic = self.current_state.get("current_topic")
+                if curr_topic and ("The topic" in curr_topic or "**" in curr_topic):
+                    cleaned = self.explorer._clean_topic(curr_topic)
+                    if cleaned != curr_topic:
+                        self.ui.print_log(f"[OVERMIND] Detected malformed topic in state. Cleaning: '{curr_topic[:30]}...' -> '{cleaned[:30]}...'")
+                        self.current_state["current_topic"] = cleaned
+                        self.save_state()
 
                 tasks_to_queue = []
                 # SAME LOGIC as before for STUDY/GUESS
                 burst_step = self.current_state.get("burst_counter", 1)
                 is_study_mode = (burst_step <= 5)
                 
-                study_topic = None
                 if is_study_mode:
+                    # Study mode uses max_swarm_workers or max_workers depending on config
+                    # But typically we want to deep-dive on one topic.
+                    study_topic = None
                     journal_data = self._safe_load_json(self.journal_file, default=[])
                     if journal_data:
                         study_topic = journal_data[-1].get("topic", "").split(":")[0].strip()
@@ -1305,55 +1353,65 @@ class ScienceBot(BaseModule):
                     
                 else:
                     self.current_state["phase"] = "GUESS"
-                    for _ in range(max_workers):
-                        topic = self.current_state.get("current_topic")
-                        depth = self.current_state.get("depth_counter", 0)
-                        max_depth = self.config['research'].get('research_depth', 3)
-
-                        if not topic or depth >= max_depth:
-                            if topic: 
-                                summary = self.explorer.synthesize(topic, study_mode=True)
-                                temp_discovery = {
-                                    "hypothesis": {"topic": topic, "hypothesis": "Full topic synthesis."},
-                                    "evaluation": {"significance_score": 0, "verdict": summary}
-                                }
-                                self.scribe.journal_entry(temp_discovery)
-                            
-                            cross_pollinated = None
-                            import random
-                            if random.random() < 0.2:
-                                cross_pollinated = self.reflector.cross_pollinate()
-
-                            if cross_pollinated:
-                                broad_topic = cross_pollinated['hybrid_topic']
-                                vectors = self.explorer.decompose_topic(broad_topic)
-                                self.current_state['dream_hypothesis_guidance'] = (
-                                    f"CRITICAL CROSS-POLLINATION MANDATE:\n"\
-                                    f"You MUST use this exact hybrid hypothesis as your foundation for the new field: {cross_pollinated['hybrid_hypothesis']}\n"\
-                                    f"Context: {cross_pollinated['isomorphism_analysis']}"
-                                )
-                            else:
-                                past_topics = self.get_past_topics()
-                                broad_topic = self.explorer.get_new_topic(past_topics, fast_mode=True)
-                                vectors = self.explorer.decompose_topic(broad_topic, study_mode=False, count=max_workers)
-                            
-                            self.current_state["current_topic"] = broad_topic
-                            self.current_state["topic_vectors"] = vectors
-                            self.current_state["depth_counter"] = 0
-                            topic = broad_topic
-                            depth = 0
-
-                        vectors = self.current_state.get("topic_vectors", [])
-                        target_topic = topic
-                        if depth < len(vectors):
-                            current_vector = vectors[depth]['name']
-                            target_topic = f"{topic}: {current_vector}"
-
-                        self.current_state["depth_counter"] += 1
-                        self.current_state["iteration_count"] = self.current_state.get("iteration_count", 0) + 1
-                        target_iteration = self.current_state["iteration_count"]
-                        tasks_to_queue.append((target_topic, depth, target_iteration))
+                    max_depth = self.config['research'].get('research_depth', 15)
                     
+                    # Resolve initial topic/vectors
+                    topic = self.current_state.get("current_topic")
+                    depth = self.current_state.get("depth_counter", 0)
+                    vectors = self.current_state.get("topic_vectors", [])
+
+                    def resolve_new_topic():
+                        nonlocal topic, vectors, depth
+                        if topic: 
+                            summary = self.explorer.synthesize(topic, study_mode=True)
+                            temp_discovery = {
+                                "hypothesis": {"topic": topic, "hypothesis": "Full topic synthesis."},
+                                "evaluation": {"significance_score": 0, "verdict": summary}
+                            }
+                            self.scribe.journal_entry(temp_discovery)
+                        
+                        cross_pollinated = None
+                        if random.random() < 0.2:
+                            cross_pollinated = self.reflector.cross_pollinate()
+
+                        if cross_pollinated:
+                            topic = cross_pollinated['hybrid_topic']
+                            vectors = self.explorer.decompose_topic(topic, count=max_workers)
+                            self.current_state['dream_hypothesis_guidance'] = (
+                                f"CRITICAL CROSS-POLLINATION MANDATE:\n"\
+                                f"You MUST use this exact hybrid hypothesis as your foundation for the new field: {cross_pollinated['hybrid_hypothesis']}\n"\
+                                f"Context: {cross_pollinated['isomorphism_analysis']}"
+                            )
+                        else:
+                            past_topics = self.get_past_topics()
+                            topic = self.explorer.get_new_topic(past_topics, fast_mode=True)
+                            vectors = self.explorer.decompose_topic(topic, study_mode=False, count=max_workers)
+                        
+                        depth = 0
+                        self.current_state["current_topic"] = topic
+                        self.current_state["topic_vectors"] = vectors
+                        self.current_state["depth_counter"] = 0
+
+                    if not topic or depth >= max_depth or not vectors:
+                        resolve_new_topic()
+
+                    # Fill the batch (Support Multi-Topic Spanning)
+                    while len(tasks_to_queue) < max_workers:
+                        if depth >= max_depth or depth >= len(vectors):
+                            self.ui.print_log(f"[GATHERER] Topic '{topic[:20]}' reached depth limit. Picking new topic to fill batch...")
+                            resolve_new_topic()
+                        
+                        current_vector = vectors[depth]['name']
+                        target_topic = f"{topic}: {current_vector}"
+                        is_high_curiosity = vectors[depth].get('high_curiosity', False)
+
+                        target_iteration = self.current_state.get("iteration_count", 0) + 1
+                        tasks_to_queue.append((target_topic, depth, target_iteration, is_high_curiosity))
+                        
+                        depth += 1
+                    
+                    self.current_state["depth_counter"] = depth
+                    self.current_state["iteration_count"] = self.current_state.get("iteration_count", 0) + 1
                     self.current_state["burst_counter"] = 1
 
                 self.save_state()
@@ -1373,30 +1431,60 @@ class ScienceBot(BaseModule):
                             t, d, i = task_data
                         
                         sec_urls = self.config['hardware'].get('secondary_gpu', [])
-                        if isinstance(sec_urls, list) and sec_urls:
-                            target_url = sec_urls[idx % len(sec_urls)]
-                        elif isinstance(sec_urls, str):
-                            target_url = sec_urls
+                        prim_urls = self.config['hardware'].get('api_url', [])
+                        
+                        if isinstance(sec_urls, str): sec_urls = [sec_urls]
+                        if isinstance(prim_urls, str): prim_urls = [prim_urls]
+                        
+                        all_urls = sec_urls + prim_urls
+                        if all_urls:
+                            target_url = all_urls[idx % len(all_urls)]
                         else:
                             target_url = None
                         
                         if idx > 0: 
                             time.sleep(0.1) 
                         
-                        if self.ui and target_url:
-                            pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
-                            self.ui.print_log(f"\033[1;36m[QUEUED] {t[:40]}... -> Pod {pod_id}\033[0m")
-                        
+                        # Logic to select target_url removed for brevity in chunk
                         future = executor.submit(self.worker_stage_research, t, d, i, target_url)
                         research_futures[future] = t
 
-                    for f in concurrent.futures.as_completed(research_futures):
+
+                    def process_result(future):
                         try:
-                            res = f.result()
+                            res = future.result()
                             if res:
+                                # Run evaluate_novelty in parallel too if we're in a hurry, 
+                                # but for now let's just push to queue and let them run.
+                                # Actually, evaluate_novelty is fast on 8B, let's just make it async.
+                                score = self.explorer.evaluate_novelty(res)
+                                res['novelty_score'] = score
+                                
+                                if score < 20:
+                                    res['force_fast_model'] = True
+                                elif score > 80:
+                                    res['priority_heavy'] = True
+                                    
                                 self.push_to_research_queue([res])
                         except Exception as e:
-                            self.ui.print_log(f"[WAVE 1] Worker failed: {e}")
+                            self.ui.print_log(f"[WAVE 1] Result processing failed: {e}")
+
+                    # Use a secondary executor or just collect them properly
+                    # To keep it simple and truly parallel, let's just not block on evaluation
+                    for f in concurrent.futures.as_completed(research_futures):
+                        # We submit the post-processing to another thread or just background it
+                        executor.submit(process_result, f)
+
+                # Feature 5: Semantic Compression Trigger
+                # Every 10 iterations, boil down the last 50 entries into Spacetime Axioms
+                current_iter = self.current_state.get("iteration_count", 0)
+                last_comp = self.current_state.get("last_compressed_iteration", -1)
+                
+                if current_iter > 0 and current_iter % 10 == 0 and current_iter != last_comp:
+                    self.ui.print_log(f"\033[1;33m[MEMORY OPTIMIZATION] Iteration {current_iter} reached. Triggering Semantic Compression...\033[0m")
+                    self.scribe.semantic_compression(limit=50)
+                    self.current_state["last_compressed_iteration"] = current_iter
+                    self.save_state()
 
                 # Responsive interrupt scale delay
                 delay = self.config['research'].get('iteration_delay', 5)
@@ -1441,8 +1529,11 @@ class ScienceBot(BaseModule):
                     mapping = self.config['hardware'].get('gpu_mapping', {}).get(comp_name, 'api_url')
                     return secondary_pool if mapping == 'secondary_gpu' else api_pool
 
-                num_pods = len(api_pool) # Used for batch sizing
-                pull_size = max(1, num_pods * 2) 
+                # Determine batch size dynamically. Rather than treating 1 URL as 1 thread, 
+                # we use heavy_concurrency_limit to saturate massive single-node pods (A100s).
+                base_pods = len(api_pool)
+                num_pods = self.config['hardware'].get('heavy_concurrency_limit', max(1, base_pods * 2))
+                pull_size = max(1, num_pods)
 
                 prelim_results = self.pop_from_research_queue(pull_size)
                 if not prelim_results:
@@ -1450,7 +1541,7 @@ class ScienceBot(BaseModule):
                     time.sleep(5)  # Wait for gatherer or auditor
                     continue
 
-                self.ui.print_log(f"[1;36m[SYNTHESIZER] Popped {len(prelim_results)} items from research queue.[0m")
+                # self.ui.print_log(f"[1;36m[SYNTHESIZER] Popped {len(prelim_results)} items from research queue.[0m")
 
                 def _run_with_url(url, func, *args, **kwargs):
                     from base_module import _THREAD_LOCAL_CONTEXT
@@ -1470,7 +1561,7 @@ class ScienceBot(BaseModule):
                                 "driving_question": r.get('driving_question'),
                                 "summary": r.get('research_summary')
                             }
-                            for r in prelim_results if 'hypothesis' not in r
+                            for r in prelim_results if 'hypothesis' not in r and not r.get('force_fast_model', False)
                         ]
                         
                         if batch_contexts:
@@ -1498,7 +1589,7 @@ class ScienceBot(BaseModule):
 
                     # --- COLLECTIVE A.1: BATCH REFINEMENT (72B Architect) ---
                     self.ui.print_log("[1;36m[COLLECTIVE A.1] Synchronizing for Batch Refinement (72B)...[0m")
-                    hypotheses = [r['hypothesis'] for r in prelim_results if 'hypothesis' in r]
+                    hypotheses = [r['hypothesis'] for r in prelim_results if 'hypothesis' in r and not r.get('force_fast_model', False)]
                     
                     num_shards = max(1, min(num_pods, len(hypotheses)))
                     if num_shards > 0:

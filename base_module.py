@@ -141,9 +141,12 @@ class BaseModule:
                     else:
                         # For remote pods, use the configured VRAM capacity
                         total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 90)
-                        
-                    return total_capacity_gb - (total_loaded_mb / 1024.0)
-            except:
+
+                    headroom = total_capacity_gb - (total_loaded_mb / 1024.0)
+                    # print(f"[VRAM-DIAG] {url} -> Loaded: {total_loaded_mb/1024.0:.2f}GB / Capacity: {total_capacity_gb}GB -> Headroom: {headroom:.2f}GB")
+                    return headroom
+            except Exception as e:
+                # print(f"[VRAM-DIAG] Error on {url}: {e}")
                 pass
 
         # Default fallback: return a "safe" high value if detection fails entirely
@@ -388,9 +391,9 @@ class BaseModule:
 
         # 6. DISPATCH LOGGING
         if self.ui:
-            pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
-            pod_port = str(target_url).split(":")[-1].split("/")[0]
-            self.ui.print_log(f"\033[1;30m[DISPATCH] {model} -> Pod {pod_id}:{pod_port}\033[0m")
+            # pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
+            # pod_port = str(target_url).split(":")[-1].split("/")[0]
+            # self.ui.print_log(f"\033[1;30m[DISPATCH] {model} -> Pod {pod_id}:{pod_port}\033[0m")
             self.ui.clear_thought_buffer()
         
         # Determine temperature

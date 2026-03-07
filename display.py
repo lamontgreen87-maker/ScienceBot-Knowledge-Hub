@@ -69,16 +69,34 @@ class Display:
                 q_lines.append(summary)
 
                 # Intelligent Sort: Thinking tasks first, then by duration (longest first)
-                # Limit increased from 6 to 14 for "Full Boar" visibility
+                # Multi-column support for massive swarm visibility (40+ workers)
+                max_display = 45
                 sorted_tasks = sorted(
                     self.active_tasks.items(), 
                     key=lambda x: (x[1]['status'] == "Thinking", x[1]['time']), 
                     reverse=True
-                )[:14]
+                )[:max_display]
 
-                for tid, tdata in sorted_tasks:
-                    s_color = tdata.get('color', Fore.WHITE) if tdata['status'] != "Queued" else Fore.CYAN
-                    q_lines.append(f"{s_color}[{tdata['status'].upper():<8}] {Fore.WHITE}{tdata['name'][:30]:<30} {Style.DIM}... {tdata['time']}s{Style.RESET_ALL}")
+                # Determine columns based on width
+                num_cols = 1
+                if width >= 130: num_cols = 3
+                elif width >= 85: num_cols = 2
+                
+                col_width = (width // num_cols) - 1
+                
+                for i in range(0, len(sorted_tasks), num_cols):
+                    row_tasks = sorted_tasks[i:i + num_cols]
+                    row_parts = []
+                    for tid, tdata in row_tasks:
+                        s_color = tdata.get('color', Fore.WHITE) if tdata['status'] != "Queued" else Fore.CYAN
+                        status = tdata['status'].upper()
+                        # Compact display for multi-column: [STATUS] Name.. 10s
+                        t_name = tdata['name'][:15]
+                        task_text = f"{s_color}[{status:<8}] {Fore.WHITE}{t_name:<15} {Style.DIM}{tdata['time']}s{Style.RESET_ALL}"
+                        row_parts.append(task_text)
+                    
+                    # Manual join to handle width correctly
+                    q_lines.append("  ".join(row_parts))
 
                 # 2. Prepare Thought Lines (Rolling window of 3)
                 content = self.thought_buffer.strip()
