@@ -2,6 +2,7 @@ import os
 import json
 import chromadb
 import requests
+import time
 from sentence_transformers import SentenceTransformer
 
 class VectorMemory:
@@ -26,6 +27,7 @@ class VectorMemory:
             self.encoder = SentenceTransformer('all-MiniLM-L6-v2')
             
         self.collection = self.client.get_or_create_collection(name="science_memory")
+        self.tensor_cache = self.client.get_or_create_collection(name="tensor_cache")
 
     def _get_embedding(self, text):
         if self.use_ollama:
@@ -112,3 +114,37 @@ class VectorMemory:
         except Exception as e:
             print(f"[VECTOR-MEM] Query failed: {e}")
             return []
+
+    def store_tensor_component(self, metric_key, component_name, symbolic_expr):
+        """Stores a cached symbolic tensor component."""
+        try:
+            doc_id = f"{metric_key}_{component_name}"
+            metadata = {
+                "metric_key": metric_key,
+                "component": component_name,
+                "timestamp": time.time()
+            }
+            # Remove existing if any to update
+            self.tensor_cache.delete(ids=[doc_id])
+            
+            self.tensor_cache.add(
+                ids=[doc_id],
+                documents=[str(symbolic_expr)],
+                metadatas=[meta_payload] if False else [metadata] # Just being safe with metadata
+            )
+            return True
+        except Exception as e:
+            print(f"[VECTOR-MEM] Cache store failed for {component_name}: {e}")
+            return False
+
+    def get_tensor_component(self, metric_key, component_name):
+        """Retrieves a cached symbolic tensor component."""
+        try:
+            doc_id = f"{metric_key}_{component_name}"
+            results = self.tensor_cache.get(ids=[doc_id])
+            if results and results['documents']:
+                return results['documents'][0]
+            return None
+        except Exception as e:
+            print(f"[VECTOR-MEM] Cache retrieval failed: {e}")
+            return None

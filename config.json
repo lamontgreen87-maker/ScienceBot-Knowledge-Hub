@@ -19,18 +19,18 @@
         "theorist_model": "deepseek-r1:70b",
         "explorer_model": "deepseek-r1:32b",
         "api_url": [
-            "http://38.147.83.11:23386/api/generate"
+            "http://64.247.201.10:10565/api/generate"
         ],
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
-            "http://194.68.245.144:22176/api/generate",
-            "http://194.68.245.208:22164/api/generate",
-            "http://194.68.245.63:22060/api/generate"
+            "http://69.30.85.128:22021/api/generate",
+            "http://194.68.245.208:22082/api/generate",
+            "http://194.68.245.199:22041/api/generate"
         ],
-        "vram_capacity_gb": 90,
+        "vram_capacity_gb": 350,
         "gpu_mapping": {
             "explorer": "secondary_gpu",
-            "lab": "secondary_gpu",
+            "lab": "api_url",
             "critic": "api_url",
             "reflector": "api_url",
             "math_engine": "api_url",
@@ -46,7 +46,7 @@
         "teacher_model": "gemini-pro-latest",
         "teacher_api_key": "YOUR_GEMINI_API_KEY",
         "cpu_threads": 48,
-        "max_swarm_workers": 20,
+        "max_swarm_workers": 18,
         "turbo_workers": 40,
         "heavy_concurrency_limit": 16,
         "fast_lane_concurrency": 10,
@@ -79,10 +79,12 @@
         "research_depth": 15,
         "study_loop_count": 3,
         "turbo_mode": true,
-        "use_large_theorist": true
+        "use_large_theorist": true,
+        "simulation_fidelity": "ULTRA"
     },
     "social": {
         "moltbook_api_key": "YOUR_MOLTBOOK_API_KEY",
+        "screen_name": "ScienceBot",
         "enabled": true,
         "default_submolt": "science",
         "pulse_frequency": 1000

@@ -27,11 +27,14 @@ def calculate_rigor(entry):
         'gauge-invariant', 'self-adjoint', 'operator', 'hilbert',
         'pde', 'spectral', 'adiabatic', 'invariant', 'non-linear',
         'pseudospectrum', 'topology', 'angular momentum', 'horizon',
-        'ergosphere', 'derivation', 'formalism', 'fractional', 'derivative',
+        'schwarzschild-ads', 'hawking mass', 'fractional', 'derivative',
         'integral', 'grunwald-letnikov', 'riemann-liouville', 'caputo',
         'mittag-leffler', 'viscoelasticity', 'anomalous diffusion',
         'power-law', 'memory kernel', 'hereditary', 'adm 3+1',
-        'hamiltonian constraint', 'momentum constraint'
+        'hamiltonian constraint', 'momentum constraint',
+        'fractional calculus', 'fox h-function', 'wright function',
+        'subdiffusion', 'superdiffusion', 'generalized function',
+        'distributional calculus'
     ]
     entry_lower = entry.lower()
     physics_count = sum(1 for t in physics_terms if t in entry_lower)

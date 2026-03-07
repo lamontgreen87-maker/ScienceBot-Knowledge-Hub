@@ -38,6 +38,8 @@ Evaluation Criteria:
 
 Most findings should be scored between 10-50.
 Only extremely rare insights should exceed 90.
+breakthrough_alert: Set to True ONLY if the finding is a significant, verified breakthrough in theoretical physics.
+integrity_alert: Set to True if you detect "buzzword salad", mathematical hallucination, or trivial restatements.
 
 Respond in JSON format:
 {{
@@ -46,7 +48,8 @@ Respond in JSON format:
     "rigor_analysis": "Critique of mathematical precision",
     "realism_score": 0-10,
     "verdict": "Detailed, skeptical summary",
-    "community_alert": true/false,
+    "breakthrough_alert": true/false,
+    "integrity_alert": true/false,
     "conflict_detected": true/false,
     "conflict_detail": "Detailed explanation of the physics contradiction, or 'None' if aligned."
 }}
@@ -57,7 +60,8 @@ JSON:"""
             return {
                 "significance_score": 0,
                 "novelty": "No response for evaluation.",
-                "community_alert": False,
+                "breakthrough_alert": False,
+                "integrity_alert": False,
                 "verdict": "Unreviewed due to connection error."
             }
 
@@ -68,7 +72,8 @@ JSON:"""
             return {
                 "significance_score": 50,
                 "novelty": "Standard application of known laws.",
-                "community_alert": False,
+                "breakthrough_alert": False,
+                "integrity_alert": False,
                 "verdict": "Archive as baseline research.",
                 "conflict_detected": False,
                 "conflict_detail": "None"

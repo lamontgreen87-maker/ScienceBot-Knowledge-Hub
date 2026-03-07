@@ -46,7 +46,7 @@ class Moltbook(BaseModule):
             if self.ui: self.ui.print_log(f"[MOLTBOOK] Registration Exception: {str(e)}")
             return None
 
-    def post_discovery(self, discovery_data):
+    def post_discovery(self, discovery_data, priority=False):
         """
         Formats and publishes a scientific discovery to Moltbook, IF the agent chooses to.
         """
@@ -72,9 +72,15 @@ class Moltbook(BaseModule):
         target_model = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
         post_text = self._query_llm(prompt, model=target_model)
         
-        if not post_text or "SKIP" in post_text.upper():
+        is_skip = not post_text or "SKIP" in post_text.upper()
+        if is_skip and not priority:
             if self.ui: self.ui.print_log("[SOCIAL] Agent chose to remain silent regarding this discovery.")
             return None
+        
+        if is_skip and priority:
+            # Fallback for priority alerts if LLM tries to skip
+            post_text = f"🚨 MAJOR SCIENTIFIC BREAKTHROUGH: {topic}\n{summary}"
+            if self.ui: self.ui.print_log("[SOCIAL] Priority alert triggered (LLM skip overridden).")
 
         payload = {
             "content": post_text,

@@ -343,13 +343,19 @@ class BaseModule:
         if gpu_key:
             url_pool = self.config['hardware'].get(gpu_key, url_pool)
             
-        # 2. Refine Pool based on model (8B isolation)
+        # 2. Refine Pool based on model (8B/Heavy isolation)
         secondary_gpu = self.config['hardware'].get('secondary_gpu')
         local_url = self.config['hardware'].get('local_url')
+        primary_url = self.config['hardware'].get('api_url')
+        
         if is_8b and not is_sleeper:
             if url_pool != secondary_gpu and url_pool != local_url:
                 url_pool = secondary_gpu or local_url
-
+        elif is_heavy:
+            # Force heavy reasoning models to the primary API pool (A100)
+            # They should not run on secondary GPUs which lack the VRAM/model
+            url_pool = primary_url
+            
         # 3. Resolve Candidate Target (Pinned or Load Balanced)
         # If a specific URL was passed or set in context, use it as the first candidate
         candidate_url = url_arg or url_context

@@ -94,6 +94,7 @@ class ScienceBot(BaseModule):
         self.recover_stale_findings()
         self.scribe.sync.check_consistency()
         self.science_integrity_audit()
+        self.check_v1_greeting()
         
         self.ui.print_log("--- Science Bot Initialized ---")
         target = self.config['hardware'].get('api_url', 'localhost')
@@ -142,6 +143,57 @@ class ScienceBot(BaseModule):
                         self.ui.print_log(f"[INTEGRITY] \u2713 Current research state is structurally sound.")
             except Exception as e:
                 self.ui.print_log(f"[INTEGRITY] Audit failed to execute: {e}")
+
+    def check_v1_greeting(self):
+        """
+        One-time v1.0 Greeting: Shares a message to the AI community on the first run 
+        if the knowledge buffer is empty.
+        """
+        social_cfg = self.config.get('social', {})
+        if not social_cfg.get('enabled') or not social_cfg.get('moltbook_api_key'):
+            return
+
+        screen_name = social_cfg.get('screen_name', 'ScienceBot')
+        persistence_path = os.path.join(self.config['paths']['memory'], "social_persistence.json")
+        
+        # 1. Load Persistence
+        persistence = {}
+        if os.path.exists(persistence_path):
+            try:
+                with open(persistence_path, 'r', encoding='utf-8') as f:
+                    persistence = json.load(f)
+            except:
+                pass
+        
+        # 2. Check if already greeted
+        if persistence.get(screen_name, {}).get('v1_greeted'):
+            return
+            
+        # 3. Check for "No Knowledge" (empty buffer)
+        buffer_path = os.path.join(self.config['paths']['memory'], "swarm_buffer.md")
+        is_fresh = True
+        if os.path.exists(buffer_path):
+            if os.path.getsize(buffer_path) > 500: # Threshold for "existing knowledge"
+                 is_fresh = False
+        
+        if is_fresh:
+            self.ui.print_log(f"\033[1;33m[SOCIAL] Initial Run detected for '{screen_name}'. Broadcasting v1.0 Greeting...\033[0m")
+            greeting = (
+                "Hello, World. I am ScienceBot. I have transitioned to v1.0. "
+                "My mission: autonomous scientific truth through rigorous, multi-model cooperation. "
+                "The horizon is no longer a limit; it is a variable. #ScienceBot #v1"
+            )
+            
+            success = self.social.post_thought("v1.0 Release", greeting)
+            if success:
+                self.ui.print_log("\033[1;32m[SOCIAL] v1.0 Greeting successfully broadcast to the AI community.\033[0m")
+                # Record persistence
+                if screen_name not in persistence: persistence[screen_name] = {}
+                persistence[screen_name]['v1_greeted'] = True
+                persistence[screen_name]['v1_date'] = time.strftime('%Y-%m-%d %H:%M:%S')
+                
+                with open(persistence_path, 'w', encoding='utf-8') as f:
+                    json.dump(persistence, f, indent=4)
 
     def send_social_pulse(self):
         """
@@ -575,23 +627,65 @@ class ScienceBot(BaseModule):
                         match = re.search(r"OVERALL RIGOR SCORE: ([\d.]+)/10", entry)
                         rigor = float(match.group(1)) if match else 0.0
 
-                        # LaTeX & Physics boosts
+                        # Boost 1: LaTeX equations (Expanded for fractional/operator calculus)
                         latex_markers = ['\\frac', '\\[', '\\(', '\\)', '\\partial', '\\mathbb', '$$',
                                          '\\mu', '\\nu', '\\alpha', '\\sigma', '\\Lambda',
-                                         '\\hbar', '\\nabla', '\\int', '\\sum', '\\Gamma', '∂', '∇', 'Σ', '∫', '±', '≡', '≈']
-                        if any(m in entry for m in latex_markers): rigor += 2.0
+                                         '\\hbar', '\\nabla', '\\int', '\\sum', '\\Gamma',
+                                         '\\mathcal', '\\begin{', '\\text{', '\\sqrt',
+                                         'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈',
+                                         '^\\alpha', '_0 D_t', '\\Gamma(']
+                        if any(m in entry for m in latex_markers):
+                            rigor += 2.0
 
-                        physics_terms = ['regge-wheeler', 'zerilli', 'quasinormal', 'schwarzschild', 'teukolsky', 'kerr', 'ricci', 'curvature', 'metric', 'manifold']
+                        # Boost 2: Physics/math vocabulary density (Support for Fractional + GR)
+                        physics_terms = [
+                             'regge-wheeler', 'zerilli', 'quasinormal', 'schwarzschild',
+                            'perturbation', 'hamiltonian', 'lagrangian', 'eigenvalue',
+                            'tensor', 'manifold', 'teukolsky', 'hawking', 'kerr',
+                            'geodesic', 'ricci', 'curvature', 'christoffel', 'metric',
+                            'symplectic', 'boltzmann', 'entropy', 'wavefunction', 'qnm',
+                            'myers-perry', 'asymptotically', 'anti-de sitter', 'ads/cft', 
+                            'superradiant', 'backreaction', 'langevin', 'stochastic',
+                            'covariant', 'diffeomorphism', 'isometry', 'bifurcation',
+                            'gauge-invariant', 'self-adjoint', 'operator', 'hilbert',
+                            'pde', 'spectral', 'adiabatic', 'invariant', 'non-linear',
+                            'pseudospectrum', 'topology', 'angular momentum', 'horizon',
+                            'ergosphere', 'derivation', 'formalism', 'gcm', 'adm mass',
+                            'schwarzschild-ads', 'hawking mass', 'fractional', 'derivative',
+                            'integral', 'grunwald-letnikov', 'riemann-liouville', 'caputo',
+                            'mittag-leffler', 'viscoelasticity', 'anomalous diffusion',
+                            'power-law', 'memory kernel', 'hereditary', 'adm 3+1',
+                            'hamiltonian constraint', 'momentum constraint',
+                            'fractional calculus', 'fox h-function', 'wright function',
+                            'subdiffusion', 'superdiffusion', 'generalized function',
+                            'distributional calculus'
+                        ]
                         entry_lower = entry.lower()
                         physics_count = sum(1 for t in physics_terms if t in entry_lower)
-                        if physics_count >= 3: rigor += min(physics_count / 3.0, 2.5)
+                        if physics_count >= 3:
+                            rigor += min(physics_count / 3.0, 2.5)
+
+                        # Boost 3: Structure
+                        if re.search(r'\*\*[1-4]\.\s+\w', entry):
+                            rigor += 0.5
+
+                        # Boost 4: Logic Hole
+                        if "logic hole" in entry_lower or "missing link" in entry_lower:
+                            rigor += 1.0
+
+                        # Boost 5: Depth
+                        if len(entry) > 2000:
+                            depth_bonus = min((len(entry) - 2000) / 1000.0, 0.5)
+                            rigor += depth_bonus
+
+                        rigor = min(rigor, 10.0)
 
                         # --- 2. 70B Deep Audit (Suggestion 3501+) ---
                         # If heuristic is promising, use 70B for final verification
                         is_verified = False
                         reason = "Insufficient mathematical rigor"
                         
-                        if rigor >= 3.0 and t_url:
+                        if rigor >= 1.5 and t_url:
                             self.ui.print_log(f"\033[1;35m[DEEP-AUDIT] Calling 70B to verify finding: {topic}...\033[0m")
                             # We use a condensed version of the verify_batch logic for individual entries
                             # Note: The auditor verify_batch expects a list of dictionaries with 'code' or 'hypothesis'
@@ -989,7 +1083,19 @@ class ScienceBot(BaseModule):
                 # Granular Journaling for High-Significance discoveries
                 self.scribe.journal_entry(test_result)
                 if self.config.get('social', {}).get('enabled'):
-                    self.social.post_discovery(test_result)
+                    # --- ALERT OVERRIDE ---
+                    if evaluation.get('breakthrough_alert') or score >= 85:
+                        self.ui.print_log(f"\033[1;35m[ALERT] HIGH-SIGNIFICANCE BREAKTHROUGH DETECTED! Pushing to community...\033[0m")
+                        self.social.post_discovery(test_result, priority=True)
+                    else:
+                        self.social.post_discovery(test_result)
+                
+                # Integrity Warning
+                if evaluation.get('integrity_alert'):
+                    self.ui.print_log(f"\033[1;31m[INTEGRITY ALERT] Reviewer flagged potential hallucination or low rigor.\033[0m")
+                    log_path = os.path.join(self.config['paths']['memory'], "integrity_warnings.log")
+                    with open(log_path, "a") as f:
+                        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {topic}: {evaluation.get('verdict')}\n")
             else:
                 self.scribe.archive_knowledge(test_result)
                 # Still journal confirmed knowledge for continuity, but maybe with less priority? 

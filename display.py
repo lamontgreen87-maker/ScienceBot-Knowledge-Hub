@@ -29,6 +29,7 @@ class Display:
         self.input_buffer = ""
         self.thought_buffer = "" # NEW: Real-time model tokens
         self.active_tasks = {}    # NEW: {task_id: {"name": str, "status": str, "time": int}}
+        self.queue_size = 0       # NEW: Track 70B Pending Queue
         self.log_file = "bot_output.log"
         
         # Clear log file on startup
@@ -64,7 +65,7 @@ class Display:
                 pod_count = sum(1 for t in self.active_tasks.values() if t.get('color') == Fore.GREEN)
                 total_active = len(self.active_tasks)
                 
-                summary = f"{Style.BRIGHT}{Fore.CYAN}[SWARM] {total_active} WORKERS ACTIVE | {Fore.YELLOW}{local_count} LOCAL {Fore.GREEN}{pod_count} POD{Style.RESET_ALL}"
+                summary = f"{Style.BRIGHT}{Fore.CYAN}[SWARM] {total_active} WORKERS ACTIVE | {Fore.YELLOW}{local_count} LOCAL {Fore.GREEN}{pod_count} POD | {Fore.MAGENTA}70B QUEUE: {self.queue_size}{Style.RESET_ALL}"
                 q_lines.append(summary)
 
                 # Intelligent Sort: Thinking tasks first, then by duration (longest first)
@@ -131,6 +132,10 @@ class Display:
     def set_status(self, text):
         with self.lock:
             self.status = text
+
+    def update_queue_size(self, size):
+        with self.lock:
+            self.queue_size = size
 
     def append_thought(self, text):
         with self.lock:

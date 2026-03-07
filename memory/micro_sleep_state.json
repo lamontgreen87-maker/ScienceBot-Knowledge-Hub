@@ -1,142 +1,142 @@
 [
     {
-        "iteration": 3457,
-        "status": "Success",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Fractional Calculus for Non-Gaussian Processes",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci Flow & Gravitational Wave Propagation",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that a Riesz fractional derivative with an optimal fractional order between 0.4 and 0.8 can accurately predict the mean squared displacement (MSD) of particles in a non-Gaussian process, specifically for anomalous diffusion exponents \u03b1 > 1. 2. To improve my chances in the next hypothesis, I should incorporate the Mittag-Leffler function into my fractional calculus model to better capture the memory effects and non-locality present in non-Gaussian processes with \u03b1 < 1, which would require a structural change to my current modeling approach."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci Flow & Gravitational Wave Propagation."
     },
     {
-        "iteration": 3457,
-        "status": "Success",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Fractional Calculus for Non-Gaussian Processes",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci Flow & Gravitational Wave Propagation",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that a Riesz fractional derivative with an optimal fractional order between 0.4 and 0.8 can accurately predict the mean squared displacement (MSD) of particles in a non-Gaussian process, specifically for anomalous diffusion exponents \u03b1 > 1. 2. To improve my chances in the next hypothesis, I should incorporate the Mittag-Leffler function into my fractional calculus model to better capture the memory effects and non-locality present in non-Gaussian processes with \u03b1 < 1, which would require a structural change to my current modeling approach."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci Flow & Gravitational Wave Propagation."
     },
     {
-        "iteration": 3461,
-        "status": "FIXABLE",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Investigating the Effects of Memory on Anomalous Diffusion using Fractional Derivatives",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci Flow & Geodesic Drift in Curved Spacetime",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physics used in the experiment, as the lack of this information led to a \"unknown\" classification and a deterministic failure. Additionally, I learned that ensuring technical vocabulary alignment is crucial, with at least 80% alignment recommended. 2. To improve my chances in the next hypothesis, I should specifically use the Generalized Langevin Equation (GLE) as the underlying physics framework, which is well-suited for modeling anomalous diffusion processes, and ensure that my code incorporates technical terms from the hypothesis to achieve a higher vocabulary alignment score."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci Flow & Geodesic Drift in Curved Spacetime."
     },
     {
-        "iteration": 3461,
-        "status": "FIXABLE",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Investigating the Effects of Memory on Anomalous Diffusion using Fractional Derivatives",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci Flow & Geodesic Drift in Curved Spacetime",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physics used in the experiment, as the lack of this information led to a \"unknown\" classification and a deterministic failure. Additionally, I learned that ensuring technical vocabulary alignment is crucial, with at least 80% alignment recommended. 2. To improve my chances in the next hypothesis, I should specifically use the Generalized Langevin Equation (GLE) as the underlying physics framework, which is well-suited for modeling anomalous diffusion processes, and ensure that my code incorporates technical terms from the hypothesis to achieve a higher vocabulary alignment score."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci Flow & Geodesic Drift in Curved Spacetime."
     },
     {
-        "iteration": 3463,
-        "status": "Success",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Investigation of L\u00e9vy Flight Dynamics with Variable Step Lengths",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci Flow & Geodesic Drift in Curved Spacetime",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that the power-law relationship between the anomalous diffusion exponent (\u03b1) and stability index (\u03b2) in L\u00e9vy flights with variable step lengths holds true, specifically for systems governed by non-Gaussian statistics. I didn't know before that the Riesz fractional derivative could be used to model such complex dynamics. **Improvement for Next Hypothesis** To improve my chances of success in the next hypothesis, I should explicitly specify the type of physics used, such as \"L\u00e9vy flight dynamics with variable step lengths under non-Gaussian statistics,\" and incorporate a more nuanced understanding of fractional calculus by using the Caputo fractional derivative instead of the Riesz derivative to model anomalous diffusion."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci Flow & Geodesic Drift in Curved Spacetime."
     },
     {
-        "iteration": 3463,
-        "status": "Success",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Investigation of L\u00e9vy Flight Dynamics with Variable Step Lengths",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci Flow & Geodesic Drift in Curved Spacetime",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that the power-law relationship between the anomalous diffusion exponent (\u03b1) and stability index (\u03b2) in L\u00e9vy flights with variable step lengths holds true, specifically for systems governed by non-Gaussian statistics. I didn't know before that the Riesz fractional derivative could be used to model such complex dynamics. **Improvement for Next Hypothesis** To improve my chances of success in the next hypothesis, I should explicitly specify the type of physics used, such as \"L\u00e9vy flight dynamics with variable step lengths under non-Gaussian statistics,\" and incorporate a more nuanced understanding of fractional calculus by using the Caputo fractional derivative instead of the Riesz derivative to model anomalous diffusion."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci Flow & Geodesic Drift in Curved Spacetime."
     },
     {
-        "iteration": 3466,
-        "status": "Success",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Anomalous Diffusion in Porous Media with Variable Fractal Dimension",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci curvature",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that anomalous diffusion processes through porous media with variable fractal dimension can be accurately modeled using fractional calculus, specifically by employing the Riesz fractional derivative and relating it to the Hurst exponent. I didn't know before that the power-law relationship H = d_s / (2 - \u03b1) held true in such systems. To improve my chances in the next hypothesis, I should explicitly specify the type of porous media being modeled, as different types may exhibit distinct fractal dimensions and anomalous diffusion exponents."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci curvature."
     },
     {
-        "iteration": 3466,
-        "status": "Success",
-        "topic": "Anomalous Diffusion & Fractional Calculus: Anomalous Diffusion in Porous Media with Variable Fractal Dimension",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci curvature",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that anomalous diffusion processes through porous media with variable fractal dimension can be accurately modeled using fractional calculus, specifically by employing the Riesz fractional derivative and relating it to the Hurst exponent. I didn't know before that the power-law relationship H = d_s / (2 - \u03b1) held true in such systems. To improve my chances in the next hypothesis, I should explicitly specify the type of porous media being modeled, as different types may exhibit distinct fractal dimensions and anomalous diffusion exponents."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci curvature."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Impact of Noise Intensity on Bifurcation Points in Stochastic Systems",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci curvature",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physics used in the stochastic system, as the unknown physics led to a deterministic failure and missing template sections. 2. In the next hypothesis, I should do differently by specifying the \"Langevin Physics\" type, which is commonly used to model noise-driven dynamics, and ensure that all required template sections are included, starting with the SYMBOLIC SETUP section to clearly define the system's parameters and equations."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci curvature."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Impact of Noise Intensity on Bifurcation Points in Stochastic Systems",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Ricci curvature",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physics used in the stochastic system, as the unknown physics led to a deterministic failure and missing template sections. 2. In the next hypothesis, I should do differently by specifying the \"Langevin Physics\" type, which is commonly used to model noise-driven dynamics, and ensure that all required template sections are included, starting with the SYMBOLIC SETUP section to clearly define the system's parameters and equations."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Ricci curvature."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Role of External Periodic Forcing in Synchronization of Noise-Driven Oscillators",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs and Creep in Concrete Structures",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: **What did this cycle teach me that I didn't know before?** This cycle taught me that a crucial aspect of stochastic systems is missing from my current understanding: the explicit specification of template sections for symbolic setup, constant injection, and immutable law. This lack of structure led to a deterministic failure. **What ONE specific thing should you do differently in the NEXT hypothesis to improve your chances?**"
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs and Creep in Concrete Structures."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Role of External Periodic Forcing in Synchronization of Noise-Driven Oscillators",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs and Creep in Concrete Structures",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: **What did this cycle teach me that I didn't know before?** This cycle taught me that a crucial aspect of stochastic systems is missing from my current understanding: the explicit specification of template sections for symbolic setup, constant injection, and immutable law. This lack of structure led to a deterministic failure. **What ONE specific thing should you do differently in the NEXT hypothesis to improve your chances?**"
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs and Creep in Concrete Structures."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 4",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs and Time-Series Forecasting",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that I need to explicitly specify the underlying physics used in my experiment, as the \"unknown\" designation led to a deterministic failure due to missing template sections. Specifically, I learned that I should have selected a relevant physics type, such as Quantum Mechanics or Thermodynamics, to inform my hypothesis and experimental design. To improve my chances in the next hypothesis, I will explicitly specify the underlying physics used, selecting Quantum Mechanics as the relevant physics type for Stochastic Systems & Noise-Driven Dynamics."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs and Time-Series Forecasting."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 4",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs and Time-Series Forecasting",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that I need to explicitly specify the underlying physics used in my experiment, as the \"unknown\" designation led to a deterministic failure due to missing template sections. Specifically, I learned that I should have selected a relevant physics type, such as Quantum Mechanics or Thermodynamics, to inform my hypothesis and experimental design. To improve my chances in the next hypothesis, I will explicitly specify the underlying physics used, selecting Quantum Mechanics as the relevant physics type for Stochastic Systems & Noise-Driven Dynamics."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs and Time-Series Forecasting."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 5",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physical laws governing the Stochastic Systems & Noise-Driven Dynamics aspect 5 in order to achieve a higher Vocabulary Alignment and avoid deterministic failures. Specifically, I learned that missing template sections such as SYMBOLIC SETUP and CONSTANT INJECTION are crucial for successful execution. 2. In the next hypothesis, I should incorporate Thermodynamics as the underlying physics type, specifically utilizing the concept of entropy to inform my symbolic setup and constant injection mechanisms, in order to improve my chances of achieving a higher Vocabulary Alignment and avoiding similar failures."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 5",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physical laws governing the Stochastic Systems & Noise-Driven Dynamics aspect 5 in order to achieve a higher Vocabulary Alignment and avoid deterministic failures. Specifically, I learned that missing template sections such as SYMBOLIC SETUP and CONSTANT INJECTION are crucial for successful execution. 2. In the next hypothesis, I should incorporate Thermodynamics as the underlying physics type, specifically utilizing the concept of entropy to inform my symbolic setup and constant injection mechanisms, in order to improve my chances of achieving a higher Vocabulary Alignment and avoiding similar failures."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 6",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that I need to explicitly specify the underlying physics used in my experiment, as the \"unknown\" designation led to a deterministic failure due to missing template sections. To improve my chances in the next hypothesis, I should specifically define the physics type as **Non-Equilibrium Thermodynamics**, incorporating the stochastic differential equations (SDEs) framework to model the noise-driven dynamics of Stochastic Systems & Noise-Driven Dynamics aspect 6. This will enable me to properly set up the symbolic setup, constant injection, and immutable law sections, ultimately enhancing my experiment's fidelity."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 6",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs",
         "physics_type": "unknown",
-        "lesson": "**Reflection on Last Experiment** This cycle taught me that I need to explicitly specify the underlying physics used in my experiment, as the \"unknown\" designation led to a deterministic failure due to missing template sections. To improve my chances in the next hypothesis, I should specifically define the physics type as **Non-Equilibrium Thermodynamics**, incorporating the stochastic differential equations (SDEs) framework to model the noise-driven dynamics of Stochastic Systems & Noise-Driven Dynamics aspect 6. This will enable me to properly set up the symbolic setup, constant injection, and immutable law sections, ultimately enhancing my experiment's fidelity."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 7",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physics used and ensure that all necessary template sections (e.g., SYMBOLIC SETUP, CONSTANT INJECTION) are included in the experimental design. Specifically, I learned that neglecting to do so can lead to a deterministic failure with low vocabulary alignment. 2. To improve my chances in the next hypothesis, I should explicitly specify \"Quantum Mechanics\" as the physics type and include all necessary template sections, particularly SYMBOLIC SETUP and CONSTANT INJECTION, to ensure a more robust experimental design."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs."
     },
     {
-        "iteration": 3544,
-        "status": "FIXABLE",
-        "topic": "Stochastic Systems & Noise-Driven Dynamics: Stochastic Systems & Noise-Driven Dynamics aspect 7",
+        "iteration": 0,
+        "status": "Failed",
+        "topic": "Fractional ODEs",
         "physics_type": "unknown",
-        "lesson": "Based on my review of the last experiment: 1. This cycle taught me that I need to explicitly specify the underlying physics used and ensure that all necessary template sections (e.g., SYMBOLIC SETUP, CONSTANT INJECTION) are included in the experimental design. Specifically, I learned that neglecting to do so can lead to a deterministic failure with low vocabulary alignment. 2. To improve my chances in the next hypothesis, I should explicitly specify \"Quantum Mechanics\" as the physics type and include all necessary template sections, particularly SYMBOLIC SETUP and CONSTANT INJECTION, to ensure a more robust experimental design."
+        "lesson": "Cycle ? completed (Failed). Continue exploring Fractional ODEs."
     }
 ]

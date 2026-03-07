@@ -3,16 +3,21 @@ import os
 import time
 
 def calculate_rigor(entry):
+    rigor = 1.0 # Base average from searcher (typical)
+    entry_lower = entry.lower()
+
     # Extract base score from summary line if possible
     match = re.search(r"OVERALL RIGOR SCORE: ([\d.]+)/10", entry)
-    rigor = float(match.group(1)) if match else 1.0 # Default to 1.0 if not found
+    if match:
+        rigor = float(match.group(1))
     
     # Boost 1: LaTeX
     latex_markers = ['\\frac', '\\[', '\\(', '\\)', '\\partial', '\\mathbb', '$$',
                      '\\mu', '\\nu', '\\alpha', '\\sigma', '\\Lambda',
                      '\\hbar', '\\nabla', '\\int', '\\sum', '\\Gamma',
                      '\\mathcal', '\\begin{', '\\text{', '\\sqrt',
-                     'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈']
+                     'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈',
+                     '^\\alpha', '_0 D_t', '\\Gamma(']
     if any(m in entry for m in latex_markers):
         rigor += 2.0
 
@@ -30,9 +35,15 @@ def calculate_rigor(entry):
         'pde', 'spectral', 'adiabatic', 'invariant', 'non-linear',
         'pseudospectrum', 'topology', 'angular momentum', 'horizon',
         'ergosphere', 'derivation', 'formalism', 'gcm', 'adm mass',
-        'schwarzschild-ads', 'hawking mass'
+        'schwarzschild-ads', 'hawking mass', 'fractional', 'derivative',
+        'integral', 'grunwald-letnikov', 'riemann-liouville', 'caputo',
+        'mittag-leffler', 'viscoelasticity', 'anomalous diffusion',
+        'power-law', 'memory kernel', 'hereditary', 'adm 3+1',
+        'hamiltonian constraint', 'momentum constraint',
+        'fractional calculus', 'fox h-function', 'wright function',
+        'subdiffusion', 'superdiffusion', 'generalized function',
+        'distributional calculus'
     ]
-    entry_lower = entry.lower()
     physics_count = sum(1 for t in physics_terms if t in entry_lower)
     if physics_count >= 3:
         rigor += min(physics_count / 3.0, 2.5)
@@ -73,7 +84,7 @@ def force_audit():
     for entry in entries[1:]:
         if not entry.strip(): continue
         
-        if "AUDIT: PENDING" in entry:
+        if "AUDIT: PENDING" in entry or "REASON: Insufficient mathematical rigor" in entry:
             # Re-audit
             lines = entry.strip().split('\n')
             header_line = lines[0]

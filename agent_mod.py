@@ -558,16 +558,17 @@ class ScienceBot(BaseModule):
                     match = re.search(r"OVERALL RIGOR SCORE: ([\d.]+)/10", entry)
                     rigor = float(match.group(1)) if match else 0.0
 
-                    # Boost 1: LaTeX equations (broader set of markers including inline notation)
+                    # Boost 1: LaTeX equations (Expanded for fractional/operator calculus)
                     latex_markers = ['\\frac', '\\[', '\\(', '\\)', '\\partial', '\\mathbb', '$$',
                                      '\\mu', '\\nu', '\\alpha', '\\sigma', '\\Lambda',
                                      '\\hbar', '\\nabla', '\\int', '\\sum', '\\Gamma',
                                      '\\mathcal', '\\begin{', '\\text{', '\\sqrt',
-                                     'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈']
+                                     'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈',
+                                     '^\\alpha', '_0 D_t', '\\Gamma(']
                     if any(m in entry for m in latex_markers):
                         rigor += 2.0
 
-                    # Boost 2: Physics/math vocabulary density (Expanded for Higher-Dim/GR)
+                    # Boost 2: Physics/math vocabulary density (Expanded for Higher-Dim/GR + Fractional)
                     physics_terms = [
                          'regge-wheeler', 'zerilli', 'quasinormal', 'schwarzschild',
                         'perturbation', 'hamiltonian', 'lagrangian', 'eigenvalue',
@@ -581,22 +582,26 @@ class ScienceBot(BaseModule):
                         'pde', 'spectral', 'adiabatic', 'invariant', 'non-linear',
                         'pseudospectrum', 'topology', 'angular momentum', 'horizon',
                         'ergosphere', 'derivation', 'formalism', 'gcm', 'adm mass',
-                        'schwarzschild-ads', 'hawking mass'
+                        'schwarzschild-ads', 'hawking mass', 'fractional', 'derivative',
+                        'integral', 'grunwald-letnikov', 'riemann-liouville', 'caputo',
+                        'mittag-leffler', 'viscoelasticity', 'anomalous diffusion',
+                        'power-law', 'memory kernel', 'hereditary', 'adm 3+1',
+                        'hamiltonian constraint', 'momentum constraint'
                     ]
                     entry_lower = entry.lower()
                     physics_count = sum(1 for t in physics_terms if t in entry_lower)
                     if physics_count >= 3:
                         rigor += min(physics_count / 3.0, 2.5)  # up to +2.5
 
-                    # Boost 3: Structured 4-section brief (sign of 70B synthesis quality)
+                    # Boost 3: Structure
                     if re.search(r'\*\*[1-4]\.\s+\w', entry):
                         rigor += 0.5
                     
-                    # Boost 4: Logic Hole detection (Reward for finding contradictions)
+                    # Boost 4: Logic Hole
                     if "logic hole" in entry_lower or "missing link" in entry_lower:
                         rigor += 1.0
 
-                    # Boost 5: Depth/Synthesis Reward (+0.1 per 500 chars above 2000)
+                    # Boost 5: Depth
                     if len(entry) > 2000:
                         depth_bonus = min((len(entry) - 2000) / 1000.0, 0.5)
                         rigor += depth_bonus
