@@ -391,10 +391,13 @@ class BaseModule:
 
         # 6. DISPATCH LOGGING
         if self.ui:
+            # Only heavy models clear the reasoning buffer to avoid 8B workers stomping on 70B thoughts
+            if is_heavy:
+                self.ui.clear_thought_buffer()
+            
             # pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
             # pod_port = str(target_url).split(":")[-1].split("/")[0]
             # self.ui.print_log(f"\033[1;30m[DISPATCH] {model} -> Pod {pod_id}:{pod_port}\033[0m")
-            self.ui.clear_thought_buffer()
         
         # Determine temperature
         temp_val = temperature if temperature is not None else 0.5
@@ -530,7 +533,7 @@ class BaseModule:
                                     token = chunk.get("response", "")
                                     
                                     full_response += token
-                                    if self.ui:
+                                    if self.ui and is_heavy: # Only show thoughts for the heavy model to avoid dashboard jitter
                                         if reasoning:
                                             self.ui.append_thought(reasoning)
                                         elif token and not full_response.strip().startswith("{"):
@@ -539,7 +542,8 @@ class BaseModule:
                                     if chunk.get("done"): break
                                     
                             if self.ui: 
-                                self.ui.clear_thought_buffer()
+                                if is_heavy:
+                                    self.ui.clear_thought_buffer()
                                 self.ui.finish_task(task_id)
                             stop_heartbeat.set()
                             return full_response.strip()
