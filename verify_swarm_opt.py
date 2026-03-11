@@ -1,6 +1,6 @@
 import json
 import time
-from agent import ScienceBot
+from agent import EigenZeta
 
 def test_swarm_optimizations():
     print("--- Verifying Swarm Optimizations ---")
