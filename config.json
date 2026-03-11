@@ -5,86 +5,140 @@
         "smtp_port": 587,
         "sender_email": "lamontgreen87@gmail.com",
         "sender_password": "PASSWORD_HERE",
-        "recipient_email": "EMAIL_HERE"
+        "recipient_email": "EMAIL_HERE",
+        "telegram_enabled": true,
+        "telegram_chat_id": "8020154952",
+        "telegram_pulse_interval": 3600
     },
     "hardware": {
+        "bot_name": "EigenZeta",
         "local_model": "deepseek-r1:8b",
         "reasoning_model": "deepseek-r1:70b",
         "large_model": "deepseek-r1:70b",
         "fast_model": "deepseek-r1:8b",
-        "constructor_model": "deepseek-r1:32b",
+        "constructor_model": "deepseek-r1:70b",
         "math_model": "deepseek-r1:70b",
         "sleeper_mode": false,
         "fallback_model": "deepseek-r1:8b",
         "theorist_model": "deepseek-r1:70b",
-        "explorer_model": "deepseek-r1:32b",
+        "explorer_model": "deepseek-r1:8b",
+        "alpha_model": "deepseek-r1:70b",
+        "beta_model": "qwen2-math:72b",
+        "gamma_model": "llama3.3:latest",
         "api_url": [
-            "http://64.247.201.10:10565/api/generate"
+            "http://194.68.245.130:22019/api/generate",
+            "http://69.30.85.16:22183/api/generate"
         ],
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
-            "http://69.30.85.128:22021/api/generate",
-            "http://194.68.245.208:22082/api/generate",
-            "http://194.68.245.199:22041/api/generate"
+            "http://69.30.85.4:22109/api/generate",
+            "http://194.68.245.130:22019/api/generate"
         ],
+        "alpha_url": "http://69.30.85.4:22109/api/generate",
+        "beta_url": "http://194.68.245.130:22019/api/generate",
+        "gamma_url": "http://69.30.85.16:22183/api/generate",
+        "consensus_threshold": 0.95,
         "vram_capacity_gb": 350,
         "gpu_mapping": {
-            "explorer": "secondary_gpu",
-            "lab": "api_url",
-            "critic": "api_url",
-            "reflector": "api_url",
-            "math_engine": "api_url",
-            "searcher": "secondary_gpu",
-            "reviewer": "api_url",
-            "scraper": "secondary_gpu",
-            "scribe": "secondary_gpu",
-            "teacher": "api_url",
-            "sciencebot": "api_url"
+            "critic": "alpha_url",
+            "reflector": "alpha_url",
+            "math_engine": "beta_url",
+            "reviewer": "alpha_url",
+            "scraper": "alpha_url",
+            "scribe": "alpha_url",
+            "teacher": "alpha_url"
         },
+        "pod1_model": "deepseek-r1:32b",
         "logical_vram_limit_gb": 8,
         "api_key": null,
         "teacher_model": "gemini-pro-latest",
         "teacher_api_key": "YOUR_GEMINI_API_KEY",
         "cpu_threads": 48,
-        "max_swarm_workers": 18,
-        "turbo_workers": 40,
-        "heavy_concurrency_limit": 16,
+        "max_swarm_workers": 32,
+        "turbo_workers": 32,
+        "heavy_concurrency_limit": 20,
         "fast_lane_concurrency": 10,
-        "num_ctx": 32768
+        "wave_mode": "MAGISTRATE",
+        "magistrate_queue_threshold": 15,
+        "num_ctx": 32768,
+        "pods": {
+            "alpha": {
+                "urls": [
+                    "http://69.30.85.4:22109/api/generate"
+                ],
+                "models": [
+                    "deepseek-r1:70b",
+                    "deepseek-r1:32b",
+                    "deepseek-r1:8b"
+                ],
+                "reservation_gb": 45
+            },
+            "beta": {
+                "urls": [
+                    "http://194.68.245.130:22019/api/generate"
+                ],
+                "models": [
+                    "qwen2-math:72b",
+                    "deepseek-r1:32b",
+                    "deepseek-r1:8b"
+                ],
+                "reservation_gb": 45
+            },
+            "gamma": {
+                "urls": [
+                    "http://69.30.85.16:22183/api/generate"
+                ],
+                "models": [
+                    "llama3.3:latest",
+                    "deepseek-r1:32b",
+                    "deepseek-r1:8b"
+                ],
+                "reservation_gb": 45
+            }
+        },
+        "sorter_settings": {
+            "enabled": true,
+            "max_8b_workers": 32,
+            "synthesis_queue_threshold": 15,
+            "audit_queue_threshold": 10,
+            "min_vram_headroom_gb": 10.0
+        }
     },
     "research": {
         "deep_research_mode": true,
         "current_topic": "Black Hole Manifold Dynamics",
-        "iteration_delay": 5,
+        "iteration_delay": 1,
         "auto_tweak": true,
         "min_complexity": 85,
         "max_complexity": 110,
         "max_retries": 30,
         "focus_areas": [
-            "Kerr Metric & Rotating Black Holes",
-            "Schwarzschild Singularity Analysis",
-            "Non-linear Frame Dragging in Kerr Spacetime",
-            "Hawking Radiation Stochastic Modeling",
-            "Penrose Processes & Ergosphere Energy Extraction",
-            "Geodesic Precession in Strong Gravity",
-            "Gravitational Redshift & Time Dilation in Strong Fields",
-            "Metric Perturbations & Black Hole Stability",
-            "Quantum Field Theory near Event Horizons",
-            "Spacetime Curvature & Ricci Flow in Extreme Gravity",
-            "Accretion Disk Magnetohydrodynamics",
-            "Black Hole Information Paradox & Holographic Entanglement",
-            "Einstein-Rosen Bridge Stability / Traversable Wormholes",
-            "Naked Singularity & Cosmic Censorship Hypothesis"
+            "Kerr-Newman Metric & Charged Rotating Black Holes",
+            "Stability of Cauchy Horizons in de Sitter Space",
+            "Gravitational Wave Ringdown & Quasinormal Modes",
+            "Firewall Paradox & Quantum Geometry at the Horizon",
+            "Stress-Energy Tensor Divergence in Extremal Black Holes",
+            "Numerical Relativity of Binary Black Hole Mergers",
+            "Spin-Precession & Post-Newtonian Expansion in Strong Fields",
+            "Holographic Complexity & Action-Volume Conjectures",
+            "Berezinskii-Kosterlitz-Thouless Transitions in Spacetime",
+            "Tidal Disruption Events (TDE) & Relativistic Hydrodynamics",
+            "Superradiance & Boson Clouds around Kerr Black Holes",
+            "Effective Field Theory of Gravitational Phase Transitions",
+            "Non-BPS Black Hole Solutions in String Theory",
+            "Microstate Geometries & Fuzzball Proposal Validation",
+            "Anomalous Diffusion & Fractional Fokker-Planck Equations in Kerr Spacetime",
+            "Fractional Calculus & Memory Kernels in Black Hole Hawking Radiation"
         ],
-        "research_depth": 15,
-        "study_loop_count": 3,
+        "research_depth": 30,
+        "study_loop_count": 5,
         "turbo_mode": true,
         "use_large_theorist": true,
         "simulation_fidelity": "ULTRA"
     },
     "social": {
         "moltbook_api_key": "YOUR_MOLTBOOK_API_KEY",
-        "screen_name": "ScienceBot",
+        "screen_name": "EigenZeta",
         "enabled": true,
         "default_submolt": "science",
         "pulse_frequency": 1000
