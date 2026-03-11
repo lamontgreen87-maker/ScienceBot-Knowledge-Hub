@@ -18,6 +18,9 @@ _THREAD_LOCAL_CONTEXT = _Context()
 
 _GLOBAL_FILE_LOCK = threading.RLock()
 _HEAVY_SEMAPHORE = None 
+_HEAVY_LIMIT = 0
+_HEAVY_WAITING_COUNT = 0
+_HEAVY_ACTIVE_COUNT = 0
 _SEMAPHORE_LOCK = threading.Lock()
 
 class BaseModule:
@@ -32,18 +35,25 @@ class BaseModule:
         self._cache_expiry = 0
         self._cache_lock = threading.Lock()
         
-        # Initialize/Update the global heavy model semaphore
-        global _HEAVY_SEMAPHORE
+        global _HEAVY_SEMAPHORE, _HEAVY_LIMIT
         with _SEMAPHORE_LOCK:
             new_limit = self.config['hardware'].get('heavy_concurrency_limit', 1)
-            if _HEAVY_SEMAPHORE is None:
-                _HEAVY_SEMAPHORE = threading.Semaphore(new_limit)
+            _HEAVY_LIMIT = new_limit
+            # Use class-level storage for the semaphore itself to ensure it survives re-instantiation
+            if not hasattr(BaseModule, '_shared_heavy_semaphore'):
+                BaseModule._shared_heavy_semaphore = threading.Semaphore(new_limit)
                 BaseModule._current_limit = new_limit
-            elif getattr(BaseModule, '_current_limit', 1) != new_limit:
-                # If the limit changed, we need to create a new one. 
-                # Note: This won't affect already-waiting threads but will affect new ones.
-                _HEAVY_SEMAPHORE = threading.Semaphore(new_limit)
+                _HEAVY_SEMAPHORE = BaseModule._shared_heavy_semaphore
+            elif BaseModule._current_limit != new_limit:
+                # Only update if the limit actually changed
+                BaseModule._shared_heavy_semaphore = threading.Semaphore(new_limit)
                 BaseModule._current_limit = new_limit
+                _HEAVY_SEMAPHORE = BaseModule._shared_heavy_semaphore
+            else:
+                _HEAVY_SEMAPHORE = BaseModule._shared_heavy_semaphore
+            
+            if self.ui:
+                self.ui.update_heavy_queue(0, new_limit)
 
     def _safe_load_json(self, file_path, default=[]):
         """Standardized, BOM-aware, and corruption-resilient thread-safe JSON loader."""
@@ -82,7 +92,7 @@ class BaseModule:
             with open(file_path, 'a', encoding='utf-8') as f:
                 f.write(text + "\n")
 
-    def get_vram_headroom(self, gpu_index=0, url=None):
+    def get_vram_headroom(self, gpu_index=0, url=None, reservation_gb=0):
         """
         Robustly detects available VRAM (in GB) on a specific GPU.
         Uses nvidia-smi with a fallback to Ollama /api/ps telemetry.
@@ -110,7 +120,8 @@ class BaseModule:
             if output:
                 lines = output.strip().split('\n')
                 if gpu_index < len(lines):
-                    return float(lines[gpu_index]) / 1024.0 # Convert MB to GB
+                    free_gb = float(lines[gpu_index]) / 1024.0 # Convert MB to GB
+                    return max(0.0, free_gb - reservation_gb)
         except:
             pass
 
@@ -143,14 +154,82 @@ class BaseModule:
                         total_capacity_gb = self.config['hardware'].get('vram_capacity_gb', 90)
 
                     headroom = total_capacity_gb - (total_loaded_mb / 1024.0)
-                    # print(f"[VRAM-DIAG] {url} -> Loaded: {total_loaded_mb/1024.0:.2f}GB / Capacity: {total_capacity_gb}GB -> Headroom: {headroom:.2f}GB")
-                    return headroom
+                    return max(0.0, headroom - reservation_gb)
             except Exception as e:
-                # print(f"[VRAM-DIAG] Error on {url}: {e}")
                 pass
 
         # Default fallback: return a "safe" high value if detection fails entirely
         return 16.0
+
+    def _resolve_pod_priority(self, model_name):
+        """
+        New v4.0 Pod Resolution:
+        1. Checks if model_name explicitly lives in a pod family (alpha, beta, gamma).
+        2. Returns (url_pool, reservation_gb) for the best matching pod.
+        """
+        m_lower = model_name.lower()
+        pods = self.config['hardware'].get('pods', {})
+        
+        # 1st Priority: Exact Family Match (via config.json pods)
+        for pod_name, pod_info in pods.items():
+            allowed_models = [m.lower() for m in pod_info.get('models', [])]
+            # Check for substring match (e.g. "deepseek-r1:70b" in "deepseek-r1:70b" or vice versa)
+            if any(m_lower in am or am in m_lower for am in allowed_models):
+                return pod_info.get('urls'), pod_info.get('reservation_gb', 0)
+        
+        # 2nd Priority: Legacy Heuristics
+        is_8b = "8b" in m_lower or "llama3.1" in m_lower
+        is_32b = "32b" in m_lower
+        is_heavy = any(x in m_lower for x in [":70b", ":72b", "math", "llama3.3", "latest"])
+        
+        primary_url = self.config['hardware'].get('api_url')
+        secondary_gpu = self.config['hardware'].get('secondary_gpu')
+        
+        if is_8b:
+            return primary_url, 0
+        if is_32b:
+            return secondary_gpu or primary_url, 20 # 20GB reservation for 32B
+        if is_heavy:
+            return secondary_gpu or primary_url, 45 # Default high reservation for heavy
+            
+        return primary_url, 0
+
+    _residency_cache = {}      # {url: (timestamp, residency_dict)}
+    _residency_cache_ttl = 60  # seconds
+
+    def get_model_residency(self, url=None):
+        """
+        Detects if models on a specific node are partially offloaded to system RAM.
+        Returns a dict: {model_name: "VRAM" | "RAM" | "PARTIAL"}
+        Cached per-URL for 60 seconds to avoid blocking every LLM call.
+        """
+        if not url: return {}
+        now = time.time()
+        cached = BaseModule._residency_cache.get(url)
+        if cached and (now - cached[0]) < BaseModule._residency_cache_ttl:
+            return cached[1]
+        try:
+            target = url.replace("/api/generate", "/api/ps")
+            response = requests.get(target, timeout=2)
+            if response.status_code == 200:
+                data = response.json()
+                residency = {}
+                for m in data.get('models', []):
+                    name = m.get('name')
+                    size = m.get('size', 0)
+                    vram_size = m.get('size_vram', 0)
+                    if vram_size >= size:
+                        status = "VRAM"
+                    elif vram_size == 0:
+                        status = "RAM"
+                    else:
+                        status = f"PARTIAL ({(vram_size/size)*100:.0f}%)"
+                    residency[name] = status
+                BaseModule._residency_cache[url] = (now, residency)
+                return residency
+        except:
+            pass
+        return {}
 
     def get_system_health(self):
         """Returns a 'Complexity Multiplier' based on available local resources."""
@@ -214,13 +293,16 @@ class BaseModule:
         """
         Queries the external Teacher oracle (Google Gemini / DeepThink).
         Requires 'teacher_api_key' and 'teacher_model' in config.
+        Falls back to the local heavy model if the API key is missing or fails.
         """
         api_key = self.config['hardware'].get('teacher_api_key')
         model = self.config['hardware'].get('teacher_model', "gemini-2.0-flash-thinking-exp-01-21")
         
-        if not api_key:
-            if self.ui: self.ui.print_log("[TEACHER] No API key found. Teaching phase skipped.")
-            return None
+        fallback_model = self.config['hardware'].get('theorist_model', 'deepseek-r1:70b')
+
+        if not api_key or api_key == "YOUR_GEMINI_API_KEY":
+            if self.ui: self.ui.print_log(f"\033[1;33m[TEACHER] API key missing. Falling back to local heavy model: {fallback_model}\033[0m")
+            return self._query_llm(prompt, model=fallback_model, timeout=timeout)
 
         # Google Generative Language API endpoint
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -251,13 +333,13 @@ class BaseModule:
                     return res_json['candidates'][0]['content']['parts'][0]['text'].strip()
                 except (KeyError, IndexError):
                     if self.ui: self.ui.print_log(f"[TEACHER] Unexpected response format: {json.dumps(res_json)[:200]}")
-                    return None
+                    return self._query_llm(prompt, model=fallback_model, timeout=timeout)
             else:
-                if self.ui: self.ui.print_log(f"[TEACHER] API Error {response.status_code}: {response.text}")
-                return None
+                if self.ui: self.ui.print_log(f"\033[1;33m[TEACHER] API Error {response.status_code}. Falling back to {fallback_model}...\033[0m")
+                return self._query_llm(prompt, model=fallback_model, timeout=timeout)
         except Exception as e:
-            if self.ui: self.ui.print_log(f"[TEACHER] Exception: {str(e)}")
-            return None
+            if self.ui: self.ui.print_log(f"\033[1;33m[TEACHER] Network Exception. Falling back to {fallback_model}...\033[0m")
+            return self._query_llm(prompt, model=fallback_model, timeout=timeout)
 
     def _is_model_available(self, model_name, target_url):
         """Checks if a specific model is present on the SPECIFIC target server (Cached per-URL for 60s)."""
@@ -299,7 +381,7 @@ class BaseModule:
         pass
 
     def _query_llm(self, prompt, model=None, temperature=0.7, max_tokens=4000, 
-                  is_8b=False, is_sleeper=False, allow_fallback=True, api_url=None, timeout=600):
+                  is_8b=False, is_sleeper=False, allow_fallback=True, api_url=None, timeout=1800):
         """
         Base query method with retry logic and sleeper mode handoff.
         - allow_fallback: If False, will not engage Sleeper Mode on connection failure.
@@ -315,8 +397,9 @@ class BaseModule:
         
         # Determine if heavy (70B/72B/etc.)
         is_8b = "8b" in m_check or "llama3.1" in m_check
+        is_32b = "32b" in m_check
         is_heavy = any(x in m_check for x in [":70b", ":72b", "math", "llama3.3", "latest"]) 
-        if "r1" in m_check and not is_8b:
+        if "r1" in m_check and not is_8b and not is_32b:
             is_heavy = True
             
         if not is_deep_mode:
@@ -333,36 +416,34 @@ class BaseModule:
                 fast_fallback = self.config['hardware'].get('fast_model', 'deepseek-r1:8b')
                 if self.ui: self.ui.print_log(f"\033[1;33m[FAST-MODE] SWAP: {model} -> {fast_fallback} (Standard Duty Cycle)\033[0m")
                 model = fast_fallback
+
+        # --- HARVEST MODE GUARD (v3.3 - Absolute 70B Isolation) ---
+        wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+        if wave_mode == "HARVEST" and is_heavy:
+             fast_fallback = self.config['hardware'].get('fast_model', 'deepseek-r1:32b')
+             if self.ui: self.ui.print_log(f"\033[1;31m[HARVEST-GUARD] Terminating 70B access. Rerouting {model} -> {fast_fallback}\033[0m")
+             model = fast_fallback
+             is_heavy = False
+             m_check = str(model).lower()
+             is_8b = "8b" in m_check or "llama3.1" in m_check
+             is_32b = "32b" in m_check
+
         # 0. RESOLVE API URL (Priority: Argument > Thread-Local Override > Instance Default)
         url_arg = api_url
         url_context = getattr(_THREAD_LOCAL_CONTEXT, 'api_url', None)
+        is_pinned = (url_arg is not None) or (url_context is not None)
         
-        # --- CONSOLIDATED SWARM ROUTING (v3.2 - Dual-Track Resolution) ---
-        # 1. Resolve starting Pool (The source of authority)
-        url_pool = self.config['hardware'].get('api_url', [])
+        # --- NEW v4.0 SWARM ROUTING (Pod Family Isolation) ---
+        url_pool, reservation_gb = self._resolve_pod_priority(model)
+        
+        # Override pool if specific mapping is defined for this component
         mapping = self.config['hardware'].get('gpu_mapping', {})
         component_key = getattr(self, 'COMPONENT_NAME', self.__class__.__name__.lower())
         gpu_key = mapping.get(component_key)
-        if gpu_key:
-            url_pool = self.config['hardware'].get(gpu_key, url_pool)
-            
-        # 2. Refine Pool based on model (8B/Heavy isolation)
-        secondary_gpu = self.config['hardware'].get('secondary_gpu')
-        local_url = self.config['hardware'].get('local_url')
-        primary_url = self.config['hardware'].get('api_url')
-        
-        if is_8b and not is_sleeper:
-            if url_pool != secondary_gpu and url_pool != local_url:
-                url_pool = secondary_gpu or local_url
-        elif is_heavy:
-            # Force heavy reasoning models to the primary API pool (A100)
-            # They should not run on secondary GPUs which lack the VRAM/model
-            url_pool = primary_url
-            
-        # 3. Resolve Candidate Target (Pinned or Load Balanced)
-        # If a specific URL was passed or set in context, use it as the first candidate
-        candidate_url = url_arg or url_context
-        
+        if gpu_key and not is_pinned:
+             # If mapping exists, it takes precedence unless we are explicitly pinned
+             url_pool = self.config['hardware'].get(gpu_key, url_pool)
+
         def resolve_url_from_pool(pool):
             if not pool: return None
             if isinstance(pool, list) and pool:
@@ -374,30 +455,18 @@ class BaseModule:
                     return url
             return pool
 
-        target_url = candidate_url or resolve_url_from_pool(url_pool)
+        target_url = url_arg or url_context or resolve_url_from_pool(url_pool)
 
         # 4. Sleeper Mode Reroute (Initial Phase)
         is_sleeper_now = is_sleeper or self.config['hardware'].get('sleeper_mode', False)
         if is_sleeper_now:
-            target_url = local_url
+            target_url = self.config['hardware'].get('local_url')
             model = self.config['hardware'].get('fallback_model', 'deepseek-r1:8b')
+            reservation_gb = 0
 
         # 5. Default Fallback
         if not target_url:
-            target_url = local_url or 'http://localhost:11434/api/generate'
-        
-        # Ensure it's a string
-        if isinstance(target_url, list): target_url = target_url[0]
-
-        # 6. DISPATCH LOGGING
-        if self.ui:
-            # Only heavy models clear the reasoning buffer to avoid 8B workers stomping on 70B thoughts
-            if is_heavy:
-                self.ui.clear_thought_buffer()
-            
-            # pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
-            # pod_port = str(target_url).split(":")[-1].split("/")[0]
-            # self.ui.print_log(f"\033[1;30m[DISPATCH] {model} -> Pod {pod_id}:{pod_port}\033[0m")
+            target_url = self.config['hardware'].get('local_url') or 'http://localhost:11434/api/generate'
         
         # Determine temperature
         temp_val = temperature if temperature is not None else 0.5
@@ -412,7 +481,7 @@ class BaseModule:
             "keep_alive": -1,
             "options": {
                 "num_predict": 8192, 
-                "temperature": temp_val,
+                "temperature": temperature if temperature is not None else 0.5,
                 "num_ctx": 4096 if is_sleeper else self.config['hardware'].get('num_ctx', 32768)
             }
         }
@@ -429,11 +498,24 @@ class BaseModule:
         h_start = time.time()
         # Use a more specific 'llm_' prefix to avoid colliding with parent 'worker_' tasks on the display
         task_id = f"llm_{id(threading.current_thread())}_{int(time.time()*1000)}"
+        
+        # --- DYNAMIC HEAVY DETECTION (For UI and Fallback) ---
+        model_name = str(model).lower()
+        is_8b = "8b" in model_name or "llama3.1" in model_name
+        is_32b = "32b" in model_name
+        is_heavy_now = is_heavy or any(x in model_name for x in [":70b", ":72b", ":32b", "math", "llama3.3", "latest"])
+        if "r1" in model_name and not (is_8b or is_32b):
+            is_heavy_now = True
+
         if self.ui:
-            # Determine color based on hardware location (Suggestion 3512 / User Request)
-            # Yellow for local, Green for Pod Server
+            # 3-tier color: MAGENTA=70B/heavy, GREEN=32B/pod, YELLOW=local
             is_local = "localhost" in target_url or "127.0.0.1" in target_url
-            hw_color = Fore.YELLOW if is_local else Fore.GREEN
+            if is_local:
+                hw_color = Fore.YELLOW
+            elif is_heavy_now:
+                hw_color = Fore.MAGENTA
+            else:
+                hw_color = Fore.GREEN
             self.ui.register_task(task_id, model, color=hw_color)
 
         def heartbeat():
@@ -456,102 +538,173 @@ class BaseModule:
         import random
         for attempt in range(retries):
             try:
-                # --- CONCURRENCY CONTROL ---
-                # Check if model is "heavy" (70B/72B)
-                is_8b_now = "8b" in model.lower() or "llama3.1" in model.lower()
-                is_heavy_now = any(x in model.lower() for x in [":70b", ":72b", "math", "llama3.3", "latest"])
-                if "r1" in model.lower() and not is_8b_now:
+                # --- DYNAMIC URL RESOLUTION (Fix for [API EXCEPTION] List-URL bug) ---
+                if isinstance(target_url, list) or target_url is None:
+                    target_url = resolve_url_from_pool(url_pool)
+                # Final safety: if it's still a list, just take the first one
+                if isinstance(target_url, list): target_url = target_url[0]
+                if not target_url: target_url = local_url
+
+                # DISPATCH LOGGING & RESIDENCY CHECK (Inside loop for rotation accuracy)
+                if self.ui and attempt == 0:
+                    residency = self.get_model_residency(target_url)
+                    model_status = residency.get(model, "VRAM")
+                    if model_status == "RAM" or "PARTIAL" in model_status:
+                        self.ui.print_log(f"\033[1;33m[PERF-ALERT] {model} on {target_url} is on {model_status}. Expect slow inference.\033[0m")
+                    if is_heavy: self.ui.clear_thought_buffer()
+
+                # --- CONCURRENCY CONTROL & DISPATCH ---
+                # Re-evaluate heaviness if model changed (e.g. from fallback)
+                model_name_now = str(model).lower()
+                is_8b_check = "8b" in model_name_now or "llama3.1" in model_name_now
+                is_32b_check = "32b" in model_name_now
+                is_heavy_now = is_heavy or any(x in model_name_now for x in [":70b", ":72b", ":32b", "math", "llama3.3", "latest"])
+                if "r1" in model_name_now and not (is_8b_check or is_32b_check):
                     is_heavy_now = True
-                
+
                 if is_heavy_now:
-                    # self.ui.print_log(f"\033[1;30m[CONCURRENCY] Queuing for heavy model {model}...\033[0m")
-                    # Non-blocking wait loop for "Waiting Room" actions
-                    while not _HEAVY_SEMAPHORE.acquire(blocking=False):
-                        self._perform_idle_tasks()
-                        time.sleep(5) 
+                    global _HEAVY_WAITING_COUNT, _HEAVY_ACTIVE_COUNT
+                    with _SEMAPHORE_LOCK:
+                        _HEAVY_WAITING_COUNT += 1
                     
+                    if self.ui:
+                        self.ui.update_heavy_queue(_HEAVY_ACTIVE_COUNT, _HEAVY_LIMIT, _HEAVY_WAITING_COUNT)
+
                     try:
+                        # Non-blocking wait loop for "Waiting Room" actions
+                        q_start = time.time()
+                        acquired = False
+                        while time.time() - q_start < 1800: # 30-minute hard timeout for queuing
+                            if _HEAVY_SEMAPHORE.acquire(blocking=False):
+                                acquired = True
+                                break
+                            self._perform_idle_tasks()
+                            time.sleep(5) 
+                        
+                        if not acquired:
+                            if self.ui: self.ui.print_log(f"\033[1;31m[TIMEOUT] Aborting request for {model} (Queued > 15m)\033[0m")
+                            stop_heartbeat.set()
+                            if self.ui: self.ui.finish_task(task_id)
+                            return None
+
+                        try:
+                            # Update task registration with potentially new model/color if we've rotated
+                            if self.ui and attempt > 0:
+                                is_local = "localhost" in str(target_url) or "127.0.0.1" in str(target_url)
+                                hw_color = Fore.YELLOW if is_local else Fore.MAGENTA
+                                # Use update_task instead of register_task to avoid resetting the timer to 0
+                                self.ui.update_task(task_id, f"Retry: {model}", elapsed=int(time.time() - h_start))
+                                if task_id in self.ui.active_tasks:
+                                    self.ui.active_tasks[task_id]["color"] = hw_color 
+                            else:
+                                pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
+                                if self.ui: self.ui.print_log(f"\033[1;30m[SEM-ACQUIRE] {model} -> Pod {pod_id}\033[0m")
+                            
+                            is_actually_processing.set()
+                            
+                            # Increment active count after acquiring slot
+                            with _SEMAPHORE_LOCK:
+                                _HEAVY_WAITING_COUNT = max(0, _HEAVY_WAITING_COUNT - 1)
+                                _HEAVY_ACTIVE_COUNT += 1
+                            if self.ui: self.ui.update_heavy_queue(_HEAVY_ACTIVE_COUNT, _HEAVY_LIMIT, _HEAVY_WAITING_COUNT)
+
+                            response = requests.post(target_url, json=payload, headers=headers, timeout=(15, timeout), stream=use_streaming)
+                            
+                            if response.status_code == 200:
+                                if use_streaming:
+                                    full_response = ""
+                                    full_reasoning = ""
+                                    for line in response.iter_lines():
+                                        if line:
+                                            if not is_actually_processing.is_set():
+                                                is_actually_processing.set()
+                                            chunk = json.loads(line)
+                                            reasoning = chunk.get("reasoning_content", "")
+                                            token = chunk.get("response", "")
+                                            
+                                            if self.ui:
+                                                if reasoning: self.ui.append_thought(reasoning)
+                                                elif token and not full_response.strip().startswith("{"):
+                                                    self.ui.append_thought(token)
+                                            
+                                            full_response += token
+                                            full_reasoning += reasoning
+                                            if chunk.get("done"): break
+                                    
+                                    if self.ui: self.ui.clear_thought_buffer()
+                                    stop_heartbeat.set()
+                                    
+                                    # PRESERVE REASONING: Prepend <think> tags for Scientist Model training
+                                    final_out = full_response.strip()
+                                    if full_reasoning.strip():
+                                        final_out = f"<think>\n{full_reasoning.strip()}\n</think>\n\n{final_out}"
+                                    return final_out
+                                else:
+                                    stop_heartbeat.set()
+                                    raw_data = response.json()
+                                    resp = raw_data.get('response', '').strip()
+                                    reas = raw_data.get('reasoning_content', '').strip()
+                                    if reas:
+                                        resp = f"<think>\n{reas}\n</think>\n\n{resp}"
+                                    return resp
+                        finally:
+                            is_actually_processing.clear()
+                            _HEAVY_SEMAPHORE.release()
+                            with _SEMAPHORE_LOCK:
+                                _HEAVY_ACTIVE_COUNT = max(0, _HEAVY_ACTIVE_COUNT - 1)
+                            if self.ui: 
+                                self.ui.update_heavy_queue(_HEAVY_ACTIVE_COUNT, _HEAVY_LIMIT, _HEAVY_WAITING_COUNT)
+                                self.ui.finish_task(task_id)
+                                self.ui.print_log(f"\033[1;30m[SEM-RELEASE] {model} freed slot\033[0m")
+                    finally:
+                        # Ensure waiting count is decremented even if we timed out before acquisition
+                        if not acquired:
+                            with _SEMAPHORE_LOCK:
+                                _HEAVY_WAITING_COUNT = max(0, _HEAVY_WAITING_COUNT - 1)
+                            if self.ui:
+                                self.ui.update_heavy_queue(_HEAVY_ACTIVE_COUNT, _HEAVY_LIMIT, _HEAVY_WAITING_COUNT)
+                else:
+                    # FAST-LANE DISPATCH
+                    try:
+                        if self.ui and attempt > 0:
+                            is_local = "localhost" in str(target_url) or "127.0.0.1" in str(target_url)
+                            hw_color = Fore.YELLOW if is_local else Fore.GREEN
+                            self.ui.register_task(task_id, model, color=hw_color)
+
                         is_actually_processing.set()
-                        # Tight 15s connection timeout, 600s (default) read timeout
-                        # Using a tuple (connect_timeout, read_timeout)
                         response = requests.post(target_url, json=payload, headers=headers, timeout=(15, timeout), stream=use_streaming)
                         
                         if response.status_code == 200:
                             if use_streaming:
                                 full_response = ""
-                                streaming_text = ""
+                                full_reasoning = ""
                                 for line in response.iter_lines():
                                     if line:
                                         if not is_actually_processing.is_set():
                                             is_actually_processing.set()
                                         chunk = json.loads(line)
-                                        # Prefer reasoning_content for the dashboard (Transparency)
                                         reasoning = chunk.get("reasoning_content", "")
                                         token = chunk.get("response", "")
-                                        
-                                        if self.ui:
-                                            # Prioritize R1 "Thinking" tokens
-                                            if reasoning:
-                                                self.ui.append_thought(reasoning)
-                                            elif token and not full_response.strip().startswith("{"):
-                                                # Regular tokens from 8B or Non-R1 70B
-                                                self.ui.append_thought(token)
-                                        
                                         full_response += token
+                                        full_reasoning += reasoning
                                         if chunk.get("done"): break
+                                stop_heartbeat.set()
                                 
-                                if self.ui: 
-                                    self.ui.clear_thought_buffer()
-                                    self.ui.finish_task(task_id)
-                                stop_heartbeat.set()
-                                return full_response.strip()
+                                final_out = full_response.strip()
+                                if full_reasoning.strip():
+                                    final_out = f"<think>\n{full_reasoning.strip()}\n</think>\n\n{final_out}"
+                                return final_out
                             else:
-                                if self.ui: self.ui.finish_task(task_id)
                                 stop_heartbeat.set()
-                                return response.json().get('response', '').strip()
-                        
-                        else:
-                            if self.ui: self.ui.finish_task(task_id)
-                        
+                                raw_data = response.json()
+                                resp = raw_data.get('response', '').strip()
+                                reas = raw_data.get('reasoning_content', '').strip()
+                                if reas:
+                                    resp = f"<think>\n{reas}\n</think>\n\n{resp}"
+                                return resp
                     finally:
-                        is_actually_processing.clear()
-                        _HEAVY_SEMAPHORE.release()
-                else:
-                    # self.ui.print_log(f"\033[1;32m[FAST-LANE] Bypassing queue for {model}...\033[0m")
-                    is_actually_processing.set()
-                    response = requests.post(target_url, json=payload, headers=headers, timeout=(15, timeout), stream=use_streaming)
-                    
-                    if response.status_code == 200:
-                        if use_streaming:
-                            full_response = ""
-                            for line in response.iter_lines():
-                                if line:
-                                    if not is_actually_processing.is_set():
-                                        is_actually_processing.set()
-                                    chunk = json.loads(line)
-                                    reasoning = chunk.get("reasoning_content", "")
-                                    token = chunk.get("response", "")
-                                    
-                                    full_response += token
-                                    if self.ui and is_heavy: # Only show thoughts for the heavy model to avoid dashboard jitter
-                                        if reasoning:
-                                            self.ui.append_thought(reasoning)
-                                        elif token and not full_response.strip().startswith("{"):
-                                            self.ui.append_thought(token)
-                                            
-                                    if chunk.get("done"): break
-                                    
-                            if self.ui: 
-                                if is_heavy:
-                                    self.ui.clear_thought_buffer()
-                                self.ui.finish_task(task_id)
-                            stop_heartbeat.set()
-                            return full_response.strip()
-                        else:
-                            if self.ui: self.ui.finish_task(task_id)
-                            stop_heartbeat.set()
-                            return response.json().get('response', '').strip()
-                
+                        if self.ui: self.ui.finish_task(task_id)
+
                 # Handle loading error (Ollama returns 503 or 500 while loading)
                 if response.status_code in [500, 503]:
                     if self.ui: self.ui.update_task(task_id, "Hydrating", attempt*30)
@@ -563,12 +716,23 @@ class BaseModule:
                 else:
                     if self.ui: 
                         self.ui.print_log(f"[API ERROR] HTTP {response.status_code}: {response.text}")
-                        self.ui.finish_task(task_id)
+                    
+                    # 404 = Model Not Found — auto-reroute to alpha_url with fast_model
+                    if response.status_code == 404 and "not found" in response.text.lower():
+                        alpha_pool = self.config['hardware'].get('alpha_url')
+                        fast_fallback = self.config['hardware'].get('fast_model', 'deepseek-r1:32b')
+                        if alpha_pool and url_pool != alpha_pool:
+                            if self.ui: self.ui.print_log(f"\033[1;33m[404-RESCUE] '{model}' not found. Switching to Alpha Pool with {fast_fallback}.\033[0m")
+                            url_pool = alpha_pool
+                            target_url = alpha_pool # Will be resolved to string in next loop iteration
+                            model = fast_fallback
+                            continue  # Retry with new target
+                    
                     stop_heartbeat.set()
                     return None
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                # Pool Rotation Logic (New in v3.0)
-                if isinstance(url_pool, list) and len(url_pool) > 1:
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.InvalidSchema, requests.exceptions.MissingSchema) as e:
+                # Pool Rotation Logic (New in v3.0) - Skip if strictly pinned
+                if not is_pinned and isinstance(url_pool, list) and len(url_pool) > 1:
                     target_url = resolve_url_from_pool(url_pool)
                     if self.ui: 
                         pod_id = str(target_url).split("//")[-1].split(":")[0].split(".")[-1]
@@ -712,10 +876,19 @@ Response:"""
         to clean up its own output and tries once more.
         """
         from json_utils import extract_json
+        import re
         
+        # Capture reasoning trace if present
+        reasoning_trace = None
+        think_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL | re.IGNORECASE)
+        if think_match:
+            reasoning_trace = think_match.group(1).strip()
+
         # First attempt: standard parsing
         result = extract_json(response)
         if result is not None:
+            if reasoning_trace and isinstance(result, dict):
+                result['reasoning_trace'] = reasoning_trace
             return result
         
         # Second attempt: ask the LLM to fix its own output

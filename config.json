@@ -101,7 +101,7 @@
             "max_8b_workers": 32,
             "synthesis_queue_threshold": 15,
             "audit_queue_threshold": 10,
-            "min_vram_headroom_gb": 10.0
+            "min_vram_headroom_gb": 20.0
         }
     },
     "research": {

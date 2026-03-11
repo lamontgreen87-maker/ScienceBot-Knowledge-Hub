@@ -333,14 +333,14 @@ class ScienceBot(BaseModule):
             # --- FEATURE: Cluster VRAM Guard (Suggestion 4120) ---
             # Guard GPU 0 (Primary)
             p_headroom = self.get_vram_headroom(url=primary_url[0] if isinstance(primary_url, list) else primary_url)
-            if p_headroom < 12.0:
-                self.ui.print_log(f"\n\033[1;33m[WARNING] GPU 0 VRAM Low ({p_headroom:.1f}GB < 12GB). Throttle engaged.\033[0m")
+            if p_headroom < 20.0:
+                self.ui.print_log(f"\n\033[1;33m[WARNING] GPU 0 VRAM Low ({p_headroom:.1f}GB < 20GB). 32B/70B Throttling engaged.\033[0m")
             
             # Guard GPU 1 (Secondary)
             if secondary_url:
                 s_headroom = self.get_vram_headroom(url=secondary_url[0] if isinstance(secondary_url, list) else secondary_url)
-                if s_headroom < 12.0:
-                    self.ui.print_log(f"\n\033[1;33m[WARNING] GPU 1 VRAM Low ({s_headroom:.1f}GB < 12GB). Study Phase may stall.\033[0m")
+                if s_headroom < 20.0:
+                    self.ui.print_log(f"\n\033[1;33m[WARNING] GPU 1 VRAM Low ({s_headroom:.1f}GB < 20GB). Heavy Workers may stall.\033[0m")
 
             # Check for partial hydration (Adaptive Mode)
             heavy_models = [
@@ -743,6 +743,13 @@ class ScienceBot(BaseModule):
         # --- GPU Pinning (Thread-Local Context) ---
         from base_module import _THREAD_LOCAL_CONTEXT
         _THREAD_LOCAL_CONTEXT.api_url = target_url
+        
+        # Wait for VRAM if we might need the heavy model
+        constructor_model = self.config['hardware'].get('constructor_model') or self.config['hardware'].get('large_model')
+        _, reservation = self._resolve_pod_priority(constructor_model)
+        while self.get_vram_headroom(url=target_url) < (reservation * 0.8): # 20% slack for KV cache
+            if self.ui: self.ui.set_status(f"THROTTLED: Construction waiting for VRAM ({reservation}GB)")
+            time.sleep(10)
 
         # Debate & Feasibility (Quick checks - 8B)
         from debate import Adversary
@@ -862,6 +869,13 @@ class ScienceBot(BaseModule):
         # --- GPU Pinning (Thread-Local Context) ---
         from base_module import _THREAD_LOCAL_CONTEXT
         _THREAD_LOCAL_CONTEXT.api_url = target_url
+        
+        # Wait for VRAM (70B/32B Self-Fix)
+        fix_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
+        _, reservation = self._resolve_pod_priority(fix_model)
+        while self.get_vram_headroom(url=target_url) < reservation:
+            if self.ui: self.ui.set_status(f"THROTTLED: Self-Fix waiting for VRAM ({reservation}GB)")
+            time.sleep(10)
 
         topic = test_result['hypothesis']['topic']
         reasoning = audit_report.get('reasoning', 'No specific reasoning provided.')
@@ -1181,7 +1195,8 @@ class ScienceBot(BaseModule):
                         sec_urls = self.config['hardware'].get('secondary_gpu', [])
                         check_url = sec_urls[0] if isinstance(sec_urls, list) and sec_urls else (sec_urls if isinstance(sec_urls, str) else None)
                         
-                        while self.get_vram_headroom(url=check_url) < 12.0:
+                        min_vram = self.config['hardware'].get('sorter_settings', {}).get('min_vram_headroom_gb', 12.0)
+                        while self.get_vram_headroom(url=check_url) < min_vram:
                             self.ui.set_status(f"THROTTLED: Waiting for VRAM")
                             time.sleep(10)
                         

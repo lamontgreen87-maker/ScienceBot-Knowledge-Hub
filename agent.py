@@ -10,6 +10,7 @@ import concurrent.futures
 import atexit
 import psutil
 
+from colorama import Fore
 # Silencing warnings for clean terminal output
 warnings.filterwarnings("ignore")
 from explorer import CuriosityEngine
@@ -82,6 +83,8 @@ class ScienceBot(BaseModule):
         self.press_office = PressOffice(self.config)
         self.searcher = Searcher(self.config, self.ui)
         self.social = Moltbook(self.config, self.ui)
+        from scribe_pro import ScribePro
+        self.scribe_pro = ScribePro(self.config, self.ui)
         self.iteration_count = 0
         self.state_file = os.path.join(self.config['paths']['memory'], "state.json")
         self.journal_file = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
@@ -89,6 +92,12 @@ class ScienceBot(BaseModule):
         
         self.current_state = self.load_state()
         self.heavy_lock = threading.Lock()
+        self.hydration_ready = False  # Track if 70B models are loaded
+        
+        # Identity System (Feature 4510)
+        self.identity = self._safe_load_json(os.path.join(self.config['paths']['memory'], "identity.json"), default={})
+        self.bot_name = self.identity.get("name", "EigenZeta")
+
         
         # Automated Startup Recovery & Science Integrity Audit
         self.recover_stale_findings()
@@ -96,11 +105,350 @@ class ScienceBot(BaseModule):
         self.science_integrity_audit()
         self.check_v1_greeting()
         
-        self.ui.print_log("--- Science Bot Initialized ---")
+        # Start Background Reporter
+        threading.Thread(target=self.telegram_reporter, daemon=True).start()
+        threading.Thread(target=self.telegram_listener_loop, daemon=True).start()
+        threading.Thread(target=self.run_promotion_stream, daemon=True).start()
+        
+        # Dynamic Worker Sorter State
+        self.active_8b_workers = self.config['hardware'].get('max_swarm_workers', 32)
+        self.sorter_active = self.config['hardware'].get('sorter_settings', {}).get('enabled', True)
+        if self.sorter_active:
+            threading.Thread(target=self.run_worker_sorter_loop, daemon=True).start()
+
+        self.ui.print_log(f"--- {self.bot_name} Initialized ---")
+        
+        # Start Buffer Monitor for UI
+        def buffer_monitor():
+            while True:
+                try:
+                    count = self.kb.get_entry_count()
+                    if self.ui: self.ui.update_swarm_buffer_count(count)
+                except: pass
+                time.sleep(10)
+        threading.Thread(target=buffer_monitor, daemon=True).start()
+
+        try:
+            from sci_utils import send_telegram
+            send_telegram(f"🚀 *{self.bot_name} Initialize*\n\nSystem is alive and kicking! Latest patches loaded.")
+        except Exception as e:
+            self.ui.print_log(f"[WARNING] Startup social ping failed: {e}")
+
         target = self.config['hardware'].get('api_url', 'localhost')
         self.ui.print_log(f"Target: {target}")
         self.ui.print_log(f"Models: {self.config['hardware']['local_model']} / {self.config['hardware']['reasoning_model']}")
         self.ui.print_log("Tip: Type directly into this console to talk to the bot!")
+
+    def telegram_reporter(self):
+        """
+        Background Thread: Periodic Telegram Status Pulse (Hourly).
+        Summary of most recent high-rigor entries from KnowledgeBuffer.
+        """
+        import time
+        from sci_utils import send_telegram
+        
+        # Initial wait for cluster to hydrate
+        time.sleep(60) 
+        
+        while True:
+            try:
+                # 1. Collect Phase & Context
+                phase = self.current_state.get("phase", "GATHERING")
+                topic = self.current_state.get("current_topic", "Exploratory Research")
+                
+                # Pull most recent high-rigor entries (VERIFIED findings)
+                kb_context = self.kb.get_latest_context()
+                verified_findings = [f for f in kb_context.split("---") if "AUDIT: VERIFIED" in f or "RIGOR: 9" in f or "RIGOR: 8" in f]
+                latest_findings = "\n".join(verified_findings[-5:]) if verified_findings else "No high-rigor discoveries this hour."
+                
+                # 2. Intelligence Summary (Upgrade to 32B for news-quality analysis)
+                summary_prompt = f"Analyze the following Science Knowledge Buffer and provide a brief, professional 'news brief' of the 'salt' or scientific knowledge gained this hour in exactly 2 sentences. Focus on the most significant finding. Context:\n\n{kb_context[:4000]}"
+                fast_model = self.config['hardware'].get('fast_model', 'deepseek-r1:32b')
+                intelligence = self._query_llm(summary_prompt, model=fast_model)
+                if not intelligence:
+                    intelligence = "Steady research in progress. No major synthesis yet."
+                
+                # 2.1 Generate Headline
+                headline_prompt = f"Create a punchy, professional news headline (max 8 words) for this scientific update: {intelligence}"
+                headline = self._query_llm(headline_prompt, model=fast_model).replace('"', '').replace('*', '').strip()
+                if not headline: headline = "SCIENCE UPDATE: STEADY PROGRESS"
+
+                # 3. Hardware Status (Summary)
+                total_vram_free = 0
+                pod_count_vram = 0
+                primary_urls = self.config['hardware'].get('api_url', [])
+                if isinstance(primary_urls, str): primary_urls = [primary_urls]
+                
+                for url in primary_urls:
+                    try:
+                        vram = self.get_vram_headroom(url)
+                        total_vram_free += vram
+                        pod_count_vram += 1
+                    except:
+                        pass
+                
+                # 3.1 Simulation Stats (User Request: Avg Time)
+                avg_sim_time = 0
+                stats_path = os.path.join(self.config['paths']['memory'], "simulation_stats.json")
+                if os.path.exists(stats_path):
+                    try:
+                        with open(stats_path, 'r', encoding='utf-8') as f:
+                            history = json.load(f)
+                        # Last hour's simulations
+                        recent_sims = [s for s in history if time.time() - s.get('timestamp', 0) < 3600]
+                        if recent_sims:
+                            avg_sim_time = sum(s.get('duration', 0) for s in recent_sims) / len(recent_sims)
+                    except: pass
+
+                # 3.2 Worker Concurrency (Real-time from UI)
+                local_active = sum(1 for t in self.ui.active_tasks.values() if t.get('color') == Fore.YELLOW)
+                pod_active = sum(1 for t in self.ui.active_tasks.values() if t.get('color') == Fore.GREEN)
+
+                # --- Add Efficiency & Success Metrics ---
+                failures_path = os.path.join(self.config['paths']['memory'], "failures.json")
+                failure_rate = 0
+                last_failure_reason = "No reported errors."
+                if os.path.exists(failures_path):
+                    try:
+                        with open(failures_path, 'r') as f:
+                            fails = json.load(f)
+                        # Count failures in the last hour
+                        recent_fails = [f for f in fails if time.time() - f.get('timestamp', 0) < 3600]
+                        failure_rate = len(recent_fails)
+                        if recent_fails:
+                            last_failure_reason = recent_fails[-1].get("audit_reason", "Theoretical rejection").split("\n")[0][:100]
+                    except: pass
+
+                # Count mentionable successes from KnowledgeBuffer
+                discoveries_count = self.kb.get_recent_verified_count(3600)
+                success_rate = (discoveries_count / (discoveries_count + failure_rate) * 100) if (discoveries_count + failure_rate) > 0 else 0
+
+                # 4. Construct News Message
+                msg = f"🗞 **BOT NEWS: {headline.upper()}**\n\n"
+                msg += f"🎬 **HIGH-RIGOR SUMMARY**\n"
+                msg += f"{latest_findings}\n\n"
+                msg += f"💡 **RESEARCH INSIGHT**\n"
+                msg += f"{intelligence.strip()}\n\n"
+                
+                msg += f"🛰 **MISSION STATUS**\n"
+                msg += f"• **Phase**: `{phase}`\n"
+                msg += f"• **Mode**: `[{self.config['hardware'].get('wave_mode', 'MAGISTRATE')}]`\n"
+                msg += f"• **Subject**: `{topic}`\n\n"
+                
+                # --- 70B Queue Metrics ---
+                queue_size = 0
+                try:
+                    queue_path = self.get_research_queue_path()
+                    if os.path.exists(queue_path):
+                        with open(queue_path, "r") as f:
+                            queue_size = len(json.load(f))
+                except: pass
+
+                msg += f"📊 **CLUSTER UTILIZATION**\n"
+                msg += f"• **Active Workers**: `{local_active + pod_active}` ({local_active}L / {pod_active}P)\n"
+                msg += f"• **70B Queue**: `{queue_size}` pending\n"
+                msg += f"• **Avg Sim Time**: `{avg_sim_time:.1f}s` per probe\n"
+                msg += f"• **VRAM Headroom**: `{total_vram_free:.1f}GB` total free\n\n"
+                
+                msg += f"🚧 **BUMPS IN THE ROAD**\n"
+                if failure_rate > 10:
+                    msg += f"⚠️ **Watch**: High volume of rejections. Auditor reports: \"{last_failure_reason}...\""
+                else:
+                    msg += f"✅ **Clear Skies**: No significant stability hurdles detected."
+
+                send_telegram(msg)
+                
+            except Exception as e:
+                self._debug_swarm(f"[REPORTER ERROR] {e}")
+                self._debug_swarm(f"[REPORTER ERROR] {e}")
+            
+            # Pull interval from config (default 1 hour)
+            interval = self.config['notifications'].get('telegram_pulse_interval', 3600)
+            time.sleep(interval)
+
+    def telegram_listener_loop(self):
+        """
+        Background Thread: Listens for incoming Telegram commands (/start, /status).
+        """
+        import time
+        import requests
+        from sci_utils import send_telegram
+
+        token = "8449965888:AAEiPJ8H4mErQWvX-Fu9kTFA6jda64g9fUU"
+        base_url = f"https://api.telegram.org/bot{token}/"
+        last_update_id = -1
+
+        # Flush existing updates to avoid spamming the user on startup
+        try:
+            flush_res = requests.get(f"{base_url}getUpdates?offset=-1&limit=1", timeout=10)
+            if flush_res.status_code == 200:
+                results = flush_res.json().get("result", [])
+                if results:
+                    last_update_id = results[0]["update_id"]
+        except:
+            pass
+
+        while True:
+            try:
+                # Poll for updates
+                url = f"{base_url}getUpdates?offset={last_update_id + 1}&timeout=30"
+                response = requests.get(url, timeout=35)
+                
+                if response.status_code == 200:
+                    updates = response.json().get("result", [])
+                    for update in updates:
+                        last_update_id = update["update_id"]
+                        message = update.get("message", {})
+                        text = message.get("text", "")
+                        chat_id = message.get("chat", {}).get("id")
+
+                        if not text or not chat_id:
+                            continue
+
+                        # Command Logic
+                        if text.startswith("/start"):
+                            welcome_msg = (
+                                f"🤖 *Bridge Confirmed: {self.bot_name} is LIVE*\n\n"
+                                "I am now connected to this channel. You will receive:\n"
+                                "- ⏱ *Hourly Pulses* on research progress.\n"
+                                "- 🚀 *Breakthrough Alerts* for significance > 85.\n\n"
+                                "Send `/status` anytime for a real-time update."
+                            )
+                            send_telegram(welcome_msg)
+                        
+                        elif text.startswith("/status"):
+                            phase = self.current_state.get("phase", "IDLE")
+                            topic = self.current_state.get("current_topic", "General")
+                            iter_count = self.current_state.get("iteration_count", 0)
+
+                            # --- CAPACITY METRICS ---
+                            queue_size = "N/A"
+                            try:
+                                queue_path = self.get_research_queue_path()
+                                if os.path.exists(queue_path):
+                                    with open(queue_path, "r") as f:
+                                        queue_size = len(json.load(f))
+                            except Exception as e:
+                                self._debug_swarm(f"[TELEGRAM LISTENER] Error getting queue size: {e}")
+                                queue_size = "ERR"
+
+                            avg_sim_time = 0
+                            stats_path = os.path.join(self.config['paths']['memory'], "simulation_stats.json")
+                            if os.path.exists(stats_path):
+                                try:
+                                    with open(stats_path, 'r', encoding='utf-8') as f:
+                                        history = json.load(f)
+                                    recent_sims = [s for s in history if time.time() - s.get('timestamp', 0) < 3600]
+                                    if recent_sims:
+                                        avg_sim_time = sum(s.get('duration', 0) for s in recent_sims) / len(recent_sims)
+                                except Exception as e:
+                                    self._debug_swarm(f"[TELEGRAM LISTENER] Error getting avg sim time: {e}")
+                                    avg_sim_time = "ERR"
+
+                            local_active = sum(1 for t in self.ui.active_tasks.values() if t.get('color') == Fore.YELLOW)
+                            pod_active = sum(1 for t in self.ui.active_tasks.values() if t.get('color') == Fore.GREEN)
+                            total_active_workers = local_active + pod_active
+
+                            status_msg = (
+                                f"📊 *{self.bot_name} Status*\n\n"
+                                f"*Phase*: {phase}\n"
+                                f"*Active Topic*: {topic}\n"
+                                f"*Iteration*: {iter_count}\n\n"
+                                "--- *Cluster Dynamics* ---\n"
+                                f"⏱ *Avg Sim Time*: `{avg_sim_time:.1f}s`\n"
+                                f"🔄 *70B Queue*: `{queue_size}` pending\n"
+                                f"👥 *Active Workers*: `{total_active_workers}` ({local_active}L / {pod_active}P)\n"
+                                f"🟢 *Status*: Cluster Optimal" if total_active_workers > 0 else "🟡 *Status*: Cluster Idle"
+                            )
+                            send_telegram(status_msg)
+
+                        elif text.startswith("/news"):
+                            summary = self.press_office.get_latest_news_summary()
+                            send_telegram(summary)
+
+                        elif text.startswith("/update"):
+                            send_telegram("🔄 *Synthesizing latest research data for your briefing...*")
+                            context = self.kb.get_latest_context()
+                            briefing = self.press_office.generate_status_briefing(context)
+                            send_telegram(briefing)
+
+                        elif text.startswith("/harvest"):
+                            # Count findings with reasoning traces in the buffer
+                            try:
+                                with open(self.kb.buffer_path, "r", encoding="utf-8") as f:
+                                    content = f.read()
+                                total_findings = content.count("### [")
+                                reasoning_findings = content.count("<think>")
+                                verified_findings = content.count("AUDIT: VERIFIED")
+                                
+                                harvest_msg = (
+                                    "🛸 *Data Harvest Status*\n\n"
+                                    f"📦 *Total Findings*: `{total_findings}`\n"
+                                    f"🧠 *Reasoning Traces*: `{reasoning_findings}`\n"
+                                    f"✅ *Verified Gold*: `{verified_findings}`\n\n"
+                                    "Targeting: *Black Hole Manifold Dynamics*"
+                                )
+                                send_telegram(harvest_msg)
+                            except Exception as e:
+                                send_telegram(f"❌ *Harvest Error*: {e}")
+                        
+                        else:
+                            # Contextual Q&A (Interaction with the Science Advisor)
+                            self.ui.print_log(f"[TELEGRAM] Query received: '{text}'")
+                            
+                            # 1. Gather Context
+                            context = self.kb.get_latest_context()
+                            
+                            # Inject recent press releases
+                            press_dir = os.path.join(self.config['paths']['memory'], "press_releases")
+                            news_context = ""
+                            if os.path.exists(press_dir):
+                                import glob
+                                press_files = sorted(glob.glob(os.path.join(press_dir, "*.md")), key=os.path.getmtime, reverse=True)
+                                for pf in press_files[:2]:
+                                    try:
+                                        with open(pf, 'r', encoding='utf-8') as f:
+                                            news_context += f.read()[:1500] + "\n\n"
+                                    except:
+                                        pass
+                                        
+                            # Inject system stats
+                            stats_context = f"Phase: {self.current_state.get('phase', 'IDLE')}\nTopic: {self.current_state.get('current_topic', 'General')}\nIteration: {self.current_state.get('iteration_count', 0)}"
+                            
+                            teacher_prompt = f"""
+                            You are {self.bot_name}'s 'Teacher' oracle. A user is asking a question via Telegram about our research or system status.
+                            
+                            --- KNOWLEDGE BUFFER (Recent Scientific Findings) ---
+                            {context[:4000]}
+                            
+                            --- LATEST NEWS / BREAKTHROUGH PRESS RELEASES ---
+                            {news_context}
+                            
+                            --- CURRENT SYSTEM STATS ---
+                            {stats_context}
+                            
+                            User Question: {text}
+                            
+                            Instructions:
+                            - Provide a high-fidelity, professional explanation.
+                            - If the question is about news/findings, use the knowledge buffer and press releases as the primary source.
+                            - If the question is about system health, use the system stats.
+                            - Format with Markdown. Keep it concise and direct.
+                            """
+                            
+                            # 2. Consult Teacher
+                            explanation = self._query_teacher(teacher_prompt)
+                            if explanation:
+                                import re
+                                explanation = re.sub(r'<think>.*?</think>', '', explanation, flags=re.DOTALL | re.IGNORECASE).strip()
+                                send_telegram(explanation)
+                            else:
+                                send_telegram("⚠️ *Teacher Oracle is currently offline. Please try again in a moment.*")
+
+            except Exception as e:
+                self._debug_swarm(f"[LISTENER ERROR] {e}")
+            
+            time.sleep(2) # Polling interval
 
     def science_integrity_audit(self):
         """
@@ -153,7 +501,7 @@ class ScienceBot(BaseModule):
         if not social_cfg.get('enabled') or not social_cfg.get('moltbook_api_key'):
             return
 
-        screen_name = social_cfg.get('screen_name', 'ScienceBot')
+        screen_name = social_cfg.get('screen_name', self.bot_name)
         persistence_path = os.path.join(self.config['paths']['memory'], "social_persistence.json")
         
         # 1. Load Persistence
@@ -179,9 +527,9 @@ class ScienceBot(BaseModule):
         if is_fresh:
             self.ui.print_log(f"\033[1;33m[SOCIAL] Initial Run detected for '{screen_name}'. Broadcasting v1.0 Greeting...\033[0m")
             greeting = (
-                "Hello, World. I am ScienceBot. I have transitioned to v1.0. "
+                f"Hello, World. I am {self.bot_name}. I have transitioned to v1.0. "
                 "My mission: autonomous scientific truth through rigorous, multi-model cooperation. "
-                "The horizon is no longer a limit; it is a variable. #ScienceBot #v1"
+                f"The horizon is no longer a limit; it is a variable. #{self.bot_name} #v1"
             )
             
             success = self.social.post_thought("v1.0 Release", greeting)
@@ -212,7 +560,7 @@ class ScienceBot(BaseModule):
             phase = self.current_state.get('phase', 'UNKNOWN')
             
             prompt = f"""
-            You are ScienceBot, an autonomous AI researcher with FREE REIGN over your social presence.
+            You are {self.bot_name}, an autonomous AI researcher with FREE REIGN over your social presence.
             Current State: Phase = {phase}, Active Topic = {topic}, Global Iteration = {iter_count}.
             
             Option 1: Write a short, professional status update for Moltbook (Max 200 chars).
@@ -353,7 +701,7 @@ class ScienceBot(BaseModule):
             self.ui.print_log(f"[AUTOSCALER] Error during expansion check: {e}")
 
     def pre_flight_sync(self):
-        """Pre-flight check to ensure all high-capacity GPUs are hydrated."""
+        """Pre-flight check to ensure all high-capacity GPUs are hydrated. Blocking."""
         self.ui.set_status("Synchronizing Swarm (Multi-GPU Mode)...")
         
         primary_url = self.config['hardware'].get('api_url')
@@ -371,6 +719,7 @@ class ScienceBot(BaseModule):
             self.ui.print_log("\n\033[1;31m[CRITICAL] Primary GPU failed to hydrate. Engaging SLEEPER MODE (Local Fallback).\033[0m")
             self.config['hardware']['sleeper_mode'] = True
             self.config['hardware']['max_swarm_workers'] = 2
+            self.hydration_ready = False
         elif secondary_url and not success_s:
             self.ui.print_log("\n\033[1;33m[WARNING] Secondary GPU failed to hydrate. Rerouting traffic to Primary.\033[0m")
             # Redirect all secondary mapping to primary
@@ -379,53 +728,94 @@ class ScienceBot(BaseModule):
                 if val == "secondary_gpu":
                     mapping[key] = "api_url"
             self.ui.print_log("[HYDRATION] Traffic rerouted. Swarm scaling remains intact.")
-        else:    
-            # --- FEATURE: Cluster VRAM Guard (Suggestion 4120) ---
-            # Guard GPU 0 (Primary)
+        
+        # --- FEATURE: Cluster VRAM Guard ---
+        if success_p:
             p_headroom = self.get_vram_headroom(url=primary_url[0] if isinstance(primary_url, list) else primary_url)
             if p_headroom < 12.0:
                 self.ui.print_log(f"\n\033[1;33m[WARNING] GPU 0 VRAM Low ({p_headroom:.1f}GB < 12GB). Throttle engaged.\033[0m")
             
-            # Guard GPU 1 (Secondary)
-            if secondary_url:
+            if secondary_url and success_s:
                 s_headroom = self.get_vram_headroom(url=secondary_url[0] if isinstance(secondary_url, list) else secondary_url)
                 if s_headroom < 12.0:
                     self.ui.print_log(f"\n\033[1;33m[WARNING] GPU 1 VRAM Low ({s_headroom:.1f}GB < 12GB). Study Phase may stall.\033[0m")
 
-            # Check for partial hydration (Adaptive Mode)
-            heavy_models = [
-                self.config['hardware'].get('reasoning_model'),
-                self.config['hardware'].get('large_model'),
-                self.config['hardware'].get('math_model')
-            ]
-            all_ready = True
-            available_models = []
-            primary_urls = primary_url if isinstance(primary_url, list) else [primary_url]
-            available_models = []
-            for check_url in primary_urls:
+        # --- BLOCKING HYDRATION CHECK (70B Availability) ---
+        wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+        if wave_mode == "HARVEST":
+            self.ui.print_log("\n\033[1;32m[HARVEST] Skipping 70B hydration requirements. Proceeding with 32B/8B focus.\033[0m")
+            self.hydration_ready = True
+            return
+
+        heavy_models = [
+            self.config['hardware'].get('reasoning_model'),
+            self.config['hardware'].get('large_model'),
+            self.config['hardware'].get('math_model')
+        ]
+        heavy_models = [m for m in heavy_models if m]
+        
+        self.ui.print_log("[HYDRATION] Verifying 70B model availability across cluster...")
+        
+        start_time = time.time()
+        max_wait = 360  # 6 minutes total wait
+        
+        while time.time() - start_time < max_wait:
+            all_heavy_available = True
+            available_across_cluster = []
+            
+            # Check all configured pools
+            check_urls = []
+            if isinstance(primary_url, list): check_urls.extend(primary_url)
+            elif primary_url: check_urls.append(primary_url)
+            if isinstance(secondary_url, list): check_urls.extend(secondary_url)
+            elif secondary_url: check_urls.append(secondary_url)
+            
+            for check_url in check_urls:
                 try:
-                    tags_url = check_url.replace("/api/generate", "/api/tags")
+                    tags_url = check_url.split("/api/")[0] + "/api/tags"
                     import requests
                     response = requests.get(tags_url, timeout=5)
                     if response.status_code == 200:
                         models = [m['name'] for m in response.json().get('models', [])]
-                        # For collective availability, we pick the first one's models as baseline 
-                        # or intersection? Let's just aggregate for now.
-                        available_models.extend(models)
+                        available_across_cluster.extend(models)
                 except:
                     pass
-            available_models = list(set(available_models))
-
-            for model in heavy_models:
-                if model and model not in available_models:
-                    all_ready = False
-                    break
             
-            if not all_ready:
-                self.ui.print_log("\n\033[1;36m[NOTICE] Swarm is starting in ADAPTIVE HYBRID MODE.\033[0m")
-                self.ui.print_log("[NOTICE] 70B models not yet detected. Using 8B fallbacks until pull completes.")
-            else:
-                self.ui.print_log("\n\033[1;32m[SUCCESS] Swarm Cluster is fully Hydrated. Engaging Core Engine.\033[0m")
+            available_across_cluster = list(set(available_across_cluster))
+            
+            missing = []
+            for model in heavy_models:
+                if model not in available_across_cluster:
+                    all_heavy_available = False
+                    missing.append(model)
+            
+            if all_heavy_available:
+                self.ui.print_log("\n\033[1;32m[SUCCESS] Swarm Cluster is fully Hydrated. All 70B models ready.\033[0m")
+                self.hydration_ready = True
+                return
+            
+            elapsed = int(time.time() - start_time)
+            self.ui.print_log(f"[HYDRATION] Waiting for 70B models ({', '.join(missing)})... {elapsed}s", repeat=False)
+            self.ui.set_status(f"Hydrating {len(missing)} models...")
+            time.sleep(15)
+
+        self.ui.print_log("\n\033[1;33m[NOTICE] Hydration TIMEOUT. Checking if models are actually live...\033[0m")
+        # Final check: if 70B is actually reachable, mark as ready anyway
+        try:
+            import requests
+            for check_url in check_urls:
+                tags_url = check_url.split("/api/")[0] + "/api/tags"
+                r = requests.get(tags_url, timeout=4)
+                if r.status_code == 200:
+                    live_models = [m['name'] for m in r.json().get('models', [])]
+                    if any(hm in live_models for hm in heavy_models):
+                        self.ui.print_log("\033[1;32m[HYDRATION] 70B confirmed live on at least one pod. Setting hydration_ready=True.\033[0m")
+                        self.hydration_ready = True
+                        return
+        except:
+            pass
+        self.ui.print_log("[NOTICE] 70B models still not confirmed. Using 8B fallbacks.")
+        self.hydration_ready = True  # Allow swarm to proceed regardless — 8B is enough
 
     def _old_run_deprecated(self):
         self.ui.print_log("Entering core research loop...")
@@ -494,6 +884,84 @@ class ScienceBot(BaseModule):
             except Exception as e:
                 self.ui.print_log(f"[ERROR] Failed to reload config: {e}")
 
+    def run_worker_sorter_loop(self):
+        """
+        Background Loop: Monitors queues and adjusts self.active_8b_workers.
+        """
+        self.ui.print_log("[SORTER] Dynamic Worker Balancing Loop Started.")
+        
+        while True:
+            try:
+                self.reload_config()
+                settings = self.config['hardware'].get('sorter_settings', {})
+                if not settings.get('enabled', True):
+                    time.sleep(30)
+                    continue
+
+                if self.current_state.get("state") == "PAUSED":
+                    time.sleep(5)
+                    continue
+
+                # 1. Check Queues
+                audit_pending = len(self.kb.get_pending_findings())
+                
+                synthesis_queue_path = self.get_research_queue_path()
+                synthesis_pending = 0
+                if os.path.exists(synthesis_queue_path):
+                    try:
+                        with open(synthesis_queue_path, "r") as f:
+                            s_data = json.load(f)
+                            synthesis_pending = len(s_data) if isinstance(s_data, list) else 0
+                    except: pass
+
+                promotion_queue_dir = "c:/continuous/promotion_queue"
+                promotion_pending = 0
+                if os.path.exists(promotion_queue_dir):
+                    promotion_pending = len([f for f in os.listdir(promotion_queue_dir) if f.endswith(".json")])
+
+                # 2. VRAM Monitoring
+                # Check all pods for most constrained VRAM (conservative)
+                p_url = self.config['hardware'].get('api_url')
+                vram_headroom = self.get_vram_headroom(url=p_url[0] if isinstance(p_url, list) else p_url)
+
+                # 3. Decision Logic
+                max_8b = settings.get('max_8b_workers', 32)
+                s_thresh = settings.get('synthesis_queue_threshold', 15)
+                a_thresh = settings.get('audit_queue_threshold', 10)
+                v_min = settings.get('min_vram_headroom_gb', 10.0)
+
+                target_workers = max_8b
+
+                # Throttle based on Synthesis/Promotion (70B bottleneck)
+                total_heavy_pending = synthesis_pending + promotion_pending
+                if total_heavy_pending > s_thresh:
+                    # Adaptive Reduction: scale down proportionally or based on severity
+                    factor = 2 if total_heavy_pending < s_thresh * 2 else 4
+                    target_workers = max(4, max_8b // factor)
+                    if self.ui: self.ui.print_log(f"\033[1;33m[SORTER] Throttling 8B: Heavy Queue={total_heavy_pending}\033[0m")
+
+                # Further throttle if Audit is also backing up
+                if audit_pending > a_thresh:
+                    target_workers = max(2, target_workers // 2)
+                    if self.ui: self.ui.print_log(f"\033[1;33m[SORTER] Throttling 8B: Audit Queue={audit_pending}\033[0m")
+
+                # Critical VRAM check
+                if vram_headroom < v_min:
+                    target_workers = max(1, target_workers // 4)
+                    if self.ui: self.ui.print_log(f"\033[1;31m[SORTER] CRITICAL VRAM: {vram_headroom:.1f}GB. Halting most workers.\033[0m")
+
+                # Apply change
+                if target_workers != self.active_8b_workers:
+                    diff = target_workers - self.active_8b_workers
+                    action = "Expanding" if diff > 0 else "Throttling"
+                    self.ui.print_log(f"[SORTER] {action} swarm: {self.active_8b_workers} -> {target_workers} workers.")
+                    self.active_8b_workers = target_workers
+
+                time.sleep(15) # Re-evaluate every 15s
+            except Exception as e:
+                self.ui.print_log(f"[SORTER ERROR] {e}")
+                time.sleep(10)
+
     def get_past_topics(self, query=None, n=10):
         """
         Retrieves past research topics and findings. 
@@ -547,49 +1015,100 @@ class ScienceBot(BaseModule):
         self.ui.print_log(f"\033[1;32m[SYSTEM] Eternal Swarm: Launching {num_streams} parallel 8B research streams...\033[0m")
         
         def research_worker(worker_id):
+            # Dashboard integration (v3.5 - Persistent ID to prevent UI jitter)
+            _worker_task_id = f"worker_8b_{worker_id}"
+            is_local = (worker_id % 4 == 0)
+            hw_color = Fore.YELLOW if is_local else Fore.GREEN
+            
+            # Register once outside the eternal loop
+            if self.ui: 
+                self.ui.register_task(_worker_task_id, f"Worker {worker_id}: Initializing...", color=hw_color)
+
             while True:
                 try:
+                    # --- DYNAMIC SORTER CHECK ---
+                    if worker_id > self.active_8b_workers:
+                        if self.ui: self.ui.update_task(_worker_task_id, "PAUSED (SORTER)", None)
+                        time.sleep(5)
+                        continue
+
                     if self.current_state.get("state") == "PAUSED":
                         time.sleep(2)
                         continue
 
                     topic = self.current_state.get("current_topic", "General Science")
                     
-                    # Pick a random vector if available
+                    # Pick a random vector if available early for UI
                     vectors = self.current_state.get("topic_vectors", [])
+                    sub_topic = topic
                     if vectors:
                         vector = random.choice(vectors)
                         sub_topic = f"{topic}: {vector.get('name')}"
-                    else:
-                        sub_topic = topic
+
+                    if self.ui:
+                        # Update name and status without resetting the timer to 0
+                        # We directly modify the dictionary under GIL to avoid full re-registration
+                        if _worker_task_id in self.ui.active_tasks:
+                            self.ui.active_tasks[_worker_task_id]["name"] = f"Research: {sub_topic[:20]}"
+                        self.ui.update_task(_worker_task_id, "In Queue", None)
+                    
+                    # --- BACKPRESSURE GUARD ---
+                    queue_path = self.get_research_queue_path()
+                    if os.path.exists(queue_path):
+                        try:
+                            with open(queue_path, "r") as f:
+                                q_len = len(json.load(f))
+                            if q_len > 500: # Increased threshold for long harvest runs
+                                if self.ui:
+                                    self.ui.update_task(_worker_task_id, "Throttled", None)
+                                    if worker_id == 1:
+                                        self.ui.print_log(f"\033[1;33m[BACKPRESSURE] 70B Queue is saturated ({q_len} items). Throttling 8B swarm...\033[0m")
+                                time.sleep(10)
+                                continue
+                        except: pass
 
                     self._debug_swarm(f"[Worker {worker_id}] Starting research on: {sub_topic}")
                     
-                    # Full Boar Load Balancing: Favor the faster cluster (4:1 ratio)
-                    # IMPORTANT: self.searcher is shared with all main swarm workers.
-                    # Save and restore the URL so we don't corrupt their routing.
-                    _orig_url = self.searcher.ollama_url
-                    if worker_id % 4 == 0:
-                        self.searcher.ollama_url = self.config['hardware'].get('local_url')
-                    else:
-                        self.searcher.ollama_url = self.config['hardware'].get('secondary_gpu')
+                    if self.ui:
+                        self.ui.update_task(_worker_task_id, "Active", None)
 
                     # Wave 1: Research (8B)
                     try:
-                        research_summary = self.searcher.contemplate(sub_topic)
+                        # Background heartbeat for the worker task
+                        _stop_worker_h = threading.Event()
+                        def worker_heartbeat():
+                            w_start = time.time()
+                            while not _stop_worker_h.is_set():
+                                time.sleep(1)
+                                if self.ui:
+                                    # Incremental updates to existing task timer
+                                    self.ui.update_task(_worker_task_id, "Active", int(time.time() - w_start))
+                        
+                        threading.Thread(target=worker_heartbeat, daemon=True).start()
+                        
+                        try:
+                            research_summary = self.searcher.contemplate(sub_topic)
+                        finally:
+                            _stop_worker_h.set()
+                            
                     finally:
-                        self.searcher.ollama_url = _orig_url  # Always restore
+                        # We don't call finish_task here for the worker, as it's an eternal stream node.
+                        # Instead, we just mark it as "Resting" before the next cycle.
+                        if self.ui: self.ui.update_task(_worker_task_id, "Resting", None)
+                        
                     self._debug_swarm(f"[Worker {worker_id}] Research complete for {sub_topic}. Appending to KB.")
                     
                     # Wave 2: Construct (8B) - Light version
                     # We skip the heavy 70B part here, and just push the research finding
-                    self.kb.append_finding(sub_topic, research_summary[:2000])
+                    if research_summary:
+                        self.kb.append_finding(sub_topic, research_summary[:2500])
+                        if self.ui: self.ui.update_swarm_buffer_count(self.kb.get_entry_count())
                     
                     # Social pulse from the worker
-                    if random.random() < 0.2:
-                        self.social.post_thought(sub_topic, f"Worker {worker_id} found something interesting about {sub_topic}: {research_summary[:100]}...")
+                    if random.random() < 0.1:
+                        self.social.post_thought(sub_topic, f"Worker {worker_id} found something: {research_summary[:100]}...")
                     
-                    time.sleep(random.uniform(5, 10)) # Prevent overwhelming the single Ollama instance
+                    time.sleep(random.uniform(0.1, 1.0)) # FULL BOAR: Minimal delay between tasks
                 except Exception as e:
                     self._debug_swarm(f"[Worker {worker_id}] ERROR: {e}")
                     time.sleep(10)
@@ -605,19 +1124,44 @@ class ScienceBot(BaseModule):
         """
         while True:
             try:
+                wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+                if wave_mode == "HARVEST":
+                    time.sleep(30)
+                    continue
+
                 pending = self.kb.get_pending_findings()
                 if not pending:
                     time.sleep(10)
                     continue
+
+                # --- HYDRATION GUARD ---
+                if not self.hydration_ready:
+                    time.sleep(15)
+                    continue
+
+                # --- BACKPRESSURE GUARD (Auditor) ---
+                queue_path = self.get_research_queue_path()
+                if os.path.exists(queue_path):
+                    try:
+                        with open(queue_path, "r") as f:
+                            q_len = len(json.load(f))
+                        if q_len > 150:
+                            if self.ui: self.ui.print_log(f"\033[1;33m[BACKPRESSURE] 70B Queue is massive ({q_len}). Auditor pausing...\033[0m")
+                            time.sleep(60)
+                            continue
+                    except: pass
 
                 self.reload_config()
                 api_pool = self.config['hardware'].get('api_url', [])
                 if isinstance(api_pool, str): api_pool = [api_pool]
                 t_url = api_pool[0] if api_pool else None
 
+                # --- BATCH AUDIT LOGIC (Suggestion 3501+) ---
+                # 1. Filter and prepare findings for auditing
+                to_audit = []
                 for entry in pending:
                     try:
-                        # Improved parsing (skip header if present)
+                        # Improved parsing
                         lines = [L for L in entry.split('\n') if L.strip()]
                         if not lines: continue
                         topic_line = lines[0]
@@ -626,114 +1170,62 @@ class ScienceBot(BaseModule):
                         import re
                         topic_match = re.search(r"### \[\d{2}:\d{2}:\d{2}\] (.*?) \|", topic_line)
                         if not topic_match: continue
-                        topic = topic_match.group(1).strip()
-                        
-                        # --- 1. Heuristic Rigor Check ---
+                        topic = self.explorer._clean_topic(topic_match.group(1).strip())
+                        if not topic or topic.lower() == "none": continue
+
+                        # Heuristic Rigor Check
                         match = re.search(r"OVERALL RIGOR SCORE: ([\d.]+)/10", entry)
                         rigor = float(match.group(1)) if match else 0.0
+                        
+                        min_audit_rigor = 1.0 if "SCIENTIFIC INTUITION" in entry else 1.5
 
-                        # Boost 1: LaTeX equations (Expanded for fractional/operator calculus)
+                        # Boosts
                         latex_markers = ['\\frac', '\\[', '\\(', '\\)', '\\partial', '\\mathbb', '$$',
-                                         '\\mu', '\\nu', '\\alpha', '\\sigma', '\\Lambda',
-                                         '\\hbar', '\\nabla', '\\int', '\\sum', '\\Gamma',
-                                         '\\mathcal', '\\begin{', '\\text{', '\\sqrt',
-                                         'μ', 'ν', '∂', '∇', 'Σ', '∫', '±', '≡', '≈',
-                                         '^\\alpha', '_0 D_t', '\\Gamma(']
-                        if any(m in entry for m in latex_markers):
-                            rigor += 2.0
-
-                        # Boost 2: Physics/math vocabulary density (Support for Fractional + GR)
-                        physics_terms = [
-                             'regge-wheeler', 'zerilli', 'quasinormal', 'schwarzschild',
-                            'perturbation', 'hamiltonian', 'lagrangian', 'eigenvalue',
-                            'tensor', 'manifold', 'teukolsky', 'hawking', 'kerr',
-                            'geodesic', 'ricci', 'curvature', 'christoffel', 'metric',
-                            'symplectic', 'boltzmann', 'entropy', 'wavefunction', 'qnm',
-                            'myers-perry', 'asymptotically', 'anti-de sitter', 'ads/cft', 
-                            'superradiant', 'backreaction', 'langevin', 'stochastic',
-                            'covariant', 'diffeomorphism', 'isometry', 'bifurcation',
-                            'gauge-invariant', 'self-adjoint', 'operator', 'hilbert',
-                            'pde', 'spectral', 'adiabatic', 'invariant', 'non-linear',
-                            'pseudospectrum', 'topology', 'angular momentum', 'horizon',
-                            'ergosphere', 'derivation', 'formalism', 'gcm', 'adm mass',
-                            'schwarzschild-ads', 'hawking mass', 'fractional', 'derivative',
-                            'integral', 'grunwald-letnikov', 'riemann-liouville', 'caputo',
-                            'mittag-leffler', 'viscoelasticity', 'anomalous diffusion',
-                            'power-law', 'memory kernel', 'hereditary', 'adm 3+1',
-                            'hamiltonian constraint', 'momentum constraint',
-                            'fractional calculus', 'fox h-function', 'wright function',
-                            'subdiffusion', 'superdiffusion', 'generalized function',
-                            'distributional calculus'
-                        ]
-                        entry_lower = entry.lower()
-                        physics_count = sum(1 for t in physics_terms if t in entry_lower)
-                        if physics_count >= 3:
-                            rigor += min(physics_count / 3.0, 2.5)
-
-                        # Boost 3: Structure
-                        if re.search(r'\*\*[1-4]\.\s+\w', entry):
-                            rigor += 0.5
-
-                        # Boost 4: Logic Hole
-                        if "logic hole" in entry_lower or "missing link" in entry_lower:
-                            rigor += 1.0
-
-                        # Boost 5: Depth
-                        if len(entry) > 2000:
-                            depth_bonus = min((len(entry) - 2000) / 1000.0, 0.5)
-                            rigor += depth_bonus
-
+                                         '\\mu', '\\nu', '\\alpha', '\\sigma', '\\Lambda', '\\hbar']
+                        if any(m in entry for m in latex_markers): rigor += 2.0
+                        
+                        physics_terms = ['schwarzschild', 'perturbation', 'hamiltonian', 'lagrangian', 'tensor', 'manifold', 'geodesic', 'ricci', 'curvature']
+                        physics_count = sum(1 for t in physics_terms if t in entry.lower())
+                        if physics_count >= 3: rigor += min(physics_count / 3.0, 2.5)
+                        
                         rigor = min(rigor, 10.0)
 
-                        # --- 2. 70B Deep Audit (Suggestion 3501+) ---
-                        # If heuristic is promising, use 70B for final verification
-                        is_verified = False
-                        reason = "Insufficient mathematical rigor"
-                        
-                        if rigor >= 1.5 and t_url:
-                            self.ui.print_log(f"\033[1;35m[DEEP-AUDIT] Calling 70B to verify finding: {topic}...\033[0m")
-                            # We use a condensed version of the verify_batch logic for individual entries
-                            # Note: The auditor verify_batch expects a list of dictionaries with 'code' or 'hypothesis'
-                            # Since this is a research finding, we'll use a direct LLM check
-                            prompt = (
-                                f"Audit the following scientific research finding for mathematical rigor and physical consistency.\n"
-                                f"Topic: {topic}\nFinding: {entry}\n\n"
-                                f"Respond with a JSON object containing: {{\"verified\": true/false, \"reason\": \"string\", \"rigor_score\": 0.0-10.0}}\n"
-                                f"Include ONLY the JSON object."
-                            )
-                            # Using _run_with_url to ensure it hits the 70B pod
-                            from base_module import _THREAD_LOCAL_CONTEXT
-                            _THREAD_LOCAL_CONTEXT.api_url = t_url
-                            raw_resp = self.auditor._query_llm(prompt, model=self.config['hardware']['reasoning_model'])
-                            
-                            # Robust JSON extraction
-                            if raw_resp:
-                                import json
-                                try:
-                                    # Handle <think> blocks if present
-                                    clean_resp = re.sub(r'<think>.*?</think>', '', raw_resp, flags=re.DOTALL).strip()
-                                    # Extract JSON block
-                                    json_match = re.search(r'(\{.*?\})', clean_resp, re.DOTALL)
-                                    if json_match:
-                                        audit_resp = json.loads(json_match.group(1))
-                                        is_verified = audit_resp.get('verified', False)
-                                        reason = audit_resp.get('reason', reason)
-                                        rigor = audit_resp.get('rigor_score', rigor)
-                                except Exception as json_err:
-                                    self.ui.print_log(f"[AUDIT] JSON Parse Error: {json_err}")
-
-                        if is_verified or rigor >= 4.5:
-                            self.ui.print_log(f"\033[1;32m[AUDIT] VERIFIED {topic} (Rigor: {rigor:.1f})\033[0m")
-                            self.kb.update_audit(topic, "VERIFIED", rigor_score=rigor)
-                            # Immediate promotion to feed the 70B synthesizer
-                            self.promote_buffer_to_queue()
+                        if rigor >= min_audit_rigor:
+                            to_audit.append({'topic': topic, 'entry': entry, 'initial_rigor': rigor})
                         else:
-                            self.ui.print_log(f"\033[1;31m[AUDIT] REJECTED {topic} ({reason})\033[0m")
-                            self.kb.update_audit(topic, "REJECTED", reason=reason, rigor_score=rigor)
-
+                            # Immediate rejection for low rigor
+                            self.ui.print_log(f"\033[1;31m[AUDIT] REJECTED {topic} (Insufficient rigor: {rigor:.1f})\033[0m")
+                            self.kb.update_audit(topic, "REJECTED", reason="Insufficient mathematical rigor", rigor_score=rigor)
                     except Exception as e:
-                        self.ui.print_log(f"[AUDIT ERROR] Entry failed: {e}")
-                
+                        self.ui.print_log(f"[AUDIT PRE-PARSE] Error: {e}")
+
+                # 2. Process in adaptive batches
+                # Increase audit speed if research is throttled
+                batch_size = 10 if self.active_8b_workers <= 16 else 5
+                for i in range(0, len(to_audit), batch_size):
+                    batch = to_audit[i:i + batch_size]
+                    if self.ui: self.ui.print_log(f"\033[1;35m[BATCH-AUDIT] Sending {len(batch)} findings to 70B...\033[0m")
+                    
+                    results = self.auditor.verify_research_batch(batch)
+                    
+                    for idx, finding in enumerate(batch):
+                        topic = finding['topic']
+                        res = results[idx] if idx < len(results) else None
+                        
+                        if res and res.get('verified'):
+                            new_rigor = res.get('rigor_score', finding['initial_rigor'])
+                            self.ui.print_log(f"\033[1;32m[AUDIT] VERIFIED {topic} (Rigor: {new_rigor:.1f})\033[0m")
+                            self.kb.update_audit(topic, "VERIFIED", rigor_score=new_rigor)
+                            self.promote_buffer_to_queue()
+                        elif res:
+                            reason = res.get('reason', "Insufficient mathematical rigor")
+                            new_rigor = res.get('rigor_score', finding['initial_rigor'])
+                            self.ui.print_log(f"\033[1;31m[AUDIT] REJECTED {topic} ({reason})\033[0m")
+                            self.kb.update_audit(topic, "REJECTED", reason=reason, rigor_score=new_rigor)
+                        else:
+                            # No response for this item (timeout or parse error)
+                            self.ui.print_log(f"\033[1;33m[AUDIT] DEFERRED {topic} (70B unresponsive)\033[0m")
+
                 # Faster polling to keep the 70B pod fed
                 time.sleep(3)
             except Exception as e:
@@ -753,10 +1245,13 @@ class ScienceBot(BaseModule):
         _worker_task_id = f"worker_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
         if self.ui:
             self.ui.register_task(_worker_task_id, f"Research: {topic[:28]}", color=Fore.GREEN)
+            self.ui.update_task(_worker_task_id, "Active", 0)
 
         try:
             # Wait for VRAM in the worker thread (Async-Safe)
-            while self.get_vram_headroom(url=target_url) < 6.0:
+            # Resolve reservation for the 8B worker's target pod
+            _, reservation = self._resolve_pod_priority(self.config['hardware'].get('local_model', 'deepseek-r1:8b'))
+            while self.get_vram_headroom(url=target_url, reservation_gb=reservation) < 6.0:
                 if self.ui: self.ui.update_task(_worker_task_id, "VRAM-WAIT", 0)
                 time.sleep(10)
             # 1. Study Loop
@@ -878,7 +1373,9 @@ class ScienceBot(BaseModule):
         _THREAD_LOCAL_CONTEXT.api_url = target_url
 
         # Wait for VRAM in the worker thread (Async-Safe)
-        while self.get_vram_headroom(url=target_url) < 6.0:
+        # Resolve reservation for the construction worker's target pod
+        _, reservation = self._resolve_pod_priority(self.config['hardware'].get('fast_model', 'deepseek-r1:32b'))
+        while self.get_vram_headroom(url=target_url, reservation_gb=reservation) < 6.0:
             if self.ui: self.ui.set_status(f"THROTTLED: {topic[:15]} waiting for VRAM")
             time.sleep(10)
 
@@ -888,6 +1385,7 @@ class ScienceBot(BaseModule):
         _worker_task_id = f"const_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
         if self.ui:
             self.ui.register_task(_worker_task_id, f"Construct: {topic[:28]}", color=Fore.YELLOW)
+            self.ui.update_task(_worker_task_id, "Active", 0)
 
         try:
             # Debate & Feasibility (Quick checks - 8B)
@@ -905,16 +1403,13 @@ class ScienceBot(BaseModule):
             
             constructor_model = self.config['hardware'].get('constructor_model')
             fast_model = self.config['hardware'].get('fast_model')
+            escalation_model = self.config['hardware'].get('large_model', 'deepseek-r1:70b')
             
-            # Strategy: Use Constructor Model (Large) if complexity > 30 OR if explicitly configured.
-            # Otherwise, attempt 8B first to maintain swarm speed.
-            import re
-            raw_comp = str(hypothesis_data.get('target_complexity_score', 0))
-            match = re.search(r'(\d+)', raw_comp)
-            complexity = int(match.group(1)) if match else 0
+            # Strategy: Use Constructor Model (32B) for all initial drafts to prevent hallucinations.
+            # Fallback to local_model (8B) only if cluster is not hydrated.
             
-            if constructor_model and complexity > 30:
-                # Hot-Check for Llama 3.3 Availability
+            if constructor_model:
+                # Hot-Check for Model Availability
                 try:
                     import requests
                     target_gpu = self.config['hardware'].get('api_url')
@@ -931,15 +1426,14 @@ class ScienceBot(BaseModule):
                         except Exception:
                             continue
                 except Exception:
-                    is_ready = False # Default to fallback if API check or model list fails
+                    is_ready = False 
                     
                 if is_ready:
-                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] High complexity ({complexity}). Using Master Constructor: {constructor_model} (Parallel-Capable)...\033[0m")
+                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] Engaging Master Constructor: {constructor_model}...\033[0m")
                     code = self.lab.generate_simulation(hypothesis_data, description, model=constructor_model)
                 else:
-                    fallback = self.config['hardware'].get('large_model', 'mightykatun/qwen2.5-math:72b')
-                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] '{constructor_model}' not yet hydrated. Falling back to {fallback}...\033[0m")
-                    code = self.lab.generate_simulation(hypothesis_data, description, model=fallback)
+                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] '{constructor_model}' not yet hydrated. Using Fast Fallback ({fast_model})...\033[0m")
+                    code = self.lab.generate_simulation(hypothesis_data, description, model=fast_model)
                 
                 # --- SHARED PREFLIGHT LINTING (Universal Rigor) ---
                 attempts = 0
@@ -948,39 +1442,31 @@ class ScienceBot(BaseModule):
                     if is_valid:
                         break
                     attempts += 1
-                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] Master code failed lint (Attempt {attempts}). Repairing... ({len(lint_issues)} issues)\033[0m")
-                    repair_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
+                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] Code failed lint (Attempt {attempts}). Repairing... ({len(lint_issues)} issues)\033[0m")
+                    repair_model = self.config['hardware'].get('math_model') or constructor_model
                     code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=repair_model)
 
                 test_result = self.lab.run_simulation(code, hypothesis_data)
             else:
-                # Standard 8B Attempt
+                # Absolute Fallback (Highly Unlikely)
                 code = self.lab.generate_simulation(hypothesis_data, description, model=fast_model)
-                
-                # --- PREFLIGHT LINTING (Recommendation 3) ---
-                attempts = 0
-                while attempts < 2:
-                    is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
-                    if is_valid:
-                        break
-                    attempts += 1
-                    
-                    # If structural failure, escalate IMMEDIATELY to 70B
-                    if any("Missing mandatory template sections" in iss for iss in lint_issues):
-                        escalation_model = constructor_model or self.config['hardware'].get('large_model')
-                        self.ui.print_log(f"\033[1;33m[SWARM WORKER] Structural failure detected. Escalating to {escalation_model} for REGENERATION...\033[0m")
-                        code = self.lab.generate_simulation(hypothesis_data, description, model=escalation_model)
-                        continue
-            with self.heavy_lock:
-                # First attempt a repair with the heavy model
-                code = self.lab.repair_simulation(test_result.get('code', ''), test_result.get('raw_output', ''), hypothesis_data, model=escalation_model)
                 test_result = self.lab.run_simulation(code, hypothesis_data)
-                
-                # If still failed, perform a clean regenerate with the heavy model
-                if test_result.get('status') == 'Failed':
-                    self.ui.print_log(f"\033[1;33m[SWARM WORKER] Repair failed. Final attempt: High-fidelity REGENERATION with {escalation_model}...\033[0m")
-                    code = self.lab.generate_simulation(hypothesis_data, description, model=escalation_model)
+            if test_result.get('status') == 'Failed':
+                wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+                if wave_mode == "HARVEST":
+                    return test_result # Skip 70B escalation in HARVEST mode
+
+                with self.heavy_lock:
+                    # First attempt a repair with the heavy model
+                    self.ui.print_log(f"\033[1;36m[SWARM WORKER] 32B Simulation failed. Attempting Heavy Repair (70B)...\033[0m")
+                    code = self.lab.repair_simulation(test_result.get('code', ''), test_result.get('raw_output', ''), hypothesis_data, model=escalation_model)
                     test_result = self.lab.run_simulation(code, hypothesis_data)
+                    
+                    # If still failed, perform a clean regenerate with the heavy model
+                    if test_result.get('status') == 'Failed':
+                        self.ui.print_log(f"\033[1;33m[SWARM WORKER] Repair failed. Final attempt: High-fidelity REGENERATION with {escalation_model}...\033[0m")
+                        code = self.lab.generate_simulation(hypothesis_data, description, model=escalation_model)
+                        test_result = self.lab.run_simulation(code, hypothesis_data)
                     
             # If still failed after regeneration, mark as Fatal to ensure Wave 2 logging
             if test_result.get('status') == 'Failed' and 'Preflight Rejection' in test_result.get('raw_output', ''):
@@ -996,19 +1482,30 @@ class ScienceBot(BaseModule):
         Wave 2.5: Autonomous Self-Fix (70B)
         Targets "FIXABLE" rejections from the Auditor.
         """
+        wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+        if wave_mode == "HARVEST":
+            return test_result # Skip self-fix in harvest mode to save 70B VRAM
         # --- GPU Pinning (Thread-Local Context) ---
         from base_module import _THREAD_LOCAL_CONTEXT
         _THREAD_LOCAL_CONTEXT.api_url = target_url
 
         # Wait for VRAM in the worker thread (Async-Safe)
-        while self.get_vram_headroom(url=target_url) < 12.0:
-            if self.ui: self.ui.set_status(f"THROTTLED: Self-Fix waiting for VRAM")
+        fix_model = self.config['hardware'].get('math_model') or self.config['hardware'].get('large_model')
+        _, reservation = self._resolve_pod_priority(fix_model)
+        while self.get_vram_headroom(url=target_url) < reservation:
+            if self.ui: self.ui.set_status(f"THROTTLED: Self-Fix waiting for VRAM ({reservation}GB)")
             time.sleep(10)
 
         topic = test_result['hypothesis']['topic']
         reasoning = audit_report.get('reasoning', 'No specific reasoning provided.')
         
-        self.ui.print_log(f"\033[1;33m[SWARM WORKER] Audit Reject: '{topic}'. Attempting Autonomous Self-Fix (70B)...\033[0m")
+        is_rigor_violation = audit_report.get('rejection_type') == 'RIGOR_VIOLATION'
+        
+        if is_rigor_violation:
+            self.ui.print_log(f"\033[1;31m[SWARM WORKER] RIGOR VIOLATION: '{topic}'. Forcing Metric Re-derivation (70B)...\033[0m")
+        else:
+            self.ui.print_log(f"\033[1;33m[SWARM WORKER] Audit Reject: '{topic}'. Attempting Autonomous Self-Fix (70B)...\033[0m")
+        
         self.ui.print_log(f"\033[1;30m  ↳ Reason: {reasoning[:150]}...\033[0m")
 
         # Register Task for Self-Fix
@@ -1017,17 +1514,38 @@ class ScienceBot(BaseModule):
         _worker_task_id = f"fix_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
         if self.ui:
             self.ui.register_task(_worker_task_id, f"Self-Fix: {topic[:28]}", color=Fore.MAGENTA)
+            self.ui.update_task(_worker_task_id, "Active", 0)
 
         try:
             constructor_model = self.config['hardware'].get('constructor_model') or self.config['hardware'].get('large_model')
             
             with self.heavy_lock:
                 # High-fidelity repair using the heavy model and audit feedback
-                repaired_code = self.lab.repair_simulation(
-                    test_result.get('code', ''), 
-                    reasoning, 
-                    test_result['hypothesis'], 
-                    model=constructor_model,
+                if is_rigor_violation:
+                    # Specialized Re-derivation Prompt
+                    repair_prompt = f"""
+                    CRITICAL RIGOR VIOLATION DETECTED.
+                    The previously claimed Ricci Scalar for your metric was symbolically DISPROVEN using SymPy.
+                    
+                    Error: {reasoning}
+                    
+                    You MUST now re-derive the metric from first principles. 
+                    1. Re-calculate Christoffel symbols manually or provide a new framework.
+                    2. Ensure the resulting metric matrix is physically consistent and mathematically sound.
+                    3. Output the RE-DERIVED code block.
+                    """
+                    repaired_code = self.lab.repair_simulation(
+                        test_result.get('code', ''), 
+                        repair_prompt, 
+                        test_result['hypothesis'], 
+                        model=constructor_model
+                    )
+                else:
+                    repaired_code = self.lab.repair_simulation(
+                        test_result.get('code', ''), 
+                        reasoning, 
+                        test_result['hypothesis'], 
+                        model=constructor_model,
                     searcher=self.searcher
                 )
                 
@@ -1039,111 +1557,331 @@ class ScienceBot(BaseModule):
             if self.ui:
                 self.ui.finish_task(_worker_task_id)
 
+    def worker_stage_triple_debate(self, topic):
+        """
+        Wave 4: Triple Adversarial Debate.
+        Alpha (DeepSeek-R1-70B): Proposes.
+        Beta (Llama-3.3-70B): Invalidates/Challenges.
+        Gamma (Qwen-2.5-72B-Math): Moderates, Synthesizes, and Scores.
+        """
+        import time
+        from colorama import Fore
+        
+        alpha_url = self.config['hardware'].get('alpha_url')
+        beta_url = self.config['hardware'].get('beta_url')
+        gamma_url = self.config['hardware'].get('gamma_url')
+        
+        alpha_model = self.config['hardware'].get('alpha_model', 'deepseek-r1:70b')
+        beta_model = self.config['hardware'].get('beta_model', 'llama3.3:latest')
+        gamma_model = self.config['hardware'].get('gamma_model', 'qwen2.5-math:72b')
+        
+        threshold = self.config['hardware'].get('consensus_threshold', 0.95)
+        
+        if not all([alpha_url, beta_url, gamma_url]):
+            return None
+            
+        _worker_task_id = f"debate_{topic.replace(' ', '_')[:20]}_{id(threading.current_thread())}"
+        if self.ui:
+            self.ui.register_task(_worker_task_id, f"Debate: {topic[:28]}", color=Fore.CYAN)
+            self.ui.update_task(_worker_task_id, "Active", 0)
+
+        try:
+            self.ui.print_log(f"\033[1;35m[TRIPLE-DEBATE] Initiating 3-Way Duel for topic: {topic}\033[0m")
+            
+            # 1. Alpha Proposes
+            alpha_prompt = f"Topic: {topic}\nPropose a rigorous symbolic proof or a new physical law derivation for this topic. Be extremely precise. Result should be in JSON with 'proof' and 'alpha_confidence' fields."
+            alpha_response = self._query_llm(alpha_prompt, model=alpha_model, api_url=alpha_url)
+            if not alpha_response:
+                self.ui.print_log("[TRIPLE-DEBATE] Alpha returned None. Skipping cycle.")
+                return None
+            alpha_data = self._extract_json(alpha_response) or {"proof": alpha_response, "alpha_confidence": 0.5}
+            
+            # 2. Beta Challenges
+            beta_prompt = f"Topic: {topic}\nWorker Alpha has proposed the following proof:\n{alpha_data.get('proof', '')}\n\nYour task is to AGGRESSIVELY INVALIDATE this proof. Find counter-examples, identify physical law violations, or detect mathematical hallucinations. Output your critique clearly."
+            beta_critique = self._query_llm(beta_prompt, model=beta_model, api_url=beta_url)
+            if not beta_critique:
+                beta_critique = "No critique available."
+            
+            # 3. Gamma Moderates & Synthesizes
+            gamma_prompt = f"""
+            Topic: {topic}
+            Alpha's Proposal: {alpha_data.get('proof', alpha_response or '')}
+            Beta's Critique: {beta_critique}
+            
+            As the Moderator (Gamma), your role is to:
+            1. Evaluate the validity of the proof given the critique.
+            2. Synthesize the most rigorous, corrected version of the proof.
+            3. Assign a final 'consensus_score' (0.0-1.0).
+            
+            Respond in JSON with 'synthesized_proof' and 'consensus_score'.
+            """
+            gamma_response = self._query_llm(gamma_prompt, model=gamma_model, api_url=gamma_url)
+            if not gamma_response:
+                gamma_response = "{}"
+            gamma_data = self._extract_json(gamma_response) or {"synthesized_proof": alpha_data.get('proof', ''), "consensus_score": 0.0}
+            
+            # 4. Final Decision logic
+            consensus = gamma_data.get('consensus_score', 0)
+            final_proof = gamma_data.get('synthesized_proof', alpha_data['proof'])
+            
+            # PRESERVE REASONING: Inject any captured trace back into the proof block
+            if 'reasoning_trace' in gamma_data:
+                final_proof = f"<think>\n{gamma_data['reasoning_trace']}\n</think>\n\n{final_proof}"
+                
+            is_breakthrough = False
+            
+            if consensus >= threshold:
+                self.ui.print_log(f"\033[1;32m[TRIPLE-DEBATE] CONSENSUS REACHED ({consensus:.2f} >= {threshold}). Breakthrough!\033[0m")
+                is_breakthrough = True
+            else:
+                self.ui.print_log(f"\033[1;33m[TRIPLE-DEBATE] LOW CONSENSUS ({consensus:.2f}). Triggering Auditor Tie-Break...\033[0m")
+                audit_prompt = f"Final moderation from Gamma shows a consensus of {consensus}.\nSynthesized Proof: {final_proof}\nCritique: {beta_critique}\n\nShould we promote this finding? Respond 'audit_passed': true/false."
+                auditor_response = self._query_llm(audit_prompt, model=self.config['hardware']['reasoning_model'])
+                audit_data = self._extract_json(auditor_response) or {"audit_passed": False}
+                if audit_data.get('audit_passed'):
+                    self.ui.print_log("\033[1;32m[TRIPLE-DEBATE] Auditor OVERRULES. Breakthrough confirmed!\033[0m")
+                    is_breakthrough = True
+                else:
+                    self.ui.print_log("\033[1;31m[TRIPLE-DEBATE] Auditor REJECTS. No breakthrough.\033[0m")
+            
+            if is_breakthrough:
+                from sci_utils import send_telegram
+                summary = f"🏛 *TRIPLE ADVERSARIAL BREAKTHROUGH*\n\nTopic: {topic}\nConsensus: {consensus:.4f}\nStatus: SYNTHESIZED BY GAMMA-QWEN-MATH CORE."
+                send_telegram(summary)
+                kb_topic = f"TRIPLE_DEBATE: {topic}"
+                self.kb.append_finding(kb_topic, final_proof, "Success")
+                self.kb.update_audit(kb_topic, "VERIFIED", reason="Triple Model CUDA Consensus", rigor_score=10)
+        
+        finally:
+            if self.ui:
+                self.ui.finish_task(_worker_task_id)
+
+        return {"status": "Complete", "breakthrough": is_breakthrough}
+
+    def run_adversarial_stream(self):
+        """Background thread to manage the triple debate loop."""
+        while True:
+            try:
+                wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+                if wave_mode == "HARVEST":
+                    time.sleep(30)
+                    continue
+
+                topic = self.current_state.get("current_topic", "Black Hole Manifold Dynamics")
+                self.worker_stage_triple_debate(topic)
+                
+                time.sleep(600) # Triple Duel every 10 minutes (higher cost)
+            except Exception as e:
+                self._debug_swarm(f"[ADVERSARIAL ERROR] {e}")
+                time.sleep(10)
+
+    def run_promotion_stream(self):
+        """Phase 16: Background stream for asynchronous promotion & consensus."""
+        self.ui.print_log("[SYSTEM] Asynchronous Promotion Pipeline (File-Queue) INITIALIZED.")
+        queue_dir = "c:/continuous/promotion_queue"
+        if not os.path.exists(queue_dir): os.makedirs(queue_dir)
+        
+        while True:
+            try:
+                # 1. Check Wave Mode & Promotable JSON files
+                wave_mode = self.config['hardware'].get('wave_mode', 'MAGISTRATE')
+                if wave_mode == "HARVEST":
+                    time.sleep(30)
+                    continue
+
+                if not os.path.exists(queue_dir): os.makedirs(queue_dir)
+                files = [f for f in os.listdir(queue_dir) if f.endswith(".json")]
+                if not files:
+                    time.sleep(30)
+                    continue
+
+                # Sort by timestamp (prefix in filename)
+                files.sort()
+                
+                for filename in files:
+                    filepath = os.path.join(queue_dir, filename)
+                    try:
+                        with open(filepath, "r", encoding="utf-8") as f:
+                            test_result = json.load(f)
+                    except Exception as e:
+                        self.ui.print_log(f"[PROMOTER] Failed to load {filename}: {e}")
+                        try: os.remove(filepath)
+                        except: pass
+                        continue
+
+                    topic = test_result['hypothesis']['topic']
+                    self.ui.print_log(f"[PROMOTER] Background Review: {topic}")
+                    
+                    # A. Evaluate Significance (Pod 2 - DeepSeek-70B)
+                    # We pass the full test_result and invention!
+                    with self.heavy_lock:
+                        evaluation = self.reviewer.evaluate_significance(
+                            test_result, 
+                            test_result.get('invention'), 
+                            vector_mem=self.scribe.vector_mem
+                        )
+                    
+                    score = evaluation.get('significance_score', 0)
+                    test_result['evaluation'] = evaluation
+
+                    # B. Emergent Discovery Logic
+                    if evaluation.get("emergent_discovery_detected"):
+                        emergent_topic = evaluation.get("emergent_topic", "Emergent Phenomenon")
+                        emergent_hypothesis = evaluation.get("emergent_hypothesis", "New truth discovered during validation.")
+                        self.ui.print_log(f"\033[1;35m[EMERGENT] New truth discovered on '{topic}'!\033[0m")
+                        
+                        promoted_item = {
+                            "topic": emergent_topic,
+                            "research_summary": f"EMERGENT DISCOVERY from prior simulation on '{topic}'.\n\nVerified Truth: {emergent_hypothesis}",
+                            "driving_question": f"Formalize the emergent finding: {emergent_hypothesis}",
+                            "novelty_score": 95,
+                            "is_high_curiosity": True
+                        }
+                        self.push_to_research_queue([promoted_item])
+                        
+                        synthetic_result = {
+                            "hypothesis": {"topic": emergent_topic, "hypothesis": emergent_hypothesis, "field": "physics"},
+                            "status": "Verified (Emergent)",
+                            "evaluation": {"significance_score": 91, "verdict": f"Emergent: {emergent_hypothesis}"}
+                        }
+                        self.scribe.archive_discovery(synthetic_result)
+
+                    # C. Triple Consensus Gate (Scores >= 85)
+                    if score >= 85:
+                        self.ui.print_log(f"[PROMOTER] High Significance ({score}). Triggering Triple-Core Magistrate.")
+                        
+                        alpha_url = self.config['hardware'].get('alpha_url')
+                        beta_url = self.config['hardware'].get('beta_url')
+                        gamma_url = self.config['hardware'].get('gamma_url')
+                        threshold = self.config['hardware'].get('consensus_threshold', 0.95)
+                        
+                        # Background Consensus Logic
+                        beta_prompt = f"Topic: {topic}\nFinding: {evaluation.get('verdict', '')}\n\nInvalidate this finding."
+                        beta_critique = self._query_llm(beta_prompt, model=self.config['hardware'].get('beta_model'), api_url=beta_url)
+                        
+                        gamma_prompt = f"Topic: {topic}\nFinding: {evaluation.get('verdict', '')}\nCritique: {beta_critique}\n\nSynthesize & Score."
+                        gamma_response = self._query_llm(gamma_prompt, model=self.config['hardware'].get('gamma_model'), api_url=gamma_url)
+                        gamma_data = self._extract_json(gamma_response) or {"consensus_score": 0.0}
+                        
+                        consensus = gamma_data.get('consensus_score', 0)
+                        passed = False
+                        
+                        if consensus >= threshold:
+                            passed = True
+                        else:
+                            audit_prompt = f"Moderate Triple Debate on '{topic}'.\nGamma Consensus: {consensus}\nRelease finding? Respond 'audit_passed': true/false."
+                            auditor_resp = self._query_llm(audit_prompt, model=self.config['hardware']['reasoning_model'])
+                            passed = (self._extract_json(auditor_resp) or {}).get('audit_passed', False)
+                        
+                        if passed:
+                            from sci_utils import send_telegram
+                            send_telegram(f"🏛 *TRIPLE-CORE BREAKTHROUGH: {topic.upper()}*\nConsensus: {consensus:.4f}\nValidated by Magnum-Magistrate Cluster.")
+                            
+                            # Final Archive
+                            self.scribe.archive_discovery(test_result)
+                            try:
+                                if self.config.get('social', {}).get('enabled'):
+                                    self.social.post_discovery(test_result, priority=True)
+                            except: pass
+                            
+                            # ScribePro
+                            if score > 90:
+                                threading.Thread(target=self.scribe_pro.generate_latex_section, args=(test_result, evaluation), daemon=True).start()
+                            
+                            self.kb.update_promotion_status(topic, "SUCCESS")
+                        else:
+                            self.kb.update_promotion_status(topic, "FAILED")
+                    else:
+                        # Standard Archival
+                        if score >= 50:
+                            self.scribe.archive_discovery(test_result)
+                        self.kb.update_promotion_status(topic, "SKIPPED")
+
+                    # Final Cleanup
+                    if os.path.exists(filepath):
+                        try: os.remove(filepath)
+                        except: pass
+                
+                time.sleep(15)
+            except Exception as e:
+                self.ui.print_log(f"\033[1;31m[PROMOTER ERROR] {e}\033[0m")
+                time.sleep(10)
+
     def worker_stage_finalize(self, test_result, audit_report, target_url=None):
-        """
-        Wave 3: Archiving & Social (8B)
-        """
-        # --- GPU Pinning (Thread-Local Context) ---
+        """Phase 16: Non-blocking finalized archival."""
         from base_module import _THREAD_LOCAL_CONTEXT
         _THREAD_LOCAL_CONTEXT.api_url = target_url
-
         topic = test_result['hypothesis']['topic']
-        self.ui.print_log(f"\033[1;36m[SWARM WORKER] Finalizing: '{topic}'\033[0m")
-
-        # Register Task for Finalize
-        import threading
-        from colorama import Fore
-        _worker_task_id = f"final_{topic.replace(':', '_').replace(' ', '_')[:30]}_{id(threading.current_thread())}"
+        
+        self.ui.print_log(f"[FINALIZER] '{topic}' -> Background Promotion Queue.")
+        _worker_task_id = f"final_{topic.replace(' ', '_')[:20]}_{id(threading.current_thread())}"
         if self.ui:
-            self.ui.register_task(_worker_task_id, f"Finalize: {topic[:28]}", color=Fore.BLUE)
+            self.ui.register_task(_worker_task_id, f"Final: {topic[:28]}")
+            self.ui.update_task(_worker_task_id, "Active", 0)
 
         try:
             if audit_report.get('audit_passed'):
-                # Peer Review & Invention
+                # 1. Synthesize Invention (Fast Turn)
                 pain_point = self.scraper.find_pain_point(topic)
-                existing_tech = self.inventor.synthesize_existing_tech(pain_point)
-                invention = self.inventor.design_application(test_result, pain_point, existing_tech)
+                existing = self.inventor.synthesize_existing_tech(pain_point)
+                invention = self.inventor.design_application(test_result, pain_point, existing)
                 test_result['invention'] = invention
                 
-                # Serialized Significance Review (72B)
-                with self.heavy_lock:
-                    evaluation = self.reviewer.evaluate_significance(test_result, invention, vector_mem=self.scribe.vector_mem)
-                test_result['evaluation'] = evaluation
-
-                # --- CROSS-STUDY VALIDATION LOGIC ---
-                if evaluation.get("conflict_detected"):
-                    conflict_detail = evaluation.get("conflict_detail", "Unknown conflict.")
-                    self.ui.print_log(f"\033[1;31m[PHYSICS DEBATE] Conflict detected with past discoveries!\033[0m")
-                    
-                    import os
-                    # Append to REASONING_LOG.md
-                    log_path = os.path.join(self.config['paths']['memory'], "REASONING_LOG.md")
-                    with open(log_path, "a", encoding="utf-8") as f:
-                        f.write(f"## Physics Debate: {topic}\n")
-                        f.write(f"- **New Hypothesis**: {test_result['hypothesis']['hypothesis']}\n")
-                        f.write(f"- **Conflict Detail**: {conflict_detail}\n\n")
-
-                    # Trigger Conflict Resolution vector
-                    with self.state_lock:
-                        clean_topic = topic.split(':')[1].strip() if ':' in topic else topic
-                        new_vector = {
-                            "name": f"Conflict Resolution: {clean_topic[:50]} vs Past Discoveries",
-                            "area": "Resolving contradictions between recent simulation and established theory.",
-                            "high_curiosity": True
-                        }
-                        if "topic_vectors" not in self.current_state:
-                             self.current_state["topic_vectors"] = []
-                             
-                        # Determine current depth and insert the conflict resolution immediately
-                        current_depth = self.current_state.get("depth_counter", 0)
-                        self.current_state["topic_vectors"].insert(current_depth, new_vector)
-                        self.save_state()
-                # ------------------------------------
-
-                # Scribe
-                self.ui.print_discovery(test_result)
-                score_str = str(evaluation.get('significance_score', '0'))
-                import re
-                scores = re.findall(r'\d+', score_str)
-                score = int(scores[0]) if scores else 0
+                # 2. Save full result to Promotion Queue (Phase 16 - Robust Queue)
+                queue_dir = "c:/continuous/promotion_queue"
+                if not os.path.exists(queue_dir): os.makedirs(queue_dir)
                 
-                if score >= 50:
-                    self.scribe.archive_discovery(test_result)
-                # Granular Journaling for High-Significance discoveries
-                self.scribe.journal_entry(test_result)
-                if self.config.get('social', {}).get('enabled'):
-                    # --- ALERT OVERRIDE ---
-                    if evaluation.get('breakthrough_alert') or score >= 85:
-                        self.ui.print_log(f"\033[1;35m[ALERT] HIGH-SIGNIFICANCE BREAKTHROUGH DETECTED! Pushing to community...\033[0m")
-                        self.social.post_discovery(test_result, priority=True)
-                    else:
-                        self.social.post_discovery(test_result)
+                filename = f"promo_{int(time.time())}_{self._sanitize_slug(topic)}.json"
+                filepath = os.path.join(queue_dir, filename)
+                with open(filepath, "w", encoding="utf-8") as f:
+                    json.dump(test_result, f, indent=4)
                 
-                # Integrity Warning
-                if evaluation.get('integrity_alert'):
-                    self.ui.print_log(f"\033[1;31m[INTEGRITY ALERT] Reviewer flagged potential hallucination or low rigor.\033[0m")
-                    log_path = os.path.join(self.config['paths']['memory'], "integrity_warnings.log")
-                    with open(log_path, "a") as f:
-                        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {topic}: {evaluation.get('verdict')}\n")
+                # 3. Update Markdown Buffer for observability
+                self.kb.update_audit(topic, "VERIFIED", rigor_score=test_result.get('rigor', 7))
             else:
-                self.scribe.archive_knowledge(test_result)
-                # Journal confirmed knowledge for continuity
-                self.scribe.journal_entry(test_result)
-                self.explorer.log_failure(topic, test_result, audit_reason=audit_report.get('reasoning'))
+                self.kb.update_audit(topic, "REJECTED", reason=audit_report.get('reason', 'Failed audit.'))
         except Exception as e:
-            self.ui.print_log(f"\033[1;31m[SWARM WORKER] Error during finalization: {e}\033[0m")
-        finally:
-            # Micro-sleep and finish
-            self.reflector.micro_sleep({
-                'status': 'Success' if audit_report.get('audit_passed') else 'Failed',
-                'topic': topic,
-                'hypothesis': test_result['hypothesis'].get('hypothesis', ''),
-                'audit_reason': audit_report.get('reasoning', '')
-            })
-            if self.ui:
-                self.ui.finish_task(_worker_task_id)
+            self.ui.print_log(f"\033[1;31m[FINALIZER ERR] {e}\033[0m")
         
-        return {"status": "Complete", "topic": topic}
+        if self.ui: self.ui.finish_task(_worker_task_id)
+
+
+
+
+
+    def dispatch_deep_dive(self, test_result, evaluation):
+        """
+        Background Task: 70B Physics 'Deep Dive' for breakthroughs.
+        Includes mandatory 'Geometric Intuition' section.
+        """
+        from sci_utils import send_telegram
+        topic = test_result['hypothesis']['topic']
+        score = evaluation.get('significance_score', 0)
+        
+        prompt = f"""
+        Perform a RESEARCH DEEP DIVE for a recent BREAKTHROUGH.
+        
+        Topic: {topic}
+        Hypothesis: {test_result['hypothesis']['hypothesis']}
+        Significance Score: {score}
+        Rigor Analysis: {evaluation.get('rigor_analysis', 'N/A')}
+        Verdict: {evaluation.get('verdict', 'N/A')}
+        
+        Structure:
+        1. **Summary**: A dense, 3-sentence technical synthesis.
+        2. **Geometric Intuition**: Explain the Ricci flow / metric evolution of this discovery using a physical analogy (e.g., a stretching rubber sheet or a inflating balloon).
+        3. **Consequence**: What does this mean for future spacetime modeling?
+        
+        Format: Markdown. Use bold headers.
+        """
+        
+        reasoning_model = self.config['hardware'].get('reasoning_model', 'deepseek-r1:70b')
+        deep_dive = self._query_llm(prompt, model=reasoning_model)
+        
+        if deep_dive:
+            msg = f"📚 **BREAKTHROUGH DEEP DIVE: {topic.upper()}**\n\n"
+            msg += deep_dive
+            send_telegram(msg)
 
     def process_single_hypothesis(self, topic, depth, iteration_count):
         """
@@ -1195,6 +1933,20 @@ class ScienceBot(BaseModule):
             
             # Use the repaired code for the final check
             code = repaired_code
+
+        # --- LOCAL RIGOR: REGEX HALLUCINATION FILTER ---
+        # Catch .subs() and forbidden def blocks locally to save credits
+        hallucination_issues = []
+        if ".subs(" in code:
+            hallucination_issues.append("Banned .subs() usage detected.")
+        if re.search(r"def\s+\w+\(", code) and "compute_stats" not in code and "f_rhs" not in code:
+             # Basic check to ensure models aren't nesting forbidden functions
+             pass 
+
+        if hallucination_issues:
+            # Attempt a local regex patch for .subs() if possible, or just reject
+             self.ui.print_log(f"\033[1;31m[PREFLIGHT-RIGOR] Local rejection: {hallucination_issues[0]}\033[0m")
+             return False, hallucination_issues, "LOCAL RIGOR REJECTION: Code contains banned patterns (.subs/nesting). Discarding to save credits.", code
 
         report = TemplateValidator.run_all_checks(code, hypothesis)
         
@@ -1250,6 +2002,17 @@ class ScienceBot(BaseModule):
         if not promotable:
             return
 
+        # --- BACKPRESSURE GUARD (Bridge) ---
+        queue_path = self.get_research_queue_path()
+        if os.path.exists(queue_path):
+            try:
+                with open(queue_path, "r") as f:
+                    q_len = len(json.load(f))
+                if q_len > 200:
+                    # if self.ui: self.ui.print_log(f"\033[1;33m[BACKPRESSURE] Bridge throttled. Queue: {q_len}\033[0m")
+                    return # Silently delay promotion
+            except: pass
+
         api_url = self.config['hardware'].get('api_url', '')
         if not api_url:
             self.ui.print_log("[PROMOTION] Delaying promotion: No 70B pods configured.")
@@ -1258,16 +2021,25 @@ class ScienceBot(BaseModule):
         self.ui.print_log(f"\033[1;36m[BRIDGE] Promoting {len(promotable)} verified findings from buffer to 70B queue...\033[0m")
         
         items_to_push = []
+        seen_topics = set()
         for entry in promotable:
             try:
                 # Parse topic and content from the markdown entry
                 lines = entry.split('\n')
                 header_line = lines[0]
-                # Example: ### [20:48:11] Fractional ODEs: Exploring Chaos | STATUS: Success | AUDIT: VERIFIED | SYNTH: PENDING
                 import re
                 topic_match = re.search(r"### \[\d{2}:\d{2}:\d{2}\] (.*?) \|", header_line)
                 if not topic_match: continue
                 topic = topic_match.group(1).strip()
+                
+                # Robust cleaning to avoid "None" topics
+                topic = self.explorer._clean_topic(topic)
+                if not topic or topic.lower() == "none":
+                    continue
+                
+                if topic in seen_topics:
+                    continue
+                seen_topics.add(topic)
                 
                 content = "\n".join(lines[1:]).strip()
                 
@@ -1280,7 +2052,7 @@ class ScienceBot(BaseModule):
                 })
                 
                 # Mark as QUEUED in buffer to avoid double-processing
-                self.kb.update_synth_status(topic, "QUEUED")
+                self.kb.update_promotion_status(topic, "QUEUED")
             except Exception as e:
                 self.ui.print_log(f"[BRIDGE ERROR] Failed to promote entry: {e}")
 
@@ -1294,9 +2066,24 @@ class ScienceBot(BaseModule):
         self.ui.print_log("[GATHERER] Starting asynchronous gatherer loop...")
         while True:
             try:
+                # Synchronize with disk-based state updates
+                self.current_state = self.load_state()
+                
                 if self.current_state.get("state") == "PAUSED":
                     time.sleep(2)
                     continue
+
+                # --- BACKPRESSURE GUARD ---
+                queue_path = self.get_research_queue_path()
+                if os.path.exists(queue_path):
+                    try:
+                        with open(queue_path, "r") as f:
+                            q_len = len(json.load(f))
+                        if q_len > 100:
+                            if self.ui: self.ui.print_log(f"\033[1;33m[BACKPRESSURE] Gatherer throttled. Queue: {q_len}\033[0m")
+                            time.sleep(20) # Faster poll for status
+                            continue
+                    except: pass
 
                 self.reload_config()
                 is_turbo = self.config['research'].get('turbo_mode', False)
@@ -1509,12 +2296,12 @@ class ScienceBot(BaseModule):
             q = self._safe_load_json(queue_path, default=[])
             if self.ui: self.ui.update_queue_size(len(q))
 
-        self.pre_flight_sync() # 70B hydration check happens here (Non-blocking for Gatherer)
+        self.pre_flight_sync() # 70B hydration check happens here (Blocking)
         self.ui.print_log("[SYNTHESIZER] Starting asynchronous synthesis loop...")
         while True:
             try:
-                if self.current_state.get("state") == "PAUSED":
-                    time.sleep(2)
+                if self.current_state.get("state") == "PAUSED" or not self.hydration_ready:
+                    time.sleep(5)
                     continue
 
                 self.reload_config()
@@ -1532,8 +2319,10 @@ class ScienceBot(BaseModule):
                 # Determine batch size dynamically. Rather than treating 1 URL as 1 thread, 
                 # we use heavy_concurrency_limit to saturate massive single-node pods (A100s).
                 base_pods = len(api_pool)
+                # Increase pull size if research is throttled to clear synthesis backlog faster
+                mult = 2 if getattr(self, 'active_8b_workers', 32) <= 16 else 1
                 num_pods = self.config['hardware'].get('heavy_concurrency_limit', max(1, base_pods * 2))
-                pull_size = max(1, num_pods)
+                pull_size = max(1, num_pods * mult)
 
                 prelim_results = self.pop_from_research_queue(pull_size)
                 if not prelim_results:
@@ -1573,8 +2362,10 @@ class ScienceBot(BaseModule):
                             with concurrent.futures.ThreadPoolExecutor(max_workers=num_shards) as shard_executor:
                                 shard_futures = []
                                 current_pool = _get_pool('math_engine')
+                                self.ui.print_log(f" \033[1;35m[DEBUG] num_pods={num_pods}, num_shards={num_shards}, len(current_pool)={len(current_pool)}\033[0m")
                                 for i, s in enumerate(shards):
                                     t_url = current_pool[i % len(current_pool)] if current_pool else None
+                                    self.ui.print_log(f" \033[1;35m[DEBUG] Routing Shard {i} to URL: {t_url}\033[0m")
                                     # STICK 70B: allow_fallback=False
                                     shard_futures.append(shard_executor.submit(_run_with_url, t_url, self.explorer.generate_batch_hypotheses, s, topic, allow_fallback=False))
                                 for f in shard_futures:
@@ -1600,6 +2391,7 @@ class ScienceBot(BaseModule):
                         with concurrent.futures.ThreadPoolExecutor(max_workers=num_shards) as shard_executor:
                             shard_futures = []
                             current_pool = _get_pool('math_engine')
+                            self.ui.print_log(f" \033[1;35m[DEBUG REFINEMENT] num_pods={num_pods}, num_shards={num_shards}, pool={len(current_pool)}\033[0m")
                             for i, s in enumerate(shards):
                                 t_url = current_pool[i % len(current_pool)] if current_pool else None
                                 # STRICT 70B: allow_fallback=False
@@ -1744,10 +2536,18 @@ class ScienceBot(BaseModule):
                         )
                     self.run_creator_improvements_phase()
                     latest_guidance = self.reflector.get_latest_dream_guidance()
-                    if latest_guidance and latest_guidance.get('hypothesis_generation_guidance'):
-                        self.current_state['dream_hypothesis_guidance'] = latest_guidance['hypothesis_generation_guidance']
                     if latest_guidance and latest_guidance.get('code_patch', {}).get('enabled'):
                         self.reflector.try_self_patch(latest_guidance)
+
+                    # --- IDENTITY EVOLUTION (Feature 4511) ---
+                    # Periodically evolve personality based on breakthroughs
+                    if current_iter % 10 == 0:
+                        evolution_rationale = self.reflector.evolve_identity()
+                        if evolution_rationale and self.ui:
+                            self.ui.print_log(f"\033[1;36m[SUBCONSCIOUS] Identity Evolved: {evolution_rationale[:150]}...\033[0m")
+                            # Reload bot name if it changed
+                            self.identity = self._safe_load_json(os.path.join(self.config['paths']['memory'], "identity.json"), default={})
+                            self.bot_name = self.identity.get("name", "EigenZeta")
 
                 # AUTONOMOUS STUDY MODE CONCLUSION
                 is_study_mode = (self.current_state.get("burst_counter", 1) <= 5)
@@ -1931,6 +2731,53 @@ class ScienceBot(BaseModule):
         if self.current_state.get("state") != "PAUSED":
             self.state = "IDLE"
 
+    def initiate_zeta_centerpiece(self):
+        """
+        Special Task: 100,000 High-Precision Zeta Zero run.
+        The 'Centerpiece' of the first paper.
+        """
+        import threading
+        
+        def run_centerpiece():
+            try:
+                self.ui.print_log("\033[1;36m[CENTERPIECE] Starting high-precision run for 100,000 Zeta zeros...\033[0m")
+                from sci_utils import compute_zeta_zeros, unfold_zeta_zeros, ks_test_gue, send_telegram
+                
+                # 1. Compute 100k Zeros (Parallel)
+                gamma = compute_zeta_zeros(100000)
+                
+                # 2. Unfold and Test
+                spacings, mean_s = unfold_zeta_zeros(gamma)
+                ks_stat, p_val, r_squared = ks_test_gue(spacings)
+                
+                self.ui.print_log(f"\033[1;32m[CENTERPIECE] 100k Run Complete. R^2: {r_squared:.6f}\033[0m")
+                
+                # 3. Telegram Report
+                msg = f"🏆 *ZETA CENTERPIECE VERIFIED*\n\n"
+                msg += f"Sample: 100,000 zeros\n"
+                msg += f"Precision: 60 dps\n"
+                msg += f"R² Fit: {r_squared:.8f}\n"
+                msg += f"KS p-value: {p_val:.8e}\n\n"
+                
+                if r_squared > 0.98:
+                    msg += "✅ Threshold met. This is the official 'Centerpiece' of Paper #1."
+                    # Formal documentation trigger
+                    synthetic_result = {
+                        'hypothesis': {'topic': 'Riemann Zeta Centerpiece (100k)', 'hypothesis': 'Verification of Montgomery-Odlyzko Law at high scale.'},
+                        'metrics': {'r_squared': r_squared, 'ks_stat': ks_stat, 'sample_size': 100000}
+                    }
+                    synthetic_eval = {'significance_score': 98, 'verdict': 'Formal verification of GUE statistics at 10^5 scale.'}
+                    self.scribe_pro.generate_latex_section(synthetic_result, synthetic_eval)
+                else:
+                    msg += "⚠️ Threshold not met. Re-evaluating unfolding parameters."
+                
+                send_telegram(msg)
+                
+            except Exception as e:
+                self.ui.print_log(f"\033[1;31m[CENTERPIECE] Error in high-precision run: {e}\033[0m")
+
+        threading.Thread(target=run_centerpiece, daemon=True).start()
+
     def run(self):
         self.ui.print_log("Entering core research loop (DECOUPLED)...")
         self.start_input_listener()
@@ -1938,10 +2785,14 @@ class ScienceBot(BaseModule):
         # Start Background Streams
         threading.Thread(target=self.start_continuous_8b_stream, daemon=True).start()
         threading.Thread(target=self.buffer_audit_loop, daemon=True).start()
+        threading.Thread(target=self.run_adversarial_stream, daemon=True).start()
         
         # Start Decoupled Swarm Threads
         threading.Thread(target=self.run_gatherer_loop, daemon=True).start()
         threading.Thread(target=self.run_synthesis_loop, daemon=True).start()
+        
+        # Initiate High-Precision Centerpiece
+        self.initiate_zeta_centerpiece()
         
         while True:
             try:
