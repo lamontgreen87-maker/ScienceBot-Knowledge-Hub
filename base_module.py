@@ -393,7 +393,7 @@ class BaseModule:
         pass
 
     def _query_llm(self, prompt, model=None, temperature=0.7, max_tokens=4000, 
-                  is_8b=False, is_sleeper=False, allow_fallback=True, api_url=None, timeout=1800):
+                  is_8b=False, is_sleeper=False, allow_fallback=True, api_url=None, timeout=None):
         """
         Base query method with retry logic and sleeper mode handoff.
         - allow_fallback: If False, will not engage Sleeper Mode on connection failure.
@@ -439,6 +439,10 @@ class BaseModule:
              m_check = str(model).lower()
              is_8b = "8b" in m_check or "llama3.1" in m_check
              is_32b = "32b" in m_check
+
+        if timeout is None:
+            # Dynamic timeout: 120s for light models, 1800s for heavy
+            timeout = 1800 if is_heavy else 120
 
         # 0. RESOLVE API URL (Priority: Argument > Thread-Local Override > Instance Default)
         url_arg = api_url

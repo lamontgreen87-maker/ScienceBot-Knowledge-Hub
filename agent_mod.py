@@ -29,6 +29,7 @@ from base_module import BaseModule
 from template_validation import TemplateValidator
 from moltbook import Moltbook
 from knowledge_buffer import KnowledgeBuffer
+from base_module import _GLOBAL_FILE_LOCK
 
 class EigenZeta(BaseModule):
     def __init__(self, config_path="config.json"):
@@ -1055,18 +1056,24 @@ class EigenZeta(BaseModule):
     def push_to_research_queue(self, items):
         if not items: return
         queue_path = self.get_research_queue_path()
-        queue = self._safe_load_json(queue_path, default=[])
-        queue.extend(items)
-        self._safe_save_json(queue_path, queue)
+        with _GLOBAL_FILE_LOCK:
+            queue = self._safe_load_json(queue_path, default=[])
+            queue.extend(items)
+            # Re-order by Novelty Score descending 
+            queue.sort(key=lambda x: x.get('novelty_score', 0) if isinstance(x, dict) else 0, reverse=True)
+            self._safe_save_json(queue_path, queue)
+            if self.ui: self.ui.update_queue_size(len(queue))
         self.ui.print_log(f"[1;32m[GATHERER] Pushed {len(items)} items to queue. Total pending: {len(queue)}[0m")
 
     def pop_from_research_queue(self, batch_size):
         queue_path = self.get_research_queue_path()
-        queue = self._safe_load_json(queue_path, default=[])
-        if not queue: return []
-        batch = queue[:batch_size]
-        self._safe_save_json(queue_path, queue[batch_size:])
-        return batch
+        with _GLOBAL_FILE_LOCK:
+            queue = self._safe_load_json(queue_path, default=[])
+            if not queue: return []
+            batch = queue[:batch_size]
+            self._safe_save_json(queue_path, queue[batch_size:])
+            if self.ui: self.ui.update_queue_size(max(0, len(queue)-len(batch)))
+            return batch
 
     def run_gatherer_loop(self):
         \"\"\"
@@ -1609,7 +1616,7 @@ class EigenZeta(BaseModule):
             self.state = "IDLE"
 
 if __name__ == "__main__":
-    bot = ScienceBot()
+    bot = EigenZeta()
     bot.run()
 
 
