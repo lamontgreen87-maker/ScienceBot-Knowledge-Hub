@@ -159,7 +159,7 @@ class BaseModule:
                 pass
 
         # Default fallback: return a "safe" high value if detection fails entirely
-        return 16.0
+        return float(self.config['hardware'].get('vram_capacity_gb', 90))
 
     def _resolve_pod_priority(self, model_name):
         """

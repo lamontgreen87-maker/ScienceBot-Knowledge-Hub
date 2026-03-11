@@ -6,7 +6,7 @@ def test_swarm_optimizations():
     print("--- Verifying Swarm Optimizations ---")
     
     # 1. Initialize Bot with mock config
-    bot = ScienceBot("config.json")
+    bot = EigenZeta("config.json")
     
     # 2. Mock vectors with one High Curiosity
     mock_vectors = [

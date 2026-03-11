@@ -32,7 +32,7 @@ from moltbook import Moltbook
 from knowledge_buffer import KnowledgeBuffer
 from vector_memory import VectorMemory
 
-class ScienceBot(BaseModule):
+class EigenZeta(BaseModule):
     def __init__(self, config_path="config.json"):
         # Prevent multiple instances
         self.lock_file = "bot.lock"
@@ -2813,5 +2813,5 @@ class ScienceBot(BaseModule):
                 time.sleep(5)
 
 if __name__ == "__main__":
-    bot = ScienceBot()
+    bot = EigenZeta()
     bot.run()

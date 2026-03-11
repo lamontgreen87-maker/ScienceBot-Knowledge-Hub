@@ -30,7 +30,7 @@ from template_validation import TemplateValidator
 from moltbook import Moltbook
 from knowledge_buffer import KnowledgeBuffer
 
-class ScienceBot(BaseModule):
+class EigenZeta(BaseModule):
     def __init__(self, config_path="config.json"):
         # Prevent multiple instances
         self.lock_file = "bot.lock"
