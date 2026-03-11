@@ -170,12 +170,24 @@ class BaseModule:
         m_lower = model_name.lower()
         pods = self.config['hardware'].get('pods', {})
         
+        all_candidate_urls = []
+        max_reservation = 0
+        
         # 1st Priority: Exact Family Match (via config.json pods)
         for pod_name, pod_info in pods.items():
             allowed_models = [m.lower() for m in pod_info.get('models', [])]
             # Check for substring match (e.g. "deepseek-r1:70b" in "deepseek-r1:70b" or vice versa)
             if any(m_lower in am or am in m_lower for am in allowed_models):
-                return pod_info.get('urls'), pod_info.get('reservation_gb', 0)
+                urls = pod_info.get('urls', [])
+                if isinstance(urls, str): urls = [urls]
+                all_candidate_urls.extend(urls)
+                max_reservation = max(max_reservation, pod_info.get('reservation_gb', 0))
+        
+        if all_candidate_urls:
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_urls = [x for x in all_candidate_urls if not (x in seen or seen.add(x))]
+            return unique_urls, max_reservation
         
         # 2nd Priority: Legacy Heuristics
         is_8b = "8b" in m_lower or "llama3.1" in m_lower
