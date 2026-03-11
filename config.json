@@ -26,17 +26,17 @@
         "beta_model": "qwen2-math:72b",
         "gamma_model": "llama3.3:latest",
         "api_url": [
-            "http://69.30.85.235:11434/api/generate",
-            "http://69.30.85.218:11434/api/generate"
+            "http://69.30.85.235:22112/api/generate",
+            "http://69.30.85.218:22112/api/generate"
         ],
         "local_url": "http://localhost:11434/api/generate",
         "secondary_gpu": [
-            "http://69.30.85.235:11434/api/generate",
-            "http://69.30.85.218:11434/api/generate"
+            "http://69.30.85.235:22112/api/generate",
+            "http://69.30.85.218:22112/api/generate"
         ],
-        "alpha_url": "http://69.30.85.235:11434/api/generate",
-        "beta_url": "http://69.30.85.218:11434/api/generate",
-        "gamma_url": "http://194.68.245.88:11434/api/generate",
+        "alpha_url": "http://69.30.85.235:22112/api/generate",
+        "beta_url": "http://69.30.85.218:22112/api/generate",
+        "gamma_url": "http://194.68.245.88:22060/api/generate",
         "consensus_threshold": 0.95,
         "vram_capacity_gb": 350,
         "gpu_mapping": {
@@ -64,7 +64,7 @@
         "pods": {
             "alpha": {
                 "urls": [
-                    "http://69.30.85.235:11434/api/generate"
+                    "http://69.30.85.235:22112/api/generate"
                 ],
                 "models": [
                     "deepseek-r1:70b",
@@ -75,7 +75,7 @@
             },
             "beta": {
                 "urls": [
-                    "http://69.30.85.218:11434/api/generate"
+                    "http://69.30.85.218:22112/api/generate"
                 ],
                 "models": [
                     "qwen2-math:72b",
@@ -86,7 +86,7 @@
             },
             "gamma": {
                 "urls": [
-                    "http://194.68.245.88:11434/api/generate"
+                    "http://194.68.245.88:22060/api/generate"
                 ],
                 "models": [
                     "llama3.3:latest",
