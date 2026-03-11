@@ -629,6 +629,19 @@ class EigenZeta(BaseModule):
         """
         Wave 1: Research & Hypothesis Guessing (8B)
         """
+        # --- GPU VRAM Guard (Parallelized) ---
+        if target_url is None:
+             sec_urls = self.config['hardware'].get('secondary_gpu', [])
+             check_url = sec_urls[0] if isinstance(sec_urls, list) and sec_urls else (sec_urls if isinstance(sec_urls, str) else None)
+        else:
+             check_url = target_url
+
+        if check_url:
+            min_vram = 6.0
+            while self.get_vram_headroom(url=check_url) < min_vram:
+                if self.ui: self.ui.set_status(f"Worker {topic[:10]} waiting for VRAM")
+                time.sleep(5)
+
         self.ui.print_log(f"\033[1;36m[SWARM WORKER] Research Stage: '{topic}'\033[0m")
         
         # --- GPU Pinning (Thread-Local Context) ---
@@ -1193,23 +1206,22 @@ class EigenZeta(BaseModule):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                     self.ui.print_log(f"[1;34m[WAVE 1] Engaging Research Workers (8B). Submitting {len(tasks_to_queue)} tasks...[0m")
                     research_futures = {}
+                    sec_urls = self.config['hardware'].get('secondary_gpu', [])
+                    if isinstance(sec_urls, str): sec_urls = [sec_urls]
+                    
                     for idx, task_data in enumerate(tasks_to_queue):
                         if len(task_data) == 4:
                             t, d, i, p = task_data
                         else:
                             t, d, i = task_data
                         
-                        sec_urls = self.config['hardware'].get('secondary_gpu', [])
-                        check_url = sec_urls[0] if isinstance(sec_urls, list) and sec_urls else (sec_urls if isinstance(sec_urls, str) else None)
-                        
-                        # 8B research workers only need minimal headroom
-                        min_vram = 6.0
-                        while self.get_vram_headroom(url=check_url) < min_vram:
-                            self.ui.set_status(f"THROTTLED: Waiting for VRAM")
-                            time.sleep(10)
+                        # Distribute tasks across pods
+                        target_url = None
+                        if sec_urls:
+                            target_url = sec_urls[idx % len(sec_urls)]
                         
                         if idx > 0: time.sleep(stagger_delay)
-                        future = executor.submit(self.worker_stage_research, t, d, i, None)
+                        future = executor.submit(self.worker_stage_research, t, d, i, target_url)
                         research_futures[future] = t
 
                     for f in concurrent.futures.as_completed(research_futures):
@@ -1318,7 +1330,14 @@ class EigenZeta(BaseModule):
                     max_construction_workers = self.config['hardware'].get('turbo_workers', 12)
                 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=max_construction_workers) as executor:
-                    construction_futures = {executor.submit(self.worker_stage_construction, r, None): r['topic'] for r in prelim_results}
+                    sec_urls = self.config['hardware'].get('secondary_gpu', [])
+                    if isinstance(sec_urls, str): sec_urls = [sec_urls]
+                    
+                    construction_futures = {}
+                    for idx, r in enumerate(prelim_results):
+                        target_url = sec_urls[idx % len(sec_urls)] if sec_urls else None
+                        future = executor.submit(self.worker_stage_construction, r, target_url)
+                        construction_futures[future] = r['topic']
                     for f in concurrent.futures.as_completed(construction_futures):
                         try:
                             res = f.result()

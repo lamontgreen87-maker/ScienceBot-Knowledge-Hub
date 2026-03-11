@@ -59,6 +59,7 @@
         "heavy_concurrency_limit": 20,
         "fast_lane_concurrency": 10,
         "wave_mode": "MAGISTRATE",
+        "swarm_stagger_s": 0.2,
         "magistrate_queue_threshold": 15,
         "num_ctx": 32768,
         "pods": {
