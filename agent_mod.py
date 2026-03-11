@@ -1195,7 +1195,8 @@ class EigenZeta(BaseModule):
                         sec_urls = self.config['hardware'].get('secondary_gpu', [])
                         check_url = sec_urls[0] if isinstance(sec_urls, list) and sec_urls else (sec_urls if isinstance(sec_urls, str) else None)
                         
-                        min_vram = self.config['hardware'].get('sorter_settings', {}).get('min_vram_headroom_gb', 12.0)
+                        # 8B research workers only need minimal headroom
+                        min_vram = 6.0
                         while self.get_vram_headroom(url=check_url) < min_vram:
                             self.ui.set_status(f"THROTTLED: Waiting for VRAM")
                             time.sleep(10)
