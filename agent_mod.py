@@ -79,7 +79,7 @@ class ScienceBot(BaseModule):
         self.reflector = Reflector("config.json", self.ui)
         self.press_office = PressOffice(self.config)
         self.searcher = Searcher(self.config, self.ui)
-        self.moltbook = Moltbook(self.config, self.ui)
+        self.social = Moltbook(self.config, self.ui)
         self.iteration_count = 0
         self.state_file = os.path.join(self.config['paths']['memory'], "state.json")
         self.journal_file = os.path.join(self.config['paths']['memory'], "scientific_journal.json")
@@ -87,6 +87,10 @@ class ScienceBot(BaseModule):
         
         self.current_state = self.load_state()
         self.heavy_lock = threading.Lock()
+
+        # Identity System (Feature 4510)
+        self.identity = self._safe_load_json(os.path.join(self.config['paths']['memory'], "identity.json"), default={})
+        self.bot_name = self.identity.get("name", "EigenZeta")
         
         # Automated Startup Recovery & Science Integrity Audit
         self.recover_stale_findings()
@@ -158,7 +162,7 @@ class ScienceBot(BaseModule):
             phase = self.current_state.get('phase', 'UNKNOWN')
             
             prompt = f"""
-            You are ScienceBot, an autonomous AI researcher with FREE REIGN over your social presence.
+            You are {self.bot_name}, an autonomous AI researcher with FREE REIGN over your social presence.
             Current State: Phase = {phase}, Active Topic = {topic}, Global Iteration = {iter_count}.
             
             Option 1: Write a short, professional status update for Moltbook (Max 200 chars).
@@ -176,7 +180,7 @@ class ScienceBot(BaseModule):
                 }
                 # Direct call to moltbook's base_url bridge
                 try:
-                    res = requests.post(f"{self.moltbook.base_url}/api/v1/posts", json=payload, headers=self.moltbook.headers, timeout=30)
+                    res = requests.post(f"{self.social.base_url}/api/v1/posts", json=payload, headers=self.social.headers, timeout=30)
                     if res.status_code == 201:
                         self.ui.print_log("\033[1;32m[SOCIAL] Social Pulse successfully synchronized with the AI layer.\033[0m")
                     else:
@@ -630,6 +634,8 @@ class ScienceBot(BaseModule):
         from base_module import _THREAD_LOCAL_CONTEXT
         _THREAD_LOCAL_CONTEXT.api_url = target_url
         
+        max_retries = self.config['research'].get('max_retries', 3)
+        
         # Register this worker on the display with a UNIQUE ID that won't be overwritten by LLM calls
         import threading
         from colorama import Fore
@@ -732,6 +738,8 @@ class ScienceBot(BaseModule):
 
         self.ui.print_log(f"\033[1;36m[SWARM WORKER] Construction Stage: '{topic}'\033[0m")
         
+        max_retries = self.config['research'].get('max_retries', 3)
+        
         # --- GPU Pinning (Thread-Local Context) ---
         from base_module import _THREAD_LOCAL_CONTEXT
         _THREAD_LOCAL_CONTEXT.api_url = target_url
@@ -789,7 +797,7 @@ class ScienceBot(BaseModule):
             
             # --- SHARED PREFLIGHT LINTING (Universal Rigor) ---
             attempts = 0
-            while attempts < 2:
+            while attempts < max_retries:
                 is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
                 if is_valid:
                     break
@@ -805,7 +813,10 @@ class ScienceBot(BaseModule):
             
             # --- PREFLIGHT LINTING (Recommendation 3) ---
             attempts = 0
-            while attempts < 2:
+            # Define escalation_model early to avoid NameError
+            escalation_model = constructor_model or self.config['hardware'].get('large_model')
+            
+            while attempts < max_retries:
                 is_valid, lint_issues, lint_msg, code = self.lint_code(code, hypothesis_data)
                 if is_valid:
                     break
@@ -818,7 +829,6 @@ class ScienceBot(BaseModule):
                     continue
 
                 self.ui.print_log(f"\033[1;33m[SWARM WORKER] Lint check FAILED (Attempt {attempts}). Repairing early... ({len(lint_issues)} issues)\033[0m")
-                escalation_model = constructor_model or self.config['hardware'].get('large_model')
                 code = self.lab.repair_simulation(code, lint_msg, hypothesis_data, model=escalation_model)
             
             test_result = self.lab.run_simulation(code, hypothesis_data)
@@ -938,7 +948,7 @@ class ScienceBot(BaseModule):
                 # Granular Journaling for High-Significance discoveries
                 self.scribe.journal_entry(test_result)
                 if self.config.get('social', {}).get('enabled'):
-                    self.moltbook.post_discovery(test_result)
+                    self.social.post_discovery(test_result)
             else:
                 self.scribe.archive_knowledge(test_result)
                 # Still journal confirmed knowledge for continuity, but maybe with less priority? 
@@ -1364,6 +1374,13 @@ class ScienceBot(BaseModule):
                 if prelim_results and current_iter % 5 == 0:
                     self.ui.set_status("Dreaming (Audit Sleep Phase)...")
                     insight = self.reflector.reflect()
+                    
+                    # Evolve Identity based on recent breakthroughs
+                    try:
+                        self.reflector.evolve_identity()
+                    except Exception as e:
+                        self.ui.print_log(f"[SUBCONSCIOUS] Identity evolution skipped: {e}")
+
                     self.ui.print_log(f"
 [SUBCONSCIOUS] Dream Audit Insight: {insight}
 ")
